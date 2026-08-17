@@ -18,6 +18,7 @@
 /.editorconfig export-ignore
 /.idea export-ignore
 /implement export-ignore
+/.phpstan export-ignore
 /tests export-ignore
 /phpunit.xml.dist export-ignore
 /phpstan.neon.dist export-ignore

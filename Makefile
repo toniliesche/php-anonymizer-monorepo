@@ -1,7 +1,7 @@
-.PHONY: help setup test test-coverage lint fix static architecture dependencies refactor mutation validate audit check qa artifacts release-preview release-preview-test release-verify
+.PHONY: help setup test test-coverage lint fix static architecture dependencies collisions refactor mutation validate audit check qa artifacts release-preview release-preview-test release-verify
 
 help:
-	@printf '%s\n' 'Use Composer as the canonical developer interface:' '  composer setup qa test test:coverage lint fix static architecture dependencies refactor:check rector:fix mutation validate audit release:preview release:verify'
+	@printf '%s\n' 'Use Composer as the canonical developer interface:' '  composer setup qa test test:coverage lint fix static architecture dependencies collisions refactor:check rector:fix mutation validate audit release:preview release:verify'
 
 setup:
 	composer install
@@ -26,6 +26,9 @@ architecture:
 
 dependencies:
 	composer dependencies
+
+collisions:
+	composer collisions
 
 refactor:
 	composer refactor:check

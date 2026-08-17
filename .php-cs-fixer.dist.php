@@ -16,6 +16,11 @@ return (new Config())
         'declare_strict_types' => true,
         'array_syntax' => ['syntax' => 'short'],
         'ordered_imports' => ['sort_algorithm' => 'alpha'],
+        'global_namespace_import' => [
+            'import_classes' => true,
+            'import_constants' => true,
+            'import_functions' => true,
+        ],
         'single_quote' => true,
         'no_unused_imports' => true,
         'strict_param' => true,

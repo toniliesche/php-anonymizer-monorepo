@@ -12,7 +12,11 @@ parameters:
     reportAnyTypeWideningInVarTag: true
     reportIgnoresWithoutComments: true
     reportUnmatchedIgnoredErrors: true
+    cognitive_complexity:
+        class: 25
+        function: 10
 
 includes:
-    - phpstan.package-policies.neon
-    - phpstan.package-policies-services.neon
+    - .phpstan/disallowed-calls.neon
+    - .phpstan/package-policies.neon
+    - .phpstan/package-policies-services.neon

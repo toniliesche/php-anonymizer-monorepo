@@ -1,0 +1,40 @@
+parameters:
+    filesRootDir: %rootDir%/../../..
+    disallowedFunctionCalls:
+        -
+            function:
+                - extract
+                - create_function
+                - phpinfo
+                - var_dump
+                - print_r
+                - debug_zval_dump
+                - putenv
+                - shell_exec
+                - exec
+                - passthru
+                - system
+                - popen
+                - proc_open
+            message: 'Dangerous or non-deterministic function calls are forbidden in published packages.'
+            errorIdentifier: anonymizer.disallowedFunction
+            allowExceptIn:
+                - packages/**/*.php
+        -
+            function:
+                - strlen
+                - substr
+                - substr_count
+                - strpos
+                - stripos
+                - strrpos
+                - strripos
+                - strstr
+                - stristr
+                - strtolower
+                - strtoupper
+                - str_split
+            message: 'Use the explicit UTF-8 mb_* string API in published packages.'
+            errorIdentifier: anonymizer.nativeStringFunction
+            allowExceptIn:
+                - packages/**/*.php

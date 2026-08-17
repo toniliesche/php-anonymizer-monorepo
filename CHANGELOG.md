@@ -4,7 +4,11 @@ All notable changes to this project will be documented here.
 
 ## [Unreleased]
 
-Future changes will be recorded here.
+### Added
+
+- Recursive `children` and `each` traversal for nested array profiles.
+- Immutable anonymization reports with changed and missing JSON Pointer paths.
+- Strict runtime shape validation for maps, lists, and selected string values.
 
 ## [0.1.0] - 2026-08-17
 

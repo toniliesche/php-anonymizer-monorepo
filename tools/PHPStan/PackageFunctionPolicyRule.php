@@ -4,22 +4,20 @@ declare(strict_types=1);
 
 namespace PhpAnonymizer\Workspace\PHPStan;
 
+use Override;
 use PhpParser\Node;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr\FuncCall;
+use PhpParser\Node\Name;
 use PhpParser\Node\Scalar\String_;
+use PHPStan\Analyser\Scope;
 use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
 
 /** @implements Rule<FuncCall> */
 final class PackageFunctionPolicyRule implements Rule
 {
-    private const array DISALLOWED = [
-        'eval', 'extract', 'create_function', 'assert', 'phpinfo', 'var_dump', 'print_r',
-        'debug_zval_dump', 'putenv', 'shell_exec', 'exec', 'passthru', 'system', 'popen', 'proc_open',
-        'strlen', 'substr', 'substr_count', 'strpos', 'stripos', 'strrpos', 'strripos', 'strstr',
-        'stristr', 'strtolower', 'strtoupper', 'str_split',
-    ];
+    private const array DISALLOWED_LANGUAGE_FUNCTIONS = ['eval', 'assert'];
 
     /** @var array<string, int> */
     private const array MB_ENCODING_ARGUMENT = [
@@ -28,27 +26,26 @@ final class PackageFunctionPolicyRule implements Rule
         'mb_stristr' => 3, 'mb_strtolower' => 1, 'mb_strtoupper' => 1, 'mb_str_split' => 2,
     ];
 
-    #[\Override]
+    #[Override]
     public function getNodeType(): string
     {
         return FuncCall::class;
     }
 
-    #[\Override]
-    public function processNode(Node $node, \PHPStan\Analyser\Scope $scope): array
+    #[Override]
+    public function processNode(Node $node, Scope $scope): array
     {
         if (!str_starts_with($scope->getFile(), dirname(__DIR__, 2) . '/packages/')) {
             return [];
         }
 
-        if (!$node->name instanceof Node\Name) {
+        if (!$node->name instanceof Name) {
             return [];
         }
 
         $name = mb_strtolower($node->name->toString(), 'UTF-8');
-        if (in_array($name, self::DISALLOWED, true)) {
-            $replacement = str_starts_with($name, 'str') || $name === 'strlen' ? 'the mb_* equivalent' : 'an explicit domain API';
-            return [RuleErrorBuilder::message(sprintf('Function %s() is disallowed in published packages; use %s.', $name, $replacement))->identifier('anonymizer.disallowedFunction')->build()];
+        if (in_array($name, self::DISALLOWED_LANGUAGE_FUNCTIONS, true)) {
+            return [RuleErrorBuilder::message(sprintf('Function %s() is disallowed in published packages.', $name))->identifier('anonymizer.disallowedFunction')->build()];
         }
 
         if (isset(self::MB_ENCODING_ARGUMENT[$name])) {

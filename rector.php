@@ -12,4 +12,10 @@ return RectorConfig::configure()
         __DIR__ . '/tools',
     ])
     ->withPhpSets(php85: true)
+    ->withImportNames(
+        importNames: true,
+        importDocBlockNames: true,
+        importShortClasses: true,
+        removeUnusedImports: true,
+    )
     ->withPreparedSets(deadCode: true, codeQuality: true, typeDeclarations: true);
