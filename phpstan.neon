@@ -1,0 +1,18 @@
+parameters:
+    level: max
+    paths:
+        - packages
+        - tools/PHPStan
+    tmpDir: var/phpstan
+    treatPhpDocTypesAsCertain: true
+    checkExplicitMixed: true
+    checkBenevolentUnionTypes: true
+    checkMissingCallableSignature: true
+    checkMissingOverrideMethodAttribute: true
+    reportAnyTypeWideningInVarTag: true
+    reportIgnoresWithoutComments: true
+    reportUnmatchedIgnoredErrors: true
+
+includes:
+    - phpstan.package-policies.neon
+    - phpstan.package-policies-services.neon

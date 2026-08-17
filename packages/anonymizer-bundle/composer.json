@@ -1,0 +1,9 @@
+{
+    "name": "php-anonymizer/anonymizer-bundle",
+    "description": "Symfony integration for PHP Anonymizer",
+    "license": "MIT",
+    "type": "symfony-bundle",
+    "require": {
+        "php": "^8.5"
+    }
+}

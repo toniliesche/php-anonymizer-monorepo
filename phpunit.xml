@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/13.3/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         cacheDirectory="var/phpunit"
+         requireCoverageMetadata="true"
+         beStrictAboutCoverageMetadata="true"
+         beStrictAboutOutputDuringTests="true"
+         failOnAllIssues="true"
+         failOnDeprecation="true"
+         failOnPhpunitDeprecation="true"
+         failOnPhpunitNotice="true"
+         failOnPhpunitWarning="true"
+         failOnRisky="true"
+         failOnWarning="true"
+         failOnEmptyTestSuite="true"
+         failOnIncomplete="true"
+         failOnSkipped="true"
+         beStrictAboutChangesToGlobalState="true"
+         displayDetailsOnAllIssues="true">
+    <testsuites>
+        <testsuite name="packages">
+            <directory suffix="Test.php">packages</directory>
+        </testsuite>
+        <testsuite name="workspace">
+            <directory suffix="Test.php">tests</directory>
+        </testsuite>
+    </testsuites>
+    <source restrictNotices="true" restrictWarnings="true">
+        <include>
+            <directory suffix=".php">packages/anonymizer/src</directory>
+        </include>
+    </source>
+    <coverage branchCoverage="true" includeUncoveredFiles="true"/>
+</phpunit>

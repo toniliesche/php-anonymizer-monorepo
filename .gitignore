@@ -3,6 +3,7 @@
 /composer.phar
 
 # Test and static-analysis output.
+/.deptrac.cache
 /.phpunit.cache/
 /.phpunit.result.cache
 /.php-cs-fixer.cache

@@ -1,0 +1,3 @@
+services:
+    - class: PhpAnonymizer\Workspace\PHPStan\PackageFunctionPolicyRule
+      tags: [phpstan.rules.rule]

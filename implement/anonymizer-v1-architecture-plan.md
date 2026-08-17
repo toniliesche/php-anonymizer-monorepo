@@ -23,6 +23,9 @@ completed acceptance criteria of earlier iterations.
 - [Tag-history release management](decisions/tag-history-release-management.md)
 - [Quality, testing, and architecture tooling](decisions/quality-testing-and-architecture-tooling.md)
 
+The refined execution plan for the first increment is recorded separately in
+[Refined Iteration 1 implementation plan](refined-iteration-01-implementation-plan.md).
+
 ## Non-negotiable engineering rules
 
 - PHP 8.5+ and Symfony 8 are the supported platforms.

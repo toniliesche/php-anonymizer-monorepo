@@ -1,0 +1,9 @@
+{
+    "name": "php-anonymizer/anonymizer-symfony-serializer",
+    "description": "Symfony Serializer adapter for PHP Anonymizer",
+    "license": "MIT",
+    "type": "library",
+    "require": {
+        "php": "^8.5"
+    }
+}

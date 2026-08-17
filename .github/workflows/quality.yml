@@ -1,0 +1,23 @@
+name: Quality
+
+on:
+  pull_request:
+  push:
+    branches:
+      - develop
+      - main
+      - 'release/**'
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: dom, mbstring, xdebug
+          coverage: xdebug
+      - uses: ramsey/composer-install@v3
+      - run: composer qa
