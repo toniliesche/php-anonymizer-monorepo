@@ -1,0 +1,46 @@
+# Composer dependencies and generated metadata.
+/vendor/
+/composer.phar
+
+# Test and static-analysis output.
+/.phpunit.cache/
+/.phpunit.result.cache
+/.php-cs-fixer.cache
+/.phpstan.cache/
+/.rector.cache/
+/.infection/
+/infection.log
+/infection-summary.log
+/infection-summary.json
+/infection-summary.txt
+/deptrac-report.html
+/deptrac-report.json
+/deptrac-report.xml
+/deptrac-report.yaml
+/deptrac-report.dot
+/deptrac-report.graphml
+/coverage/
+/clover.xml
+/junit.xml
+
+# Symfony and local application runtime files.
+/var/
+/.env.local
+/.env.local.php
+/.env.*.local
+
+# IDE/editor files.
+/.idea/
+/.vscode/
+*.swp
+*.swo
+
+# Operating-system files.
+.DS_Store
+Thumbs.db
+
+# Local Composer credentials and environment overrides.
+/auth.json
+
+# Release/build output. Keep build scripts and checked-in manifests trackable.
+/dist/

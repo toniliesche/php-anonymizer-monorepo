@@ -1,0 +1,21 @@
+# Optional repository-local Git defaults.
+# Apply manually with:
+#   git config --local include.path ../.gitoptions
+# The include is intentionally not installed automatically by this file.
+
+[core]
+	# Keep committed text files portable across operating systems.
+	autocrlf = input
+
+[fetch]
+	# Remove local references to deleted remote branches during fetch.
+	prune = true
+
+[pull]
+	# Require an explicit merge/rebase decision instead of creating surprise merges.
+	ff = only
+
+[rerere]
+	# Reuse recorded conflict resolutions locally.
+	enabled = true
+	autoupdate = true

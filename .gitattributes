@@ -1,0 +1,30 @@
+# Normalize text files in the repository and check them out with LF endings.
+* text=auto eol=lf
+
+# Improve diffs for the project's primary formats.
+*.php diff=php
+*.json diff
+*.json5 diff
+*.md diff
+*.yml diff
+*.yaml diff
+
+# Do not include planning, development, or repository metadata in Composer
+# source archives when this repository is packaged as a library.
+/.github export-ignore
+/.gitignore export-ignore
+/.gitattributes export-ignore
+/.gitoptions export-ignore
+/.editorconfig export-ignore
+/.idea export-ignore
+/implement export-ignore
+/tests export-ignore
+/phpunit.xml.dist export-ignore
+/phpstan.neon.dist export-ignore
+/php-cs-fixer.dist.php export-ignore
+/rector.php export-ignore
+/infection.json5 export-ignore
+/deptrac.yaml export-ignore
+/deptrac.php export-ignore
+/composer-dependency-analyser.php export-ignore
+/composer-dependency-analyser.neon export-ignore
