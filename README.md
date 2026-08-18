@@ -39,4 +39,19 @@ $safe = $anonymizer->anonymize('customer-safe', [
 The profile schema, conditions, and scalar fallbacks are documented in
 [`docs/profile-schema.md`](docs/profile-schema.md).
 
+The core also supports named string strategies and encoded payloads:
+
+```php
+$profile = ProfileDefinition::fromArray('payload', [
+    'mode' => 'redact',
+    'rules' => [['field' => 'email', 'strategy' => 'star_mask']],
+]);
+
+$json = $anonymizer->anonymizePayload('payload', 'json', '{"email":"Ada"}');
+// {"email":"***"}
+```
+
+Custom strategies and codecs implement the framework-free interfaces described
+in [`docs/extension-author-guide.md`](docs/extension-author-guide.md).
+
 Run `composer qa` for the complete quality gate.

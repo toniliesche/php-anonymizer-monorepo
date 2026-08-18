@@ -46,5 +46,41 @@ the original sibling values before transformations at that level, so rule
 order cannot change their result. A non-matching rule is skipped without a
 report entry.
 
-`strategy` and `embedded` are reserved for the extension and JSON work in a
-later iteration.
+## Replacement strategies
+
+A leaf may name a registered string replacement strategy. Redact-mode leaves
+default to `redact`, which returns `[REDACTED]`. The core also provides
+`star_mask`, which emits one `*` per UTF-8 character. Preserve-mode leaves stay
+unchanged unless they explicitly name a strategy.
+
+```php
+['field' => 'email', 'strategy' => 'star_mask']
+```
+
+Strategies are leaf-only and cannot be combined with `children`, `each`, or
+`embedded`.
+
+## Embedded payloads
+
+An embedded leaf decodes a string, applies another profile, and encodes the
+result again. The named profile must exist and references may not form cycles.
+The core JSON codec is registered as `json`.
+
+```php
+[
+    'field' => 'metadata',
+    'embedded' => ['codec' => 'json', 'profile' => 'metadata'],
+]
+```
+
+Embedded report paths are prefixed by the containing field, so a nested change
+to `/email` is reported as `/metadata/email`. Embedded payloads and top-level
+payload methods require codecs to produce associative maps; JSON lists and
+scalar roots are rejected.
+
+The top-level API accepts a profile, codec ID, and encoded payload:
+
+```php
+$payload = $anonymizer->anonymizePayload('customer', 'json', $json);
+$result = $anonymizer->anonymizePayloadWithReport('customer', 'json', $json);
+```

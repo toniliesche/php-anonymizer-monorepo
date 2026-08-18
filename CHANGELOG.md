@@ -2,7 +2,17 @@
 
 All notable changes to this project will be documented here.
 
-## Iteration 3 — Profile Semantics (Unreleased)
+## Iteration 4 — Core Extensions and JSON (Unreleased)
+
+### Added
+
+- Finalized enumerable profile-provider, replacement-strategy, and payload-codec
+  extension ports with eager duplicate/reference/cycle validation.
+- Added built-in `redact`, UTF-8 `star_mask`, and `json` implementations.
+- Added top-level encoded-payload methods and embedded JSON rule processing with
+  prefixed RFC 6901 report paths.
+
+## Iteration 3 — Profile Semantics
 
 ### Added
 
