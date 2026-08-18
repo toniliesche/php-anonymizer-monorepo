@@ -9,7 +9,12 @@
         "symfony/config": "^8.1.4",
         "symfony/dependency-injection": "^8.1.4",
         "symfony/http-kernel": "^8.1.4",
+        "symfony/yaml": "^8.1.2",
         "thecodingmachine/safe": "^3.4"
+    },
+    "suggest": {
+        "php-anonymizer/anonymizer-faker": "Enable Faker replacement strategies",
+        "php-anonymizer/anonymizer-personas": "Enable fixed European persona strategies"
     },
     "autoload": {
         "psr-4": {

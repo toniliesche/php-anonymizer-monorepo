@@ -30,6 +30,25 @@ App\Anonymizer\CsvCodec:
 ```
 
 Profile providers use `anonymizer.profile_provider`. Strategy and codec IDs
-must be unique and must not replace the built-in `redact`, `star_mask`, or
-`json` IDs. Faker, YAML payloads, object serialization, and legacy
-configuration are provided by later packages or iterations.
+must be unique and must not replace built-in IDs. YAML payloads are available
+as `yaml` automatically. Faker strategies are optional:
+
+```sh
+composer require php-anonymizer/anonymizer-faker
+```
+
+```yaml
+anonymizer:
+  faker: { enabled: true, locale: en_US, seed: 1234 }
+```
+
+Fixed European personas are also optional:
+
+```sh
+composer require php-anonymizer/anonymizer-personas
+```
+
+```yaml
+anonymizer:
+  personas: { enabled: true, locale: de }
+```

@@ -1,0 +1,50 @@
+<?php
+
+declare(strict_types=1);
+
+namespace PhpAnonymizer\AnonymizerBundle\Infrastructure\Payload;
+
+use Override;
+use PhpAnonymizer\Anonymizer\Application\Extension\Payload\PayloadCodecInterface;
+use Symfony\Component\Yaml\Exception\ParseException;
+use Symfony\Component\Yaml\Yaml;
+
+final class YamlPayloadCodec implements PayloadCodecInterface
+{
+    #[Override]
+    public function id(): string
+    {
+        return 'yaml';
+    }
+
+    /** @return array<string, mixed> */
+    #[Override]
+    public function decode(string $payload): array
+    {
+        try {
+            $decoded = Yaml::parse($payload, Yaml::PARSE_EXCEPTION_ON_INVALID_TYPE);
+        } catch (ParseException $exception) {
+            throw $exception;
+        }
+
+        if (!is_array($decoded) || ($decoded !== [] && array_is_list($decoded))) {
+            throw new ParseException('YAML payload root must be a mapping.');
+        }
+
+        foreach (array_keys($decoded) as $key) {
+            if (!is_string($key)) {
+                throw new ParseException('YAML payload mapping keys must be strings.');
+            }
+        }
+
+        /** @var array<string, mixed> $decoded */
+        return $decoded;
+    }
+
+    /** @param array<string, mixed> $data */
+    #[Override]
+    public function encode(array $data): string
+    {
+        return Yaml::dump($data, 4, 2);
+    }
+}

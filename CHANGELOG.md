@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented here.
 
+## Iteration 6 — Faker and YAML Integrations (Unreleased)
+
+- Added optional framework-free Faker replacement strategies with stable
+  `faker.*` snake-case IDs, locale support, and deterministic seeds.
+- Added the Bundle-provided `yaml` payload codec backed by `symfony/yaml`.
+- Added Bundle configuration and extension-ID reservations for the optional integrations.
+- Added optional fixed European Personas strategies with stable `persona.*`
+  IDs for UK, German, Spanish, French, Italian, Dutch, and Portuguese data.
+- Added regional Personas for Ireland, Austria, Switzerland, and Belgian Dutch
+  through `en_IE`, `de_AT`, `de_CH`, and `nl_BE`.
+
 ## Iteration 5 — Symfony Bundle MVP (Unreleased)
 
 - Added the Symfony 8 Bundle with inline profile configuration, an autowireable
@@ -37,7 +48,7 @@ All notable changes to this project will be documented here.
 - Added top-level encoded-payload methods and embedded JSON rule processing with
   prefixed RFC 6901 report paths.
 
-## Iteration 3 — Profile Semantics
+## Iteration 3 — Profile Semantics (Unreleased)
 
 ### Added
 
@@ -45,7 +56,7 @@ All notable changes to this project will be documented here.
   strings.
 - Strict `when` predicates and explicit `on_scalar` actions for mixed shapes.
 
-## Iteration 2 — Core Traversal and Diagnostics
+## Iteration 2 — Core Traversal and Diagnostics (Unreleased)
 
 ### Added
 
@@ -53,7 +64,7 @@ All notable changes to this project will be documented here.
 - Immutable anonymization reports with changed and missing JSON Pointer paths.
 - Strict runtime shape validation for maps, lists, and selected string values.
 
-## Iteration 1 — Foundation and Minimal Core
+## Iteration 1 — Foundation and Minimal Core (Unreleased)
 
 ### Added
 

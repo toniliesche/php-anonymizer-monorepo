@@ -2,6 +2,8 @@ deptrac:
   paths:
     - packages/anonymizer/src
     - packages/anonymizer-bundle/src
+    - packages/anonymizer-faker/src
+    - packages/anonymizer-personas/src
   exclude_files: ~
   layers:
     - name: Domain
@@ -20,6 +22,14 @@ deptrac:
       collectors:
         - type: classNameRegex
           value: "#^PhpAnonymizer\\\\AnonymizerBundle\\\\.*#"
+    - name: FakerIntegration
+      collectors:
+        - type: classNameRegex
+          value: "#^PhpAnonymizer\\\\AnonymizerFaker\\\\.*#"
+    - name: PersonasIntegration
+      collectors:
+        - type: classNameRegex
+          value: "#^PhpAnonymizer\\\\AnonymizerPersonas\\\\.*#"
   ruleset:
     Domain: ~
     Application:
@@ -28,5 +38,11 @@ deptrac:
       - Application
       - Domain
     SymfonyBundle:
+      - Application
+      - Domain
+    FakerIntegration:
+      - Application
+      - Domain
+    PersonasIntegration:
       - Application
       - Domain

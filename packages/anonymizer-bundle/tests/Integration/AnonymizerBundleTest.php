@@ -32,9 +32,11 @@ use PhpAnonymizer\AnonymizerBundle\AnonymizerBundle;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\AnonymizerConfiguration;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\AnonymizerExtension;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Compiler\ExtensionTagCompilerPass;
+use PhpAnonymizer\AnonymizerBundle\Infrastructure\Payload\YamlPayloadCodec;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\CompositeProfileProvider;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\ConfiguredProfileProvider;
 use PHPUnit\Framework\Attributes\CoversClass;
+use ReflectionMethod;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
@@ -44,6 +46,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 #[CoversClass(ExtensionTagCompilerPass::class)]
 #[CoversClass(CompositeProfileProvider::class)]
 #[CoversClass(ConfiguredProfileProvider::class)]
+#[CoversClass(YamlPayloadCodec::class)]
 #[CoversClass(ArrayAnonymizer::class)]
 #[CoversClass(JsonPointer::class)]
 #[CoversClass(PreserveStringSelection::class)]
@@ -85,6 +88,29 @@ final class AnonymizerBundleTest extends KernelTestCase
         self::assertSame(['email' => 'custom:hello'], $anonymizer->anonymize('custom', ['email' => 'hello']));
         self::assertSame(['email' => 'custom:hello'], $anonymizer->anonymize('provided', ['email' => 'hello']));
         self::assertSame(['body' => 'custom:hello'], $anonymizer->anonymize('payload', ['body' => 'hello']));
+    }
+
+    public function testFakerConfigurationRegistersStrategies(): void
+    {
+        $container = new ContainerBuilder();
+        new AnonymizerExtension()->load([['faker' => ['enabled' => true, 'locale' => 'en_US', 'seed' => 1234]]], $container);
+
+        self::assertTrue($container->hasDefinition('anonymizer.faker.faker_first_name'));
+        $tags = $container->getDefinition(YamlPayloadCodec::class)->getTag('anonymizer.payload_codec');
+        /** @var array<int, array{id: string}> $tags */
+        self::assertSame('yaml', $tags[0]['id']);
+
+        $method = new ReflectionMethod(AnonymizerExtension::class, 'requireFakerFactory');
+        $this->expectException(\Symfony\Component\Config\Definition\Exception\InvalidConfigurationException::class);
+        $method->invoke(new AnonymizerExtension(), 'Missing\\FakerFactory');
+    }
+
+    public function testPersonaConfigurationRegistersStrategies(): void
+    {
+        $container = new ContainerBuilder();
+        new AnonymizerExtension()->load([['personas' => ['enabled' => true, 'locale' => 'es']]], $container);
+
+        self::assertTrue($container->hasDefinition('anonymizer.personas.persona_first_name'));
     }
 
     #[Override]

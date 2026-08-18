@@ -21,6 +21,21 @@ final class AnonymizerConfiguration implements ConfigurationInterface
                     ->prototype('variable')
                     ->end()
                 ->end()
+                ->arrayNode('faker')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->booleanNode('enabled')->defaultFalse()->end()
+                        ->scalarNode('locale')->defaultValue('en_US')->cannotBeEmpty()->end()
+                        ->scalarNode('seed')->defaultNull()->end()
+                    ->end()
+                ->end()
+                ->arrayNode('personas')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->booleanNode('enabled')->defaultFalse()->end()
+                        ->scalarNode('locale')->defaultValue('en')->cannotBeEmpty()->end()
+                    ->end()
+                ->end()
             ->end();
 
         return $treeBuilder;

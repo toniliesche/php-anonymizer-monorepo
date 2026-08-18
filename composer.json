@@ -11,11 +11,14 @@
     "require-dev": {
         "deptrac/deptrac": "^4.7.1",
         "ergebnis/composer-normalize": "^2.52",
+        "fakerphp/faker": "^1.24",
         "friendsofphp/php-cs-fixer": "^3.95.19",
         "infection/infection": "^0.35",
         "nikic/php-parser": "^5.8",
         "php-anonymizer/anonymizer": "@dev",
         "php-anonymizer/anonymizer-bundle": "@dev",
+        "php-anonymizer/anonymizer-faker": "@dev",
+        "php-anonymizer/anonymizer-personas": "@dev",
         "phpstan/extension-installer": "^1.4.3",
         "phpstan/phpstan": "^2.2.8",
         "phpstan/phpstan-deprecation-rules": "^2.0.5",
@@ -53,6 +56,8 @@
     "autoload-dev": {
         "psr-4": {
             "PhpAnonymizer\\AnonymizerBundle\\Tests\\": "packages/anonymizer-bundle/tests/",
+            "PhpAnonymizer\\AnonymizerFaker\\Tests\\": "packages/anonymizer-faker/tests/",
+            "PhpAnonymizer\\AnonymizerPersonas\\Tests\\": "packages/anonymizer-personas/tests/",
             "PhpAnonymizer\\Anonymizer\\Tests\\": "packages/anonymizer/tests/",
             "PhpAnonymizer\\Workspace\\PHPStan\\": "tools/PHPStan/",
             "PhpAnonymizer\\Workspace\\Tests\\": "tests/"
@@ -84,6 +89,8 @@
         "collisions": "@php vendor/bin/detect-collisions packages tests tools/PHPStan",
         "consumer": "@php tools/consumer-test.php",
         "consumer:bundle": "@php tools/bundle-consumer-test.php",
+        "consumer:faker": "@php tools/faker-consumer-test.php",
+        "consumer:personas": "@php tools/personas-consumer-test.php",
         "dependencies": "@php vendor/bin/composer-dependency-analyser",
         "fix": "@php vendor/bin/php-cs-fixer fix",
         "lint": "@php vendor/bin/php-cs-fixer fix --dry-run --diff",
@@ -94,6 +101,8 @@
             "@mutation",
             "@consumer",
             "@consumer:bundle",
+            "@consumer:faker",
+            "@consumer:personas",
             "@release:preview:test",
             "@artifacts"
         ],

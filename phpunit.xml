@@ -30,6 +30,8 @@
         <include>
             <directory suffix=".php">packages/anonymizer/src</directory>
             <directory suffix=".php">packages/anonymizer-bundle/src</directory>
+            <directory suffix=".php">packages/anonymizer-faker/src</directory>
+            <directory suffix=".php">packages/anonymizer-personas/src</directory>
         </include>
     </source>
     <coverage branchCoverage="true" includeUncoveredFiles="true"/>
