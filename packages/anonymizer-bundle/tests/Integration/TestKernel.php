@@ -13,8 +13,11 @@ use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\Bundle\BundleInterface;
 use Symfony\Component\HttpKernel\Kernel;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Symfony\Component\Serializer\Serializer;
 
 final class TestKernel extends Kernel
 {
@@ -30,6 +33,9 @@ final class TestKernel extends Kernel
     public function registerContainerConfiguration(LoaderInterface $loader): void
     {
         $loader->load(static function (ContainerBuilder $container): void {
+            $container->register('object_normalizer', ObjectNormalizer::class);
+            $container->register('serializer', Serializer::class)
+                ->setArguments([[new Reference('object_normalizer')]]);
             $yamlLoader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/config'));
             $yamlLoader->load('anonymizer.yaml');
 

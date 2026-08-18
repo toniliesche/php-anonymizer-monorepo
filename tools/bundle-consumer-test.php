@@ -18,6 +18,7 @@ try {
         'repositories' => [
             ['type' => 'path', 'url' => $root . '/packages/anonymizer', 'options' => ['symlink' => false]],
             ['type' => 'path', 'url' => $root . '/packages/anonymizer-bundle', 'options' => ['symlink' => false]],
+            ['type' => 'path', 'url' => $root . '/packages/anonymizer-symfony-serializer', 'options' => ['symlink' => false]],
         ],
         'minimum-stability' => 'dev',
     ];
@@ -55,6 +56,8 @@ final class ConsumerKernel extends Kernel
     public function registerContainerConfiguration(LoaderInterface $loader): void
     {
         $loader->load(static function (ContainerBuilder $container): void {
+            $container->register('serializer', \Symfony\Component\Serializer\Serializer::class)
+                ->setArguments([[]]);
             (new YamlFileLoader($container, new FileLocator(__DIR__)))->load('anonymizer.yaml');
         });
     }

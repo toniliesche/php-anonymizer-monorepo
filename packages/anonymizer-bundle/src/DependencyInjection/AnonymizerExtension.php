@@ -12,6 +12,10 @@ use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Payload\YamlPayloadCodec;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\CompositeProfileProvider;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\ConfiguredProfileProvider;
+use PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement\FakerReplacementStrategyFactory;
+use PhpAnonymizer\AnonymizerPersonas\Infrastructure\Replacement\PersonaReplacementStrategyFactory;
+use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyAnonymizer;
+use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyObjectAnonymizer;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -33,7 +37,7 @@ final class AnonymizerExtension extends Extension
             ->addTag('anonymizer.payload_codec', ['id' => 'yaml', 'builtin' => true]);
 
         if ($config['faker']['enabled']) {
-            $fakerFactory = $this->requireFakerFactory('PhpAnonymizer\\AnonymizerFaker\\Infrastructure\\Replacement\\FakerReplacementStrategyFactory');
+            $fakerFactory = $this->requireFakerFactory(FakerReplacementStrategyFactory::class);
             $container->register('anonymizer.faker.generator')
                 ->setFactory([$fakerFactory, 'createGenerator'])
                 ->setArguments([$config['faker']['locale'], $config['faker']['seed']]);
@@ -45,7 +49,7 @@ final class AnonymizerExtension extends Extension
             }
         }
         if ($config['personas']['enabled']) {
-            $personaFactory = $this->requireFakerFactory('PhpAnonymizer\\AnonymizerPersonas\\Infrastructure\\Replacement\\PersonaReplacementStrategyFactory', 'personas');
+            $personaFactory = $this->requireFakerFactory(PersonaReplacementStrategyFactory::class, 'personas');
             foreach (self::PERSONA_IDS as $id) {
                 $container->register('anonymizer.personas.' . str_replace('.', '_', $id))
                     ->setFactory([$personaFactory, 'createStrategy'])
@@ -83,7 +87,15 @@ final class AnonymizerExtension extends Extension
             new TaggedIteratorArgument('anonymizer.payload_codec'),
         ]);
         $container->setDefinition(ArrayAnonymizer::class, $anonymizer);
-        $container->setAlias(AnonymizerInterface::class, ArrayAnonymizer::class)->setPublic(true);
+        $container->setDefinition(SymfonyObjectAnonymizer::class, new Definition(SymfonyObjectAnonymizer::class, [
+            new Reference(ArrayAnonymizer::class),
+            new Reference('serializer'),
+        ]));
+        $container->setDefinition(SymfonyAnonymizer::class, new Definition(SymfonyAnonymizer::class, [
+            new Reference(ArrayAnonymizer::class),
+            new Reference(SymfonyObjectAnonymizer::class),
+        ]));
+        $container->setAlias(AnonymizerInterface::class, SymfonyAnonymizer::class)->setPublic(true);
     }
 
     #[Override]

@@ -32,18 +32,25 @@ use PhpAnonymizer\AnonymizerBundle\AnonymizerBundle;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\AnonymizerConfiguration;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\AnonymizerExtension;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Compiler\ExtensionTagCompilerPass;
+use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Compiler\SerializerServiceCompilerPass;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Payload\YamlPayloadCodec;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\CompositeProfileProvider;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\ConfiguredProfileProvider;
+use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyAnonymizer;
+use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyObjectAnonymizer;
 use PHPUnit\Framework\Attributes\CoversClass;
 use ReflectionMethod;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 #[CoversClass(AnonymizerBundle::class)]
 #[CoversClass(AnonymizerConfiguration::class)]
 #[CoversClass(AnonymizerExtension::class)]
 #[CoversClass(ExtensionTagCompilerPass::class)]
+#[CoversClass(SerializerServiceCompilerPass::class)]
+#[CoversClass(SymfonyAnonymizer::class)]
+#[CoversClass(SymfonyObjectAnonymizer::class)]
 #[CoversClass(CompositeProfileProvider::class)]
 #[CoversClass(ConfiguredProfileProvider::class)]
 #[CoversClass(YamlPayloadCodec::class)]
@@ -101,7 +108,7 @@ final class AnonymizerBundleTest extends KernelTestCase
         self::assertSame('yaml', $tags[0]['id']);
 
         $method = new ReflectionMethod(AnonymizerExtension::class, 'requireFakerFactory');
-        $this->expectException(\Symfony\Component\Config\Definition\Exception\InvalidConfigurationException::class);
+        $this->expectException(InvalidConfigurationException::class);
         $method->invoke(new AnonymizerExtension(), 'Missing\\FakerFactory');
     }
 

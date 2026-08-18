@@ -20,7 +20,7 @@ final class FakerReplacementStrategyFactoryTest extends TestCase
         $strategies = FakerReplacementStrategyFactory::create(seed: 1234);
 
         self::assertCount(15, $strategies);
-        self::assertSame(array_map(static fn(FakerFormatter $formatter): string => $formatter->id(), FakerFormatter::cases()), array_map(static fn($strategy): string => $strategy->id(), $strategies));
+        self::assertSame(array_map(static fn(FakerFormatter $formatter): string => $formatter->id(), FakerFormatter::cases()), array_map(static fn(FakerReplacementStrategy $strategy): string => $strategy->id(), $strategies));
         foreach ($strategies as $strategy) {
             self::assertNotSame('', $strategy->replace('ignored'));
         }
@@ -29,12 +29,12 @@ final class FakerReplacementStrategyFactoryTest extends TestCase
     public function testTextSeedsAreDeterministic(): void
     {
         $first = FakerReplacementStrategyFactory::create(seed: 'stable');
-        $firstValues = array_map(static fn($strategy): string => $strategy->replace('x'), $first);
+        $firstValues = array_map(static fn(FakerReplacementStrategy $strategy): string => $strategy->replace('x'), $first);
         $second = FakerReplacementStrategyFactory::create(seed: 'stable');
 
         self::assertSame(
             $firstValues,
-            array_map(static fn($strategy): string => $strategy->replace('x'), $second),
+            array_map(static fn(FakerReplacementStrategy $strategy): string => $strategy->replace('x'), $second),
         );
     }
 

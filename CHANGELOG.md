@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented here.
 
+## Iteration 7 — Symfony Serializer Object Integration (Unreleased)
+
+- Added immutable object anonymization through the application-provided Symfony
+  Serializer service.
+- Unified array and object operations behind the single core
+  `AnonymizerInterface`; the Bundle now exposes one configured anonymizer facade.
+- Added expressive normalization/denormalization failures and rejected
+  `object_to_populate` to protect source-object immutability.
+- Made the Serializer service a required Bundle integration and added coverage,
+  architecture, static-analysis, and mutation-test scope for the adapter.
+
 ## Iteration 6 — Faker and YAML Integrations (Unreleased)
 
 - Added optional framework-free Faker replacement strategies with stable

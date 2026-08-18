@@ -1,3 +1,7 @@
 # PHP Anonymizer Symfony Serializer
 
-Immutable object adaptation is planned for Iteration 7.
+The package provides the object support behind the Bundle's single
+`PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface`.
+Arrays continue to use the core engine; objects are normalized, anonymized,
+and denormalized into a new instance through the application's Symfony
+Serializer service. The source object is never populated or mutated.

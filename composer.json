@@ -19,6 +19,7 @@
         "php-anonymizer/anonymizer-bundle": "@dev",
         "php-anonymizer/anonymizer-faker": "@dev",
         "php-anonymizer/anonymizer-personas": "@dev",
+        "php-anonymizer/anonymizer-symfony-serializer": "@dev",
         "phpstan/extension-installer": "^1.4.3",
         "phpstan/phpstan": "^2.2.8",
         "phpstan/phpstan-deprecation-rules": "^2.0.5",
@@ -33,6 +34,8 @@
         "symfony/dependency-injection": "^8.1.4",
         "symfony/framework-bundle": "^8.1.4",
         "symfony/http-kernel": "^8.1.4",
+        "symfony/property-access": "^8.1.4",
+        "symfony/serializer": "^8.1.4",
         "symfony/yaml": "^8.1.2",
         "thecodingmachine/phpstan-safe-rule": "^1.4.7",
         "tomasvotruba/cognitive-complexity": "^1.2"
@@ -58,6 +61,7 @@
             "PhpAnonymizer\\AnonymizerBundle\\Tests\\": "packages/anonymizer-bundle/tests/",
             "PhpAnonymizer\\AnonymizerFaker\\Tests\\": "packages/anonymizer-faker/tests/",
             "PhpAnonymizer\\AnonymizerPersonas\\Tests\\": "packages/anonymizer-personas/tests/",
+            "PhpAnonymizer\\AnonymizerSymfonySerializer\\Tests\\": "packages/anonymizer-symfony-serializer/tests/",
             "PhpAnonymizer\\Anonymizer\\Tests\\": "packages/anonymizer/tests/",
             "PhpAnonymizer\\Workspace\\PHPStan\\": "tools/PHPStan/",
             "PhpAnonymizer\\Workspace\\Tests\\": "tests/"

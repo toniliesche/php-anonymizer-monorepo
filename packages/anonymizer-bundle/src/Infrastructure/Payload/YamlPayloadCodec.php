@@ -21,11 +21,7 @@ final class YamlPayloadCodec implements PayloadCodecInterface
     #[Override]
     public function decode(string $payload): array
     {
-        try {
-            $decoded = Yaml::parse($payload, Yaml::PARSE_EXCEPTION_ON_INVALID_TYPE);
-        } catch (ParseException $exception) {
-            throw $exception;
-        }
+        $decoded = Yaml::parse($payload, Yaml::PARSE_EXCEPTION_ON_INVALID_TYPE);
 
         if (!is_array($decoded) || ($decoded !== [] && array_is_list($decoded))) {
             throw new ParseException('YAML payload root must be a mapping.');
