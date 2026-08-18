@@ -18,9 +18,9 @@ try {
 <?php
 declare(strict_types=1);
 require __DIR__ . '/vendor/autoload.php';
-use PhpAnonymizer\Anonymizer\Application\ArrayAnonymizer;
-use PhpAnonymizer\Anonymizer\Domain\ProfileDefinition;
-use PhpAnonymizer\Anonymizer\Infrastructure\InMemoryProfileProvider;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\ArrayAnonymizer;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
+use PhpAnonymizer\Anonymizer\Infrastructure\Profile\InMemoryProfileProvider;
 $profile = ProfileDefinition::fromArray('consumer', ['mode' => 'redact', 'rules' => [['field' => 'email']]]);
 $result = new ArrayAnonymizer(new InMemoryProfileProvider([$profile]))->anonymize('consumer', ['email' => 'secret']);
 if ($result !== ['email' => '[REDACTED]']) { exit(1); }

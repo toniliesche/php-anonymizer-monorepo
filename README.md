@@ -6,9 +6,9 @@ uses PHP 8.5+, Composer, and the root Composer scripts.
 The first core API is intentionally small and array-only:
 
 ```php
-use PhpAnonymizer\Anonymizer\Application\ArrayAnonymizer;
-use PhpAnonymizer\Anonymizer\Domain\ProfileDefinition;
-use PhpAnonymizer\Anonymizer\Infrastructure\InMemoryProfileProvider;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\ArrayAnonymizer;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
+use PhpAnonymizer\Anonymizer\Infrastructure\Profile\InMemoryProfileProvider;
 
 $profile = ProfileDefinition::fromArray('customer', [
     'mode' => 'redact',
