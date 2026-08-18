@@ -2,7 +2,15 @@
 
 All notable changes to this project will be documented here.
 
-## [Unreleased]
+## Iteration 3 — Profile Semantics (Unreleased)
+
+### Added
+
+- Preserve-mode allow-list traversal for recursively redacting unselected
+  strings.
+- Strict `when` predicates and explicit `on_scalar` actions for mixed shapes.
+
+## Iteration 2 — Core Traversal and Diagnostics
 
 ### Added
 
@@ -10,7 +18,7 @@ All notable changes to this project will be documented here.
 - Immutable anonymization reports with changed and missing JSON Pointer paths.
 - Strict runtime shape validation for maps, lists, and selected string values.
 
-## [0.1.0] - 2026-08-17
+## Iteration 1 — Foundation and Minimal Core
 
 ### Added
 

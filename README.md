@@ -20,4 +20,23 @@ $safe = $anonymizer->anonymize('customer', ['email' => 'user@example.com']);
 // ['email' => '[REDACTED]']
 ```
 
+Preserve profiles act as allow-lists. Selected strings remain unchanged while
+other strings are redacted recursively:
+
+```php
+$profile = ProfileDefinition::fromArray('customer-safe', [
+    'mode' => 'preserve',
+    'rules' => [['field' => 'email']],
+]);
+
+$safe = $anonymizer->anonymize('customer-safe', [
+    'email' => 'user@example.com',
+    'name' => 'Ada',
+]);
+// ['email' => 'user@example.com', 'name' => '[REDACTED]']
+```
+
+The profile schema, conditions, and scalar fallbacks are documented in
+[`docs/profile-schema.md`](docs/profile-schema.md).
+
 Run `composer qa` for the complete quality gate.
