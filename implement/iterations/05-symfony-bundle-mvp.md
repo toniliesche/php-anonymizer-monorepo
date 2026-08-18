@@ -1,5 +1,8 @@
 # Iteration 05 — Symfony Bundle MVP
 
+The refined implementation scope is recorded in
+[`../refined-iteration-05-symfony-bundle-integration-plan.md`](../refined-iteration-05-symfony-bundle-integration-plan.md).
+
 ## Goal
 
 Make profiles easy to configure and the anonymizer easy to inject into a

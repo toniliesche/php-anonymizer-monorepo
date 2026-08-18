@@ -29,6 +29,7 @@
     <source restrictNotices="true" restrictWarnings="true">
         <include>
             <directory suffix=".php">packages/anonymizer/src</directory>
+            <directory suffix=".php">packages/anonymizer-bundle/src</directory>
         </include>
     </source>
     <coverage branchCoverage="true" includeUncoveredFiles="true"/>

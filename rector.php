@@ -6,8 +6,7 @@ use Rector\Config\RectorConfig;
 
 return RectorConfig::configure()
     ->withPaths([
-        __DIR__ . '/packages/anonymizer/src',
-        __DIR__ . '/packages/anonymizer/tests',
+        __DIR__ . '/packages',
         __DIR__ . '/tests',
         __DIR__ . '/tools',
     ])

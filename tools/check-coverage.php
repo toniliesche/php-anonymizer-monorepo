@@ -22,7 +22,7 @@ $coveredConditionals = (int) ($metrics['coveredconditionals'] ?? 0);
 
 if ($statements === 0 || $coveredStatements !== $statements || $coveredConditionals !== $conditionals) {
     fwrite(STDERR, sprintf(
-        "Core coverage must be 100%% line and branch coverage (lines %d/%d, branches %d/%d).\n",
+        "Published package coverage must be 100%% line and branch coverage (lines %d/%d, branches %d/%d).\n",
         $coveredStatements,
         $statements,
         $coveredConditionals,
@@ -31,4 +31,4 @@ if ($statements === 0 || $coveredStatements !== $statements || $coveredCondition
     exit(1);
 }
 
-printf("Core coverage: 100%% line and branch (%d lines, %d branches).\n", $statements, $conditionals);
+printf("Published package coverage: 100%% line and branch (%d lines, %d branches).\n", $statements, $conditionals);

@@ -25,6 +25,8 @@ completed acceptance criteria of earlier iterations.
 
 The refined execution plan for the first increment is recorded separately in
 [Refined Iteration 1 implementation plan](refined-iteration-01-implementation-plan.md).
+The refined execution plan for the Symfony integration is recorded separately
+in [Refined Iteration 5 Symfony Bundle integration plan](refined-iteration-05-symfony-bundle-integration-plan.md).
 
 ## Non-negotiable engineering rules
 

@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/infection/infection/0.34.0/resources/schema.json",
-  "source": {"directories": ["packages/anonymizer/src"]},
+  "source": {"directories": ["packages/anonymizer/src", "packages/anonymizer-bundle/src"]},
   "testFramework": "phpunit",
   "logs": {"text": "var/infection.log", "summary": "var/infection-summary.log"},
   "tmpDir": "var/infection",

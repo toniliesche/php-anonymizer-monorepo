@@ -1,0 +1,56 @@
+<?php
+
+declare(strict_types=1);
+
+namespace PhpAnonymizer\AnonymizerBundle\Tests\Integration;
+
+use Override;
+use PhpAnonymizer\AnonymizerBundle\AnonymizerBundle;
+
+use function Safe\getmypid;
+
+use Symfony\Component\Config\FileLocator;
+use Symfony\Component\Config\Loader\LoaderInterface;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use Symfony\Component\HttpKernel\Bundle\BundleInterface;
+use Symfony\Component\HttpKernel\Kernel;
+
+final class TestKernel extends Kernel
+{
+    /** @return iterable<BundleInterface> */
+    #[Override]
+    // @phpstan-ignore return.deprecatedInterface (Symfony's KernelInterface still declares the legacy bundle interface.)
+    public function registerBundles(): iterable
+    {
+        yield new AnonymizerBundle();
+    }
+
+    #[Override]
+    public function registerContainerConfiguration(LoaderInterface $loader): void
+    {
+        $loader->load(static function (ContainerBuilder $container): void {
+            $yamlLoader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/config'));
+            $yamlLoader->load('anonymizer.yaml');
+
+            $container->register(TestPayloadCodec::class)
+                ->addTag('anonymizer.payload_codec', ['id' => 'pipe']);
+            $container->register(TestProfileProvider::class)
+                ->addTag('anonymizer.profile_provider');
+            $container->register(TestReplacementStrategy::class)
+                ->addTag('anonymizer.replacement_strategy', ['id' => 'custom']);
+        });
+    }
+
+    #[Override]
+    public function getCacheDir(): string
+    {
+        return sys_get_temp_dir() . '/php-anonymizer-bundle-test-' . getmypid();
+    }
+
+    #[Override]
+    public function getLogDir(): string
+    {
+        return $this->getCacheDir();
+    }
+}

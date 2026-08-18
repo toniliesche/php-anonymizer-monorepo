@@ -1,0 +1,24 @@
+anonymizer:
+  profiles:
+    customer:
+      mode: redact
+      rules:
+        - field: email
+          strategy: star_mask
+    custom:
+      mode: redact
+      rules:
+        - field: email
+          strategy: custom
+    provider:
+      mode: redact
+      rules:
+        - field: email
+          strategy: custom
+    payload:
+      mode: redact
+      rules:
+        - field: body
+          embedded:
+            codec: pipe
+            profile: custom

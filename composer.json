@@ -5,16 +5,17 @@
     "type": "project",
     "require": {
         "php": "^8.5",
+        "ext-mbstring": "*",
         "thecodingmachine/safe": "^3.4"
     },
     "require-dev": {
-        "ext-mbstring": "*",
         "deptrac/deptrac": "^4.7.1",
         "ergebnis/composer-normalize": "^2.52",
         "friendsofphp/php-cs-fixer": "^3.95.19",
         "infection/infection": "^0.35",
         "nikic/php-parser": "^5.8",
         "php-anonymizer/anonymizer": "@dev",
+        "php-anonymizer/anonymizer-bundle": "@dev",
         "phpstan/extension-installer": "^1.4.3",
         "phpstan/phpstan": "^2.2.8",
         "phpstan/phpstan-deprecation-rules": "^2.0.5",
@@ -25,6 +26,11 @@
         "shipmonk/composer-dependency-analyser": "^1.8.4",
         "shipmonk/name-collision-detector": "^2.1.1",
         "spaze/phpstan-disallowed-calls": "^4.14",
+        "symfony/config": "^8.1.4",
+        "symfony/dependency-injection": "^8.1.4",
+        "symfony/framework-bundle": "^8.1.4",
+        "symfony/http-kernel": "^8.1.4",
+        "symfony/yaml": "^8.1.2",
         "thecodingmachine/phpstan-safe-rule": "^1.4.7",
         "tomasvotruba/cognitive-complexity": "^1.2"
     },
@@ -46,6 +52,7 @@
     },
     "autoload-dev": {
         "psr-4": {
+            "PhpAnonymizer\\AnonymizerBundle\\Tests\\": "packages/anonymizer-bundle/tests/",
             "PhpAnonymizer\\Anonymizer\\Tests\\": "packages/anonymizer/tests/",
             "PhpAnonymizer\\Workspace\\PHPStan\\": "tools/PHPStan/",
             "PhpAnonymizer\\Workspace\\Tests\\": "tests/"
@@ -76,6 +83,7 @@
         ],
         "collisions": "@php vendor/bin/detect-collisions packages tests tools/PHPStan",
         "consumer": "@php tools/consumer-test.php",
+        "consumer:bundle": "@php tools/bundle-consumer-test.php",
         "dependencies": "@php vendor/bin/composer-dependency-analyser",
         "fix": "@php vendor/bin/php-cs-fixer fix",
         "lint": "@php vendor/bin/php-cs-fixer fix --dry-run --diff",
@@ -85,6 +93,7 @@
             "@test:coverage",
             "@mutation",
             "@consumer",
+            "@consumer:bundle",
             "@release:preview:test",
             "@artifacts"
         ],

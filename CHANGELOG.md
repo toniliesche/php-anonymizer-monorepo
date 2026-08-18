@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented here.
 
+## Iteration 5 — Symfony Bundle MVP (Unreleased)
+
+- Added the Symfony 8 Bundle with inline profile configuration, an autowireable
+  core anonymizer service, tagged profile providers, replacement strategies,
+  and payload codecs.
+- Added compile-time extension-tag ID validation, a local Flex recipe, and a
+  real Symfony kernel integration test.
+- Extended static analysis, architecture checks, coverage, mutation scope, and
+  package metadata checks to the Bundle.
+
 ## Iteration 4.1 — Cohesion and Context-Focused Namespace Refactor (Unreleased)
 
 - Consolidated redaction and preservation traversal around a shared rule-tree

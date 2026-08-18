@@ -1,6 +1,7 @@
 deptrac:
   paths:
     - packages/anonymizer/src
+    - packages/anonymizer-bundle/src
   exclude_files: ~
   layers:
     - name: Domain
@@ -15,10 +16,17 @@ deptrac:
       collectors:
         - type: classNameRegex
           value: "#^PhpAnonymizer\\\\Anonymizer\\\\Infrastructure\\\\.*#"
+    - name: SymfonyBundle
+      collectors:
+        - type: classNameRegex
+          value: "#^PhpAnonymizer\\\\AnonymizerBundle\\\\.*#"
   ruleset:
     Domain: ~
     Application:
       - Domain
     Infrastructure:
+      - Application
+      - Domain
+    SymfonyBundle:
       - Application
       - Domain
