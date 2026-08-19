@@ -32,10 +32,7 @@ final class FakerReplacementStrategyFactoryTest extends TestCase
         $firstValues = array_map(static fn(FakerReplacementStrategy $strategy): string => $strategy->replace('x'), $first);
         $second = FakerReplacementStrategyFactory::create(seed: 'stable');
 
-        self::assertSame(
-            $firstValues,
-            array_map(static fn(FakerReplacementStrategy $strategy): string => $strategy->replace('x'), $second),
-        );
+        self::assertSame($firstValues, array_map(static fn(FakerReplacementStrategy $strategy): string => $strategy->replace('x'), $second));
     }
 
     public function testIntegerSeedsPassThrough(): void

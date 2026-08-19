@@ -6,7 +6,6 @@ namespace PhpAnonymizer\AnonymizerBundle\Application\LegacyImport;
 
 /**
  * @phpstan-type Rule array<string, mixed>
- * @codeCoverageIgnore Migration conversion boundary.
  */
 final class LegacyRuleMerger
 {

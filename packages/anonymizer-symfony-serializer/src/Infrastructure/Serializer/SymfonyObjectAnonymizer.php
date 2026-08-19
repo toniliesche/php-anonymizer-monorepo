@@ -23,7 +23,7 @@ final readonly class SymfonyObjectAnonymizer
     /** @param array<string, mixed> $context */
     public function anonymize(string $profile, object $object, array $context = []): object
     {
-        return $this->anonymizeWithReport($profile, $object, $context)->object;
+        return $this->anonymizeWithReport($profile, $object, $context)->object();
     }
 
     /** @param array<string, mixed> $context */

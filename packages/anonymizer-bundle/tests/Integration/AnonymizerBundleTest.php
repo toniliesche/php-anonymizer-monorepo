@@ -48,6 +48,7 @@ use ReflectionMethod;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\HttpKernel\KernelInterface;
 
 #[CoversClass(AnonymizerBundle::class)]
 #[CoversClass(AnonymizerConfiguration::class)]
@@ -89,14 +90,11 @@ final class AnonymizerBundleTest extends KernelTestCase
         self::bootKernel(['debug' => false]);
 
         $kernel = self::$kernel;
-        self::assertNotNull($kernel);
+        self::assertInstanceOf(KernelInterface::class, $kernel);
         /** @var AnonymizerInterface $anonymizer */
         $anonymizer = $kernel->getContainer()->get(AnonymizerInterface::class);
 
-        self::assertSame(
-            ['email' => '*****'],
-            $anonymizer->anonymize('customer', ['email' => 'hello']),
-        );
+        self::assertSame(['email' => '*****'], $anonymizer->anonymize('customer', ['email' => 'hello']));
         self::assertSame(['email' => 'custom:hello'], $anonymizer->anonymize('custom', ['email' => 'hello']));
         self::assertSame(['email' => 'custom:hello'], $anonymizer->anonymize('provided', ['email' => 'hello']));
         self::assertSame(['body' => 'custom:hello'], $anonymizer->anonymize('payload', ['body' => 'hello']));
@@ -107,8 +105,8 @@ final class AnonymizerBundleTest extends KernelTestCase
         $container = new ContainerBuilder();
         new AnonymizerBundle()->build($container);
         $passes = $container->getCompiler()->getPassConfig()->getBeforeOptimizationPasses();
-        self::assertTrue(array_filter($passes, static fn(object $pass): bool => $pass instanceof ExtensionTagCompilerPass) !== []);
-        self::assertTrue(array_filter($passes, static fn(object $pass): bool => $pass instanceof SerializerServiceCompilerPass) !== []);
+        self::assertNotSame([], array_filter($passes, static fn(object $pass): bool => $pass instanceof ExtensionTagCompilerPass));
+        self::assertNotSame([], array_filter($passes, static fn(object $pass): bool => $pass instanceof SerializerServiceCompilerPass));
     }
 
     public function testFakerConfigurationRegistersStrategies(): void

@@ -23,7 +23,7 @@ final class TestKernel extends Kernel
 {
     /** @return iterable<BundleInterface> */
     #[Override]
-    // @phpstan-ignore return.deprecatedInterface (Symfony's KernelInterface still declares the legacy bundle interface.)
+    // @phpstan-ignore return.deprecatedInterface (Symfony 8.1 marks the bundle interface as deprecated.)
     public function registerBundles(): iterable
     {
         yield new AnonymizerBundle();

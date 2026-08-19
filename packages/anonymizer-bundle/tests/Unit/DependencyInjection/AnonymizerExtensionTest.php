@@ -84,8 +84,8 @@ final class AnonymizerExtensionTest extends TestCase
         new AnonymizerBundle()->build($container);
 
         $passes = $container->getCompilerPassConfig()->getBeforeOptimizationPasses();
-        self::assertTrue(array_filter($passes, static fn(object $pass): bool => $pass instanceof ExtensionTagCompilerPass) !== []);
-        self::assertTrue(array_filter($passes, static fn(object $pass): bool => $pass instanceof SerializerServiceCompilerPass) !== []);
+        self::assertNotSame([], array_filter($passes, static fn(object $pass): bool => $pass instanceof ExtensionTagCompilerPass));
+        self::assertNotSame([], array_filter($passes, static fn(object $pass): bool => $pass instanceof SerializerServiceCompilerPass));
     }
 
     /** @return iterable<string, array{0: mixed}> */

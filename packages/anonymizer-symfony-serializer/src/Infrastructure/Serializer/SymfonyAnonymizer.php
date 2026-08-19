@@ -6,6 +6,7 @@ namespace PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer;
 
 use Override;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\Result\AnonymizationResultInterface;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Result\PayloadAnonymizationResult;
 
 final readonly class SymfonyAnonymizer implements AnonymizerInterface
@@ -29,7 +30,7 @@ final readonly class SymfonyAnonymizer implements AnonymizerInterface
     }
 
     #[Override]
-    public function anonymizeWithReport(string $profile, array|object $data): object
+    public function anonymizeWithReport(string $profile, array|object $data): AnonymizationResultInterface
     {
         return is_array($data)
             ? $this->arrayAnonymizer->anonymizeWithReport($profile, $data)

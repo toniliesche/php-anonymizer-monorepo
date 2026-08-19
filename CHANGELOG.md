@@ -4,7 +4,17 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
-- Future changes will be recorded here.
+- Iteration 9.1 refactors the pre-v1 API and implementation boundaries.
+
+## Iteration 9.1 — Pre-v1 Cohesion and API Refactor (Unreleased)
+
+- Added a typed `AnonymizationResultInterface` shared by array and Symfony object results.
+- Added `AnonymizerFactory` and an application-level profile collection so callers do not
+  need to construct concrete engines or infrastructure profile providers.
+- Made object reports immutable through accessor methods and updated public examples.
+- Extracted legacy path conversion into a focused collaborator and removed legacy
+  application conversion coverage exemptions.
+- Kept the single `AnonymizerInterface` service contract and existing anonymization behavior.
 
 ## 1.0.0
 

@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use Rector\Config\RectorConfig;
+use Rector\PHPUnit\CodeQuality\Rector\Class_\PreferPHPUnitThisCallRector;
+use Rector\PHPUnit\CodeQuality\Rector\ClassMethod\NoSetupWithParentCallOverrideRector;
 
 return RectorConfig::configure()
     ->withPaths([
@@ -10,11 +12,33 @@ return RectorConfig::configure()
         __DIR__ . '/tests',
         __DIR__ . '/tools',
     ])
-    ->withPhpSets(php85: true)
-    ->withImportNames(
-        importNames: true,
-        importDocBlockNames: true,
-        importShortClasses: true,
-        removeUnusedImports: true,
+    // This fixture intentionally wires concrete Symfony services and mirrors
+    // the runtime Kernel signature; Symfony migration renames are incorrect here.
+    ->withSkipPath(__DIR__ . '/packages/anonymizer-bundle/tests/Integration/TestKernel.php')
+    ->withPhpSets(
+        php85: true
     )
-    ->withPreparedSets(deadCode: true, codeQuality: true, typeDeclarations: true);
+    ->withAttributesSets(
+        symfony: true,
+        phpunit: true,
+    )
+    ->withComposerBased(
+        phpunit: true,
+        symfony: true,
+    )
+    ->withImportNames()
+    ->withPreparedSets(
+        deadCode: true,
+        codeQuality: true,
+        typeDeclarations: true,
+        privatization: true,
+        earlyReturn: true,
+        phpunitCodeQuality: true,
+        symfonyCodeQuality: true,
+    )
+    ->withSkip([
+        // PHPStan strict rules require PHPUnit assertions to use static calls.
+        PreferPHPUnitThisCallRector::class,
+        // Keep explicit #[Override] attributes even when PHPUnit parent setup is called.
+        NoSetupWithParentCallOverrideRector::class,
+    ]);

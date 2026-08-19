@@ -25,12 +25,12 @@ final class SymfonyAnonymizerTest extends TestCase
     public function testDispatchesArraysObjectsAndPayloadsThroughOneInterface(): void
     {
         $array = $this->createMock(AnonymizerInterface::class);
-        $array->expects(self::once())->method('anonymize')->with('p', ['name' => 'Jane'])->willReturn(['name' => 'John']);
-        $array->expects(self::once())->method('anonymizeWithReport')->with('p', ['name' => 'Jane'])->willReturn(new AnonymizationResult(['name' => 'John'], [], []));
-        $array->expects(self::once())->method('anonymizePayload')->with('p', 'json', '{}')->willReturn('{"name":"John"}');
-        $array->expects(self::once())->method('anonymizePayloadWithReport')->with('p', 'json', '{}')->willReturn(new PayloadAnonymizationResult('{}', new AnonymizationResult([], [], [])));
+        $array->expects($this->once())->method('anonymize')->with('p', ['name' => 'Jane'])->willReturn(['name' => 'John']);
+        $array->expects($this->once())->method('anonymizeWithReport')->with('p', ['name' => 'Jane'])->willReturn(new AnonymizationResult(['name' => 'John'], [], []));
+        $array->expects($this->once())->method('anonymizePayload')->with('p', 'json', '{}')->willReturn('{"name":"John"}');
+        $array->expects($this->once())->method('anonymizePayloadWithReport')->with('p', 'json', '{}')->willReturn(new PayloadAnonymizationResult('{}', new AnonymizationResult([], [], [])));
         $objectCore = $this->createMock(AnonymizerInterface::class);
-        $objectCore->expects(self::exactly(2))->method('anonymizeWithReport')->willReturn(new AnonymizationResult(['name' => 'John'], [], []));
+        $objectCore->expects($this->exactly(2))->method('anonymizeWithReport')->willReturn(new AnonymizationResult(['name' => 'John'], [], []));
         $object = new FacadePerson('Jane');
         $facade = new SymfonyAnonymizer($array, new SymfonyObjectAnonymizer($objectCore, new Serializer([new ObjectNormalizer()])));
 

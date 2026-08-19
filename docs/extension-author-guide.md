@@ -60,11 +60,12 @@ top-level payload API or by an `embedded: {codec, profile}` rule. Codec errors
 should be reported with the profile, operation, codec ID, and embedded JSON
 Pointer path supplied by the core.
 
-Register extensions explicitly when constructing `ArrayAnonymizer`:
+Register extensions through the factory; applications do not need to construct
+the concrete engine or profile provider:
 
 ```php
-$anonymizer = new ArrayAnonymizer(
-    new InMemoryProfileProvider([$profile]),
+$anonymizer = AnonymizerFactory::fromProfiles(
+    [$profile],
     strategies: [new StarMask()],
     codecs: [new PipeCodec()],
 );

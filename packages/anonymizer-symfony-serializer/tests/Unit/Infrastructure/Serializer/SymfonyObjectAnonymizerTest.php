@@ -30,22 +30,25 @@ final class SymfonyObjectAnonymizerTest extends TestCase
     public function testItCreatesAnImmutableAnonymizedObjectAndPassesContext(): void
     {
         $core = $this->createMock(AnonymizerInterface::class);
-        $core->expects(self::once())->method('anonymizeWithReport')->with('default', ['name' => 'Jane'])->willReturn(new AnonymizationResult(['name' => 'John'], [], []));
+        $core->expects($this->once())->method('anonymizeWithReport')->with('default', ['name' => 'Jane'])->willReturn(new AnonymizationResult(['name' => 'John'], [], []));
         $adapter = new SymfonyObjectAnonymizer($core, new Serializer([new ObjectNormalizer()]));
         $source = new Person('Jane');
 
         $result = $adapter->anonymizeWithReport('default', $source, ['foo' => 'bar']);
 
-        self::assertNotSame($source, $result->object);
+        self::assertNotSame($source, $result->object());
         self::assertSame('Jane', $source->name);
-        self::assertInstanceOf(Person::class, $result->object);
-        self::assertSame('John', $result->object->name);
+        self::assertInstanceOf(Person::class, $result->object());
+        self::assertSame('John', $result->object()->name);
+        self::assertSame($result->object(), $result->data());
+        self::assertSame([], $result->anonymizedPaths());
+        self::assertSame([], $result->missingPaths());
     }
 
     public function testObjectToPopulateIsRejected(): void
     {
         $core = $this->createMock(AnonymizerInterface::class);
-        $core->expects(self::never())->method('anonymizeWithReport');
+        $core->expects($this->never())->method('anonymizeWithReport');
         $adapter = new SymfonyObjectAnonymizer($core, new Serializer([new ObjectNormalizer()]));
 
         $this->expectException(ObjectDenormalizationFailure::class);
@@ -56,7 +59,7 @@ final class SymfonyObjectAnonymizerTest extends TestCase
     {
         $serializer = new TestSerializer(static fn(): never => throw new RuntimeException('broken'));
         $core = $this->createMock(AnonymizerInterface::class);
-        $core->expects(self::never())->method('anonymizeWithReport');
+        $core->expects($this->never())->method('anonymizeWithReport');
         $adapter = new SymfonyObjectAnonymizer($core, $serializer);
 
         $this->expectException(ObjectNormalizationFailure::class);
@@ -67,7 +70,7 @@ final class SymfonyObjectAnonymizerTest extends TestCase
     {
         $serializer = new TestSerializer(static fn(mixed $value): array => ['Jane']);
         $core = $this->createMock(AnonymizerInterface::class);
-        $core->expects(self::never())->method('anonymizeWithReport');
+        $core->expects($this->never())->method('anonymizeWithReport');
         $adapter = new SymfonyObjectAnonymizer($core, $serializer);
 
         $this->expectException(ObjectNormalizationFailure::class);
@@ -78,7 +81,7 @@ final class SymfonyObjectAnonymizerTest extends TestCase
     {
         $serializer = new TestSerializer(static fn(mixed $value): array => ['name' => 'Jane'], static fn(mixed $data, string $type): never => throw new RuntimeException('broken'));
         $core = $this->createMock(AnonymizerInterface::class);
-        $core->expects(self::once())->method('anonymizeWithReport')->willReturn(new AnonymizationResult(['name' => 'John'], [], []));
+        $core->expects($this->once())->method('anonymizeWithReport')->willReturn(new AnonymizationResult(['name' => 'John'], [], []));
         $adapter = new SymfonyObjectAnonymizer($core, $serializer);
 
         $this->expectException(ObjectDenormalizationFailure::class);
@@ -89,7 +92,7 @@ final class SymfonyObjectAnonymizerTest extends TestCase
     {
         $serializer = new TestSerializer(static fn(mixed $value): array => ['name' => 'Jane'], static fn(mixed $data, string $type): stdClass => new stdClass());
         $core = $this->createMock(AnonymizerInterface::class);
-        $core->expects(self::once())->method('anonymizeWithReport')->willReturn(new AnonymizationResult(['name' => 'John'], [], []));
+        $core->expects($this->once())->method('anonymizeWithReport')->willReturn(new AnonymizationResult(['name' => 'John'], [], []));
         $adapter = new SymfonyObjectAnonymizer($core, $serializer);
 
         $this->expectException(ObjectDenormalizationFailure::class);
