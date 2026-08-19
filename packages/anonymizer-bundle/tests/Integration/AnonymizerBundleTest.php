@@ -29,10 +29,15 @@ use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\RuleOptionsCompiler;
 use PhpAnonymizer\Anonymizer\Domain\Rule\Payload\EmbeddedPayloadDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Rule\RuleDefinition;
 use PhpAnonymizer\AnonymizerBundle\AnonymizerBundle;
+use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleCollectionConverter;
+use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleConverter;
+use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleMerger;
+use PhpAnonymizer\AnonymizerBundle\Command\ImportLegacyRulesCommand;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\AnonymizerConfiguration;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\AnonymizerExtension;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Compiler\ExtensionTagCompilerPass;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Compiler\SerializerServiceCompilerPass;
+use PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport\LegacyDocumentReader;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Payload\YamlPayloadCodec;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\CompositeProfileProvider;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\ConfiguredProfileProvider;
@@ -97,12 +102,27 @@ final class AnonymizerBundleTest extends KernelTestCase
         self::assertSame(['body' => 'custom:hello'], $anonymizer->anonymize('payload', ['body' => 'hello']));
     }
 
+    public function testBuildRegistersBothCompilerPasses(): void
+    {
+        $container = new ContainerBuilder();
+        new AnonymizerBundle()->build($container);
+        $passes = $container->getCompiler()->getPassConfig()->getBeforeOptimizationPasses();
+        self::assertTrue(array_filter($passes, static fn(object $pass): bool => $pass instanceof ExtensionTagCompilerPass) !== []);
+        self::assertTrue(array_filter($passes, static fn(object $pass): bool => $pass instanceof SerializerServiceCompilerPass) !== []);
+    }
+
     public function testFakerConfigurationRegistersStrategies(): void
     {
         $container = new ContainerBuilder();
         new AnonymizerExtension()->load([['faker' => ['enabled' => true, 'locale' => 'en_US', 'seed' => 1234]]], $container);
 
         self::assertTrue($container->hasDefinition('anonymizer.faker.faker_first_name'));
+        self::assertTrue($container->hasDefinition(LegacyRuleConverter::class));
+        self::assertTrue($container->hasDefinition(ImportLegacyRulesCommand::class));
+        self::assertTrue($container->hasDefinition(LegacyRuleMerger::class));
+        self::assertTrue($container->hasDefinition(LegacyRuleCollectionConverter::class));
+        self::assertTrue($container->hasDefinition(LegacyDocumentReader::class));
+        self::assertSame([['id' => 'faker.first_name', 'builtin' => true]], $container->getDefinition('anonymizer.faker.faker_first_name')->getTag('anonymizer.replacement_strategy'));
         $tags = $container->getDefinition(YamlPayloadCodec::class)->getTag('anonymizer.payload_codec');
         /** @var array<int, array{id: string}> $tags */
         self::assertSame('yaml', $tags[0]['id']);
@@ -118,6 +138,7 @@ final class AnonymizerBundleTest extends KernelTestCase
         new AnonymizerExtension()->load([['personas' => ['enabled' => true, 'locale' => 'es']]], $container);
 
         self::assertTrue($container->hasDefinition('anonymizer.personas.persona_first_name'));
+        self::assertSame([['id' => 'persona.first_name', 'builtin' => true]], $container->getDefinition('anonymizer.personas.persona_first_name')->getTag('anonymizer.replacement_strategy'));
     }
 
     #[Override]

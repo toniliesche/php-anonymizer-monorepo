@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented here.
 
+## Iteration 8 — Legacy Rule Importer (Unreleased)
+
+- Added `anonymizer:import-legacy-rules` for one-way migration of legacy YAML and
+  JSON rule documents into complete, canonical Symfony Bundle configuration.
+- Added deterministic rendering, `--check` drift detection, conversion diagnostics,
+  and atomic output replacement so failed migrations never overwrite existing files.
+- Explicitly reject legacy object-access/custom-provider features that cannot be
+  represented by the array-first v1 profile model.
+
 ## Iteration 7 — Symfony Serializer Object Integration (Unreleased)
 
 - Added immutable object anonymization through the application-provided Symfony

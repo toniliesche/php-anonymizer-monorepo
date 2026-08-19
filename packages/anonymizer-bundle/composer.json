@@ -8,6 +8,7 @@
         "php-anonymizer/anonymizer": "^1.0",
         "php-anonymizer/anonymizer-symfony-serializer": "^1.0",
         "symfony/config": "^8.1.4",
+        "symfony/console": "^8.1.4",
         "symfony/dependency-injection": "^8.1.4",
         "symfony/http-kernel": "^8.1.4",
         "symfony/serializer": "^8.1.4",
