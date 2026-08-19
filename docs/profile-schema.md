@@ -57,6 +57,16 @@ unchanged unless they explicitly name a strategy.
 ['field' => 'email', 'strategy' => 'star_mask']
 ```
 
+Contextual strategies may additionally require a non-secret key identifier:
+
+```php
+['field' => 'email', 'strategy' => 'pseudonymize', 'key_id' => 'customer-v1']
+```
+
+Use `ContextualAnonymizerInterface` with an `AnonymizationContext` containing
+canonical string attributes such as `tenant` and `scope`. Key material is
+resolved by the application and never belongs in profiles or logs.
+
 Strategies are leaf-only and cannot be combined with `children`, `each`, or
 `embedded`.
 

@@ -8,6 +8,7 @@ use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizationLimits;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\ArrayAnonymizer;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AuditAnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\BatchAnonymizerInterface;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\ContextualAnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Domain\Exception\InvalidProfileDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\RuleOptionsCompiler;
@@ -31,6 +32,7 @@ use PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport\LegacyDocumentRea
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\ConfiguredProfileProvider;
 use PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement\FakerReplacementStrategyFactory;
 use PhpAnonymizer\AnonymizerPersonas\Infrastructure\Replacement\PersonaReplacementStrategyFactory;
+use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Replacement\HmacPseudonymStrategy;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -160,6 +162,24 @@ final class AnonymizerExtensionTest extends TestCase
         self::assertSame([ArrayAnonymizer::class, 'logger'], $this->referenceIds($audit));
         self::assertTrue($container->hasAlias(AuditAnonymizerInterface::class));
         self::assertTrue($container->getAlias(AuditAnonymizerInterface::class)->isPublic());
+    }
+
+    public function testRegistersConfiguredPseudonymization(): void
+    {
+        $container = new ContainerBuilder();
+        new AnonymizerExtension()->load([['pseudonymization' => ['enabled' => true, 'key_provider' => 'keys']]], $container);
+
+        self::assertSame(['keys'], $this->referenceIds($container->getDefinition(HmacPseudonymStrategy::class)->getArguments()));
+        /** @var list<array{id: string}> $tags */
+        $tags = $container->getDefinition(HmacPseudonymStrategy::class)->getTag('anonymizer.replacement_strategy');
+        self::assertSame('pseudonymize', $tags[0]['id']);
+        self::assertTrue($container->getAlias(ContextualAnonymizerInterface::class)->isPublic());
+    }
+
+    public function testPseudonymizationRequiresKeyProvider(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        new AnonymizerExtension()->load([['pseudonymization' => ['enabled' => true]]], new ContainerBuilder());
     }
 
     public function testReportsMissingFakerIntegrationsPrecisely(): void

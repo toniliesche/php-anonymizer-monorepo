@@ -5,7 +5,7 @@
     "type": "symfony-bundle",
     "require": {
         "php": "^8.5",
-        "php-anonymizer/anonymizer": "^1.0",
+        "php-anonymizer/anonymizer": "^1.2",
         "php-anonymizer/anonymizer-symfony-serializer": "^1.0",
         "psr/log": "^3.0",
         "symfony/config": "^8.1.4",
@@ -18,7 +18,8 @@
     },
     "suggest": {
         "php-anonymizer/anonymizer-faker": "Enable Faker replacement strategies",
-        "php-anonymizer/anonymizer-personas": "Enable fixed European persona strategies"
+        "php-anonymizer/anonymizer-personas": "Enable fixed European persona strategies",
+        "php-anonymizer/anonymizer-pseudonymization": "Enable keyed deterministic pseudonymisation"
     },
     "autoload": {
         "psr-4": {

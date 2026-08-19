@@ -4,7 +4,7 @@ This playbook installs the Graphify CLI once per machine and configures its
 Codex integration per repository. It is written for the `new-anonymizer`
 workspace, but the repository steps can be repeated for another checkout.
 
-Graphify's default Codex integration uses an `AGENTS.md` section and a local
+Graphify's default Codex integration uses an `../_AGENTS.md` section and a local
 Codex skill. It does not require an MCP server. The graph itself is generated
 per repository.
 
@@ -46,7 +46,7 @@ Codex skill and hook files. Review the result before staging anything:
 
 ```sh
 git status --short
-git diff -- AGENTS.md .codex
+git diff -- _AGENTS.md .codex
 ```
 
 Keep the generated graph local by adding this entry to `.gitignore` once:
@@ -55,7 +55,7 @@ Keep the generated graph local by adding this entry to `.gitignore` once:
 rg -qxF 'graphify-out/' .gitignore || printf '\n# Local Graphify knowledge graph.\ngraphify-out/\n' >> .gitignore
 ```
 
-For a shared team setup, commit the Graphify section in `AGENTS.md`, the
+For a shared team setup, commit the Graphify section in `../_AGENTS.md`, the
 `.codex/` integration files, and the `.gitignore` entry. Do not stage unrelated
 working-tree changes.
 
@@ -118,7 +118,7 @@ not automatically provide one; a local Codex session is not an API endpoint
 that Graphify can use as its extraction backend. Configure a supported backend
 according to Graphify's current documentation, then rerun `$graphify .` if
 document-level concepts are needed. Do not put the key in the repository or in
-`AGENTS.md`.
+`../_AGENTS.md`.
 
 ChatGPT Plus does not include API usage. ChatGPT subscriptions and API usage
 are billed separately, so Plus cannot be converted into the

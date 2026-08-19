@@ -32,6 +32,7 @@
             <directory suffix=".php">packages/anonymizer-bundle/src</directory>
             <directory suffix=".php">packages/anonymizer-faker/src</directory>
             <directory suffix=".php">packages/anonymizer-personas/src</directory>
+            <directory suffix=".php">packages/anonymizer-pseudonymization/src</directory>
             <directory suffix=".php">packages/anonymizer-symfony-serializer/src</directory>
         </include>
     </source>
