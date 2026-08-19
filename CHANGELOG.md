@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented here.
 
+## Unreleased
+
+- Future changes will be recorded here.
+
+## 1.0.0
+
+- Completed the clean, hexagonal rewrite through Iterations 1–9.
+- Added independently installable packages and deterministic release artifacts.
+- Added tag-history release planning and archive checksums.
+
 ## Iteration 8 — Legacy Rule Importer (Unreleased)
 
 - Added `anonymizer:import-legacy-rules` for one-way migration of legacy YAML and

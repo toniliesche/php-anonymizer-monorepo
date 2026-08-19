@@ -5,36 +5,92 @@ declare(strict_types=1);
 $root = dirname(__DIR__);
 $version = $argv[1] ?? 'dev';
 $target = $root . '/var/artifacts/' . preg_replace('/[^A-Za-z0-9_.-]+/', '-', $version);
-$packages = glob($root . '/packages/*', GLOB_ONLYDIR) ?: [];
-sort($packages);
-
-if (is_dir($target)) {
-    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($target, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
-    foreach ($iterator as $item) {
-        $item->isDir() ? rmdir($item->getPathname()) : unlink($item->getPathname());
+$expected = ['anonymizer', 'anonymizer-bundle', 'anonymizer-faker', 'anonymizer-personas', 'anonymizer-symfony-serializer'];
+$packages = [];
+foreach ($expected as $name) {
+    $package = $root . '/packages/' . $name;
+    if (!is_dir($package) || !is_file($package . '/composer.json')) {
+        throw new RuntimeException('Expected package is missing: ' . $name);
     }
-} else {
-    mkdir($target, 0777, true);
+    $packages[] = $package;
+}
+if (!is_dir($target) && !mkdir($target, 0777, true) && !is_dir($target)) {
+    throw new RuntimeException('Could not create artifact directory.');
 }
 
+$manifest = ['version' => $version, 'packages' => []];
 foreach ($packages as $package) {
     $name = basename($package);
-    $destination = $target . '/' . $name;
-    mkdir($destination, 0777, true);
-    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($package, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::SELF_FIRST);
-    foreach ($iterator as $item) {
-        $relative = substr($item->getPathname(), strlen($package) + 1);
-        if (str_starts_with($relative, 'vendor/') || str_starts_with($relative, 'var/')) {
-            continue;
-        }
+    $prefix = $name . '-' . $version . '/';
+    $zipName = $name . '-' . $version . '.zip';
+    $tarName = $name . '-' . $version . '.tar.gz';
+    $zipPath = $target . '/' . $zipName;
+    $tarPath = $target . '/' . $tarName;
+    @unlink($zipPath);
+    @unlink($tarPath);
+    @unlink($target . '/' . $name . '-' . $version . '.tar');
+    $files = packageFiles($package);
 
-        $destinationPath = $destination . '/' . $relative;
-        if ($item->isDir()) {
-            mkdir($destinationPath, 0777, true);
-        } else {
-            copy($item->getPathname(), $destinationPath);
-        }
+    $zip = new ZipArchive();
+    if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+        throw new RuntimeException('Could not create ' . $zipPath);
     }
+    foreach ($files as $relative) {
+        $zip->addFile($package . '/' . $relative, $prefix . $relative);
+        $zip->setMtimeName($prefix . $relative, 0);
+    }
+    $zip->close();
+
+    $tar = new PharData($target . '/' . $name . '-' . $version . '.tar');
+    foreach ($files as $relative) {
+        $tar->addFile($package . '/' . $relative, $prefix . $relative);
+    }
+    $tar->compress(Phar::GZ);
+    unset($tar);
+    @unlink($target . '/' . $name . '-' . $version . '.tar');
+
+    $metadata = json_decode((string) file_get_contents($package . '/composer.json'), true, 512, JSON_THROW_ON_ERROR);
+    if (!is_array($metadata) || !isset($metadata['name']) || !is_string($metadata['name'])) {
+        throw new RuntimeException('Invalid Composer metadata in ' . $name);
+    }
+    $manifest['packages'][$name] = [
+        'composer_name' => $metadata['name'],
+        'version' => $version,
+        'zip' => $zipName,
+        'zip_sha256' => hash_file('sha256', $zipPath),
+        'tar_gz' => $tarName,
+        'tar_gz_sha256' => hash_file('sha256', $tarPath),
+    ];
 }
 
-printf("Staged %d Composer package artifacts in %s.\n", count($packages), $target);
+$manifestPath = $target . '/release-manifest.json';
+file_put_contents($manifestPath, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+$checksums = [];
+foreach (glob($target . '/*') ?: [] as $file) {
+    if (is_file($file) && basename($file) !== 'SHA256SUMS') {
+        $checksums[] = hash_file('sha256', $file) . '  ' . basename($file);
+    }
+}
+sort($checksums, SORT_STRING);
+file_put_contents($target . '/SHA256SUMS', implode("\n", $checksums) . "\n");
+printf("Built %d package archives in %s.\n", count($packages), $target);
+
+/** @return list<string> */
+function packageFiles(string $package): array
+{
+    $files = [];
+    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($package, FilesystemIterator::SKIP_DOTS));
+    foreach ($iterator as $item) {
+        if (!$item->isFile()) {
+            continue;
+        }
+        $relative = substr($item->getPathname(), strlen($package) + 1);
+        if (preg_match('#^(tests|vendor|var)/#', $relative) === 1 || in_array(basename($relative), ['phpunit.xml', 'phpstan.neon'], true)) {
+            continue;
+        }
+        $files[] = str_replace(DIRECTORY_SEPARATOR, '/', $relative);
+    }
+    sort($files, SORT_STRING);
+
+    return $files;
+}

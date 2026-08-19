@@ -1,4 +1,4 @@
-.PHONY: help setup test test-coverage lint fix static architecture dependencies collisions refactor refactor-fix mutation validate audit check qa consumer-bundle consumer-faker consumer-personas artifacts release-preview release-preview-test release-verify
+.PHONY: help setup test test-coverage lint fix static architecture dependencies collisions refactor refactor-fix mutation validate audit check qa consumer-bundle consumer-faker consumer-personas artifacts release-preview release-preview-test release-verify release-publish
 
 help:
 	@printf '%s\n' 'Use Composer as the canonical developer interface:' '  composer setup qa test test:coverage lint fix static architecture dependencies collisions refactor:check refactor:fix mutation consumer:bundle validate audit release:preview release:verify'
@@ -71,3 +71,6 @@ release-preview-test:
 
 release-verify:
 	composer release:verify
+
+release-publish:
+	composer release:publish -- --dry-run

@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: mbstring, zip
+          coverage: xdebug
+      - run: composer install --no-interaction --prefer-dist
+      - run: composer qa
+      - run: git branch --force main origin/main
+      - run: CI=true GITHUB_HEAD_REF=${{ github.event.pull_request.head.ref }} composer release:verify
+      - run: |
+          version=$(CI=true GITHUB_HEAD_REF=${{ github.event.pull_request.head.ref }} php tools/release-preview.php | awk '/next version:/ {print $3}')
+          git tag -a "$version" -m "Release $version"
+          git push origin "$version"
+          PHP_VERSION=8.5 php tools/build-artifacts.php "$version"
+          gh release create "$version" var/artifacts/"$version"/* --title "$version" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - run: gh pr create --base develop --head main --title "Sync main into develop after release" --body "Automated release synchronization."
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
