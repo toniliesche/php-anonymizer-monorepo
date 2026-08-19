@@ -38,6 +38,7 @@ final class PersonaReplacementStrategyFactoryTest extends TestCase
     public function testAcceptsEuropeanLanguageAndRegionForms(): void
     {
         self::assertSame('de', PersonaLocale::fromLocale('DE-de')->value);
+        self::assertSame('de', PersonaLocale::fromLocale('  DE-de  ')->value);
         self::assertSame('en', PersonaLocale::fromLocale('en_GB')->value);
         self::assertSame('nl', PersonaLocale::fromLocale('nl')->value);
         self::assertSame('en_ie', PersonaLocale::fromLocale('en_IE')->value);
@@ -53,6 +54,15 @@ final class PersonaReplacementStrategyFactoryTest extends TestCase
         self::assertSame('Lisboa', PersonaCatalog::for(PersonaLocale::Portuguese)->value(PersonaField::City));
         self::assertSame('Wien', PersonaCatalog::for(PersonaLocale::Austrian)->value(PersonaField::City));
         self::assertSame('Antwerpen', PersonaCatalog::for(PersonaLocale::BelgianDutch)->value(PersonaField::City));
+        self::assertSame('Joe Bloggs', PersonaCatalog::for(PersonaLocale::English)->name);
+        self::assertSame('Max Mustermann', PersonaCatalog::for(PersonaLocale::German)->name);
+        self::assertSame('Juan García', PersonaCatalog::for(PersonaLocale::Spanish)->name);
+        self::assertSame('Jean Dupont', PersonaCatalog::for(PersonaLocale::French)->name);
+        self::assertSame('Mario Rossi', PersonaCatalog::for(PersonaLocale::Italian)->name);
+        self::assertSame('Jan Jansen', PersonaCatalog::for(PersonaLocale::Dutch)->name);
+        self::assertSame('António Silva', PersonaCatalog::for(PersonaLocale::Portuguese)->name);
+        self::assertSame('Franz Huber', PersonaCatalog::for(PersonaLocale::Austrian)->name);
+        self::assertSame('Jan Peeters', PersonaCatalog::for(PersonaLocale::BelgianDutch)->name);
     }
 
     public function testRejectsNonEuropeanRegionalLocaleAndUnknownStrategy(): void

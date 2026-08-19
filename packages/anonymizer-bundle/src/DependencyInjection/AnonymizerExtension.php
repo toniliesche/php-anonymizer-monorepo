@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace PhpAnonymizer\AnonymizerBundle\DependencyInjection;
 
 use Override;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizationLimits;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\ArrayAnonymizer;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AuditAnonymizerInterface;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\BatchAnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Domain\Exception\InvalidProfileDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
 use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleCollectionConverter;
@@ -16,6 +19,7 @@ use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleNodeConver
 use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRulePathConverter;
 use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleValueConverter;
 use PhpAnonymizer\AnonymizerBundle\Command\ImportLegacyRulesCommand;
+use PhpAnonymizer\AnonymizerBundle\Infrastructure\Audit\AuditLoggerAdapter;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport\AtomicFileWriter;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport\BundleConfigRenderer;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport\LegacyDocumentReader;
@@ -54,9 +58,16 @@ final class AnonymizerExtension extends Extension
             new Reference(BundleConfigRenderer::class), new Reference(AtomicFileWriter::class),
         ]))->addTag('console.command');
 
-        /** @var array{profiles: array<string, mixed>, faker: array{enabled: bool, locale: string, seed: int|string|null}, personas: array{enabled: bool, locale: string}} $config */
+        /** @var array{profiles: array<string, mixed>, faker: array{enabled: bool, locale: string, seed: int|string|null}, personas: array{enabled: bool, locale: string}, limits: array{max_input_bytes: int, max_depth: int, max_visited_nodes: int, max_collection_entries: int, max_embedded_payload_depth: int}, audit: array{enabled: bool, logger_service: string|null}} $config */
         $config = $this->processConfiguration(new AnonymizerConfiguration(), $configs);
         $profiles = $this->createProfiles($config['profiles']);
+        $container->setDefinition(AnonymizationLimits::class, new Definition(AnonymizationLimits::class, [
+            $config['limits']['max_input_bytes'],
+            $config['limits']['max_depth'],
+            $config['limits']['max_visited_nodes'],
+            $config['limits']['max_collection_entries'],
+            $config['limits']['max_embedded_payload_depth'],
+        ]));
         $container->setDefinition(YamlPayloadCodec::class, new Definition(YamlPayloadCodec::class))
             ->addTag('anonymizer.payload_codec', ['id' => 'yaml', 'builtin' => true]);
 
@@ -109,6 +120,7 @@ final class AnonymizerExtension extends Extension
             new Reference(CompositeProfileProvider::class),
             new TaggedIteratorArgument('anonymizer.replacement_strategy'),
             new TaggedIteratorArgument('anonymizer.payload_codec'),
+            new Reference(AnonymizationLimits::class),
         ]);
         $container->setDefinition(ArrayAnonymizer::class, $anonymizer);
         $container->setDefinition(SymfonyObjectAnonymizer::class, new Definition(SymfonyObjectAnonymizer::class, [
@@ -120,6 +132,17 @@ final class AnonymizerExtension extends Extension
             new Reference(SymfonyObjectAnonymizer::class),
         ]));
         $container->setAlias(AnonymizerInterface::class, SymfonyAnonymizer::class)->setPublic(true);
+        $container->setAlias(BatchAnonymizerInterface::class, ArrayAnonymizer::class)->setPublic(true);
+        if ($config['audit']['enabled']) {
+            if ($config['audit']['logger_service'] === null || $config['audit']['logger_service'] === '') {
+                throw new InvalidConfigurationException('anonymizer.audit.logger_service is required when anonymizer.audit.enabled is true.');
+            }
+            $container->setDefinition(AuditLoggerAdapter::class, new Definition(AuditLoggerAdapter::class, [
+                new Reference(ArrayAnonymizer::class),
+                new Reference($config['audit']['logger_service']),
+            ]));
+            $container->setAlias(AuditAnonymizerInterface::class, AuditLoggerAdapter::class)->setPublic(true);
+        }
     }
 
     #[Override]

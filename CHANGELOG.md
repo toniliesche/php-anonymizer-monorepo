@@ -4,9 +4,10 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
-- Iteration 9.1 refactors the pre-v1 API and implementation boundaries.
+- Iteration 10 adds bounded execution limits, a no-report fast path, lazy
+  batch anonymization, and aggregate value-free audit results.
 
-## Iteration 9.1 — Pre-v1 Cohesion and API Refactor (Unreleased)
+## Iteration 9.1 — 1.0.0 Cohesion and API Refactor
 
 - Added a typed `AnonymizationResultInterface` shared by array and Symfony object results.
 - Added `AnonymizerFactory` and an application-level profile collection so callers do not

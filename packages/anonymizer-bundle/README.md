@@ -52,3 +52,13 @@ composer require php-anonymizer/anonymizer-personas
 anonymizer:
   personas: { enabled: true, locale: de }
 ```
+
+The Bundle accepts execution limits under `anonymizer.limits`. Audit logging is
+optional and disabled by default; enable it with a configured PSR-3 logger:
+
+```yaml
+anonymizer:
+  audit:
+    enabled: true
+    logger_service: monolog.logger.anonymizer
+```

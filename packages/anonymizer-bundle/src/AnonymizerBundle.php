@@ -15,7 +15,6 @@ final class AnonymizerBundle extends Bundle
     #[Override]
     public function build(ContainerBuilder $container): void
     {
-        parent::build($container);
         $container->addCompilerPass(new ExtensionTagCompilerPass());
         $container->addCompilerPass(new SerializerServiceCompilerPass());
     }

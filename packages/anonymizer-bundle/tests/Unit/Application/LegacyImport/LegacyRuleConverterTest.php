@@ -99,6 +99,40 @@ final class LegacyRuleConverterTest extends TestCase
         $merger->merge([['field' => 'email', 'strategy' => 'redact'], ['field' => 'email', 'strategy' => 'faker.email']]);
     }
 
+    public function testMergesDistinctNestedChildrenAndKeepsFollowingRules(): void
+    {
+        $result = new LegacyRuleMerger()->merge([
+            ['field' => 'user', 'children' => [
+                ['field' => 'name', 'strategy' => 'redact'],
+                ['field' => 'id', 'strategy' => 'redact'],
+            ]],
+            ['field' => 'user', 'children' => [
+                ['field' => 'email', 'strategy' => 'redact'],
+                ['field' => 'phone', 'strategy' => 'redact'],
+            ]],
+            ['field' => 'active', 'strategy' => 'redact'],
+        ]);
+
+        self::assertSame([
+            ['field' => 'user', 'children' => [
+                ['field' => 'name', 'strategy' => 'redact'],
+                ['field' => 'id', 'strategy' => 'redact'],
+                ['field' => 'email', 'strategy' => 'redact'],
+                ['field' => 'phone', 'strategy' => 'redact'],
+            ]],
+            ['field' => 'active', 'strategy' => 'redact'],
+        ], $result);
+    }
+
+    public function testConflictWithNonStringFieldUsesUnknownLabel(): void
+    {
+        $this->expectExceptionMessageMatches('/unknown/');
+        new LegacyRuleMerger()->merge([
+            ['field' => 12, 'strategy' => 'redact'],
+            ['field' => 12, 'strategy' => 'faker.email'],
+        ]);
+    }
+
     public function testRejectsMalformedLegacyCollectionsAndPaths(): void
     {
         $values = new LegacyRuleValueConverter();

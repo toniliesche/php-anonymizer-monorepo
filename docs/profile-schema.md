@@ -84,3 +84,18 @@ The top-level API accepts a profile, codec ID, and encoded payload:
 $payload = $anonymizer->anonymizePayload('customer', 'json', $json);
 $result = $anonymizer->anonymizePayloadWithReport('customer', 'json', $json);
 ```
+
+## Execution limits and batches
+
+Core execution limits are enabled by default and can be overridden with
+`AnonymizationLimits`. The defaults are 10 MiB input payloads, depth 64,
+100,000 visited nodes, 50,000 entries per collection, and embedded depth 8.
+Limit failures identify the profile and current JSON Pointer.
+
+`BatchAnonymizerInterface::anonymizeRecords()` accepts an iterable of map
+records and yields transformed maps lazily. Records are processed independently
+without reports; iteration stops at the first invalid or failing record.
+
+`AuditAnonymizerInterface` is array-only. Its aggregate entries identify the
+profile, compiled-profile fingerprint, path, action, handler, and count. Audit
+results never contain input or replacement values.

@@ -62,8 +62,13 @@ final class SymfonyObjectAnonymizerTest extends TestCase
         $core->expects($this->never())->method('anonymizeWithReport');
         $adapter = new SymfonyObjectAnonymizer($core, $serializer);
 
-        $this->expectException(ObjectNormalizationFailure::class);
-        $adapter->anonymize('default', new Person('Jane'));
+        try {
+            $adapter->anonymize('default', new Person('Jane'));
+            self::fail('Expected normalization failure.');
+        } catch (ObjectNormalizationFailure $failure) {
+            self::assertSame(0, $failure->getCode());
+            self::assertInstanceOf(RuntimeException::class, $failure->getPrevious());
+        }
     }
 
     public function testListNormalizationIsRejected(): void
@@ -84,8 +89,13 @@ final class SymfonyObjectAnonymizerTest extends TestCase
         $core->expects($this->once())->method('anonymizeWithReport')->willReturn(new AnonymizationResult(['name' => 'John'], [], []));
         $adapter = new SymfonyObjectAnonymizer($core, $serializer);
 
-        $this->expectException(ObjectDenormalizationFailure::class);
-        $adapter->anonymize('default', new Person('Jane'));
+        try {
+            $adapter->anonymize('default', new Person('Jane'));
+            self::fail('Expected denormalization failure.');
+        } catch (ObjectDenormalizationFailure $failure) {
+            self::assertSame(0, $failure->getCode());
+            self::assertInstanceOf(RuntimeException::class, $failure->getPrevious());
+        }
     }
 
     public function testWrongDenormalizedClassIsRejected(): void
