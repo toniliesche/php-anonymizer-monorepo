@@ -4,6 +4,9 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Iteration 18: documented the 2.0 public API inventory, semver boundary,
+  internalization policy, and refined cleanup plan.
+
 ## 1.7.0 (WIP)
 
 - Iteration 18: added `php-anonymizer/anonymizer-laravel` with Laravel 13 service-provider
