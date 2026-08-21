@@ -8,6 +8,8 @@ use Override;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizationLimits;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\ArrayAnonymizer;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\DocumentAnonymizerInterface;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\NdjsonAnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Path\JsonPointer;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Policy\PreserveStringSelection;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Policy\PreserveTraversalPolicy;
@@ -122,6 +124,8 @@ final class AnonymizerBundleTest extends KernelTestCase
         self::assertSame(['email' => 'custom:hello'], $anonymizer->anonymize('custom', ['email' => 'hello']));
         self::assertSame(['email' => 'custom:hello'], $anonymizer->anonymize('provided', ['email' => 'hello']));
         self::assertSame(['body' => 'custom:hello'], $anonymizer->anonymize('payload', ['body' => 'hello']));
+        self::assertInstanceOf(DocumentAnonymizerInterface::class, $kernel->getContainer()->get(DocumentAnonymizerInterface::class));
+        self::assertInstanceOf(NdjsonAnonymizerInterface::class, $kernel->getContainer()->get(NdjsonAnonymizerInterface::class));
     }
 
     public function testBuildRegistersBothCompilerPasses(): void

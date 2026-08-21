@@ -20,6 +20,20 @@ final class YamlPayloadCodecTest extends TestCase
         self::assertSame($data, $codec->decode($codec->encode($data)));
     }
 
+    public function testRoundTripsDocumentSequences(): void
+    {
+        $codec = new YamlPayloadCodec();
+        $data = [['email' => 'hello'], ['email' => 'world']];
+
+        self::assertSame($data, $codec->decodeDocument($codec->encodeDocument($data)));
+    }
+
+    public function testRejectsScalarDocumentRoots(): void
+    {
+        $this->expectException(ParseException::class);
+        new YamlPayloadCodec()->decodeDocument('value');
+    }
+
     public function testRejectsNonMappingRoots(): void
     {
         $this->expectExceptionObject(new ParseException('YAML payload root must be a mapping.'));

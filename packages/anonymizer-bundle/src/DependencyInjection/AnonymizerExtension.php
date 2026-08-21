@@ -11,6 +11,10 @@ use PhpAnonymizer\Anonymizer\Application\Anonymization\ArrayAnonymizer;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AuditAnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\BatchAnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\ContextualAnonymizerInterface;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\ContextualDocumentAnonymizerInterface;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\ContextualNdjsonAnonymizerInterface;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\DocumentAnonymizerInterface;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\NdjsonAnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Domain\Exception\InvalidProfileDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
 use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleCollectionConverter;
@@ -140,6 +144,8 @@ final class AnonymizerExtension extends Extension
         ]));
         $container->setAlias(AnonymizerInterface::class, SymfonyAnonymizer::class)->setPublic(true);
         $container->setAlias(BatchAnonymizerInterface::class, ArrayAnonymizer::class)->setPublic(true);
+        $container->setAlias(DocumentAnonymizerInterface::class, ArrayAnonymizer::class)->setPublic(true);
+        $container->setAlias(NdjsonAnonymizerInterface::class, ArrayAnonymizer::class)->setPublic(true);
         if ($config['audit']['enabled']) {
             if ($config['audit']['logger_service'] === null || $config['audit']['logger_service'] === '') {
                 throw new InvalidConfigurationException('anonymizer.audit.logger_service is required when anonymizer.audit.enabled is true.');
@@ -190,6 +196,8 @@ final class AnonymizerExtension extends Extension
         $container->setDefinition(DateShiftTransformation::class, new Definition(DateShiftTransformation::class, [new Reference($config['key_provider'])]))
             ->addTag('anonymizer.value_transformation', ['id' => 'date_shift', 'builtin' => true]);
         $container->setAlias(ContextualAnonymizerInterface::class, ArrayAnonymizer::class)->setPublic(true);
+        $container->setAlias(ContextualDocumentAnonymizerInterface::class, ArrayAnonymizer::class)->setPublic(true);
+        $container->setAlias(ContextualNdjsonAnonymizerInterface::class, ArrayAnonymizer::class)->setPublic(true);
     }
 
     /** @param array<string, mixed> $definitions
