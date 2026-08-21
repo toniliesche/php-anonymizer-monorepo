@@ -9,7 +9,9 @@ use PhpAnonymizer\Anonymizer\Application\Extension\Replacement\ReplacementStrate
 
 final readonly class PersonaReplacementStrategy implements ReplacementStrategyInterface
 {
-    public function __construct(private Persona $persona, private PersonaField $field) {}
+    public function __construct(private Persona $persona, private PersonaField $field)
+    {
+    }
 
     #[Override]
     public function id(): string

@@ -10,7 +10,9 @@ use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
 
 final class TestProfileProvider implements ProfileProviderInterface
 {
-    /** @return iterable<ProfileDefinition> */
+    /**
+     * @return iterable<ProfileDefinition>
+     */
     #[Override]
     public function profiles(): iterable
     {

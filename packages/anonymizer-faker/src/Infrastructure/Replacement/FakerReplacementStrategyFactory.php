@@ -6,18 +6,19 @@ namespace PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement;
 
 use Faker\Factory;
 use Faker\Generator;
-
 use function Safe\unpack;
 
 final class FakerReplacementStrategyFactory
 {
-    /** @return list<FakerReplacementStrategy> */
+    /**
+     * @return list<FakerReplacementStrategy>
+     */
     public static function create(string $locale = 'en_US', int|string|null $seed = null): array
     {
         $faker = self::createGenerator($locale, $seed);
 
         return array_map(
-            static fn(FakerFormatter $formatter): FakerReplacementStrategy => new FakerReplacementStrategy($faker, $formatter),
+            static fn (FakerFormatter $formatter): FakerReplacementStrategy => new FakerReplacementStrategy($faker, $formatter),
             FakerFormatter::cases(),
         );
     }
@@ -44,9 +45,10 @@ final class FakerReplacementStrategyFactory
         }
 
         $bytes = hash('sha256', $seed, true);
+
+        /** @var array{seed: int} $parts */
         $parts = unpack('Nseed', $bytes);
-        /** @var int $normalized */
-        $normalized = $parts['seed'];
-        return $normalized;
+
+        return $parts['seed'];
     }
 }

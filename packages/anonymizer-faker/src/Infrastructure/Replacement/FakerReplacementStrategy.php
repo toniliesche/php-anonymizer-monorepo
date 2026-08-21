@@ -13,7 +13,8 @@ final readonly class FakerReplacementStrategy implements ReplacementStrategyInte
     public function __construct(
         private Generator $faker,
         private FakerFormatter $formatter,
-    ) {}
+    ) {
+    }
 
     #[Override]
     public function id(): string
@@ -25,6 +26,7 @@ final readonly class FakerReplacementStrategy implements ReplacementStrategyInte
     public function replace(string $value): string
     {
         $generated = $this->faker->format($this->formatter->formatter());
+
         return (string) $generated; // @phpstan-ignore cast.string (Faker formatter contract returns scalar values.)
     }
 }

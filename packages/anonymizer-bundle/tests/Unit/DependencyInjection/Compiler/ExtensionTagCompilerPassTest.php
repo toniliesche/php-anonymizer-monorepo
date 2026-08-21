@@ -26,7 +26,9 @@ final class ExtensionTagCompilerPassTest extends TestCase
         self::assertCount(1, $container->findTaggedServiceIds('anonymizer.payload_codec'));
     }
 
-    /** @param array<string, mixed> $attributes */
+    /**
+     * @param array<string, mixed> $attributes
+     */
     #[DataProvider('invalidTagProvider')]
     public function testRejectsInvalidTags(string $tag, array $attributes, string $message): void
     {
@@ -37,7 +39,9 @@ final class ExtensionTagCompilerPassTest extends TestCase
         new ExtensionTagCompilerPass()->process($container);
     }
 
-    /** @return iterable<string, array{string, array<string, mixed>, string}> */
+    /**
+     * @return iterable<string, array{string, array<string, mixed>, string}>
+     */
     public static function invalidTagProvider(): iterable
     {
         yield 'missing ID' => [
@@ -45,11 +49,13 @@ final class ExtensionTagCompilerPassTest extends TestCase
             [],
             'Service "extension" uses tag "anonymizer.replacement_strategy" without a valid id.',
         ];
+
         yield 'invalid ID' => [
             'anonymizer.payload_codec',
             ['id' => 'not valid'],
             'Service "extension" uses tag "anonymizer.payload_codec" without a valid id.',
         ];
+
         yield 'built-in ID' => [
             'anonymizer.payload_codec',
             ['id' => 'json'],
@@ -63,8 +69,12 @@ final class ExtensionTagCompilerPassTest extends TestCase
         $container->register('first')->addTag('anonymizer.replacement_strategy', ['id' => 'hash']);
         $container->register('second')->addTag('anonymizer.replacement_strategy', ['id' => 'hash']);
 
-        $this->expectException(InvalidArgumentException::class);
-        new ExtensionTagCompilerPass()->process($container);
+        try {
+            new ExtensionTagCompilerPass()->process($container);
+            self::fail('Expected duplicate extension IDs to be rejected.');
+        } catch (InvalidArgumentException $exception) {
+            self::assertSame('Extension ID "hash" is registered more than once for tag "anonymizer.replacement_strategy".', $exception->getMessage());
+        }
     }
 
     public function testContinuesAfterBuiltInTagsAndRejectsLaterInvalidTag(): void

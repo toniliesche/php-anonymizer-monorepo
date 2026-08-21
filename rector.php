@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use Rector\Config\RectorConfig;
+use Rector\Php83\Rector\ClassMethod\AddOverrideAttributeToOverriddenMethodsRector;
+use Rector\PHPUnit\CodeQuality\Rector\Class_\PreferPHPUnitSelfCallRector;
 use Rector\PHPUnit\CodeQuality\Rector\Class_\PreferPHPUnitThisCallRector;
 use Rector\PHPUnit\CodeQuality\Rector\ClassMethod\NoSetupWithParentCallOverrideRector;
 
@@ -36,9 +38,18 @@ return RectorConfig::configure()
         phpunitCodeQuality: true,
         symfonyCodeQuality: true,
     )
+    ->withConfiguredRule(
+        AddOverrideAttributeToOverriddenMethodsRector::class,
+        [
+            'allow_override_empty_method' => true,
+        ],
+    )
     ->withSkip([
-        // PHPStan strict rules require PHPUnit assertions to use static calls.
-        PreferPHPUnitThisCallRector::class,
         // Keep explicit #[Override] attributes even when PHPUnit parent setup is called.
         NoSetupWithParentCallOverrideRector::class,
-    ]);
+    ])
+    ->withRules(
+        [
+            PreferPHPUnitSelfCallRector::class,
+        ],
+    );

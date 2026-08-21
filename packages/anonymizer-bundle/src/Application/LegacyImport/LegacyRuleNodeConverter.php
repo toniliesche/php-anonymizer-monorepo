@@ -6,14 +6,18 @@ namespace PhpAnonymizer\AnonymizerBundle\Application\LegacyImport;
 
 /**
  * @phpstan-type Rule array<string, mixed>
+ *
  * @codeCoverageIgnore Legacy conversion diagnostics are exercised through command-level integration tests.
  */
 final readonly class LegacyRuleNodeConverter
 {
-    public function __construct(private LegacyRuleValueConverter $values, private LegacyRulePathConverter $paths) {}
+    public function __construct(private LegacyRuleValueConverter $values, private LegacyRulePathConverter $paths)
+    {
+    }
 
     /**
      * @param array<string, mixed> $node
+     *
      * @return array<string, mixed>
      */
     public function convertNode(array $node): array
@@ -39,11 +43,21 @@ final readonly class LegacyRuleNodeConverter
         if (($node['is_array'] ?? false) === true) {
             return ['field' => $name, 'each' => $rule['children'] ?? true, 'on_scalar' => 'redact'];
         }
+
         return $rule;
     }
 
     /**
+     * @return Rule
+     */
+    public function convertPath(string $path, mixed $definition): array
+    {
+        return $this->paths->convert($path, $definition);
+    }
+
+    /**
      * @param list<mixed> $children
+     *
      * @return list<array<string, mixed>>
      */
     private function convertChildren(string $name, array $children): array
@@ -53,15 +67,11 @@ final readonly class LegacyRuleNodeConverter
             if (!is_array($child)) {
                 throw LegacyImportException::message(sprintf('Child nodes for "%s" must be maps.', $name));
             }
+
             /** @var array<string, mixed> $child */
             $converted[] = $this->convertNode($child);
         }
-        return $converted;
-    }
 
-    /** @return Rule */
-    public function convertPath(string $path, mixed $definition): array
-    {
-        return $this->paths->convert($path, $definition);
+        return $converted;
     }
 }

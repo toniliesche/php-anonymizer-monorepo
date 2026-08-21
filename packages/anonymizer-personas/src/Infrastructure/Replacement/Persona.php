@@ -19,7 +19,8 @@ final readonly class Persona
         public string $city,
         public string $postcode,
         public string $country,
-    ) {}
+    ) {
+    }
 
     public function value(PersonaField $field): string
     {

@@ -14,7 +14,7 @@ foreach ($expected as $name) {
     }
     $packages[] = $package;
 }
-if (!is_dir($target) && !mkdir($target, 0777, true) && !is_dir($target)) {
+if (!is_dir($target) && !mkdir($target, 0o777, true) && !is_dir($target)) {
     throw new RuntimeException('Could not create artifact directory.');
 }
 
@@ -75,7 +75,9 @@ sort($checksums, SORT_STRING);
 file_put_contents($target . '/SHA256SUMS', implode("\n", $checksums) . "\n");
 printf("Built %d package archives in %s.\n", count($packages), $target);
 
-/** @return list<string> */
+/**
+ * @return list<string>
+ */
 function packageFiles(string $package): array
 {
     $files = [];

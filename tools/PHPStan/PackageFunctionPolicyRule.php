@@ -14,7 +14,9 @@ use PHPStan\Analyser\Scope;
 use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleErrorBuilder;
 
-/** @implements Rule<FuncCall> */
+/**
+ * @implements Rule<FuncCall>
+ */
 final class PackageFunctionPolicyRule implements Rule
 {
     private const array DISALLOWED_LANGUAGE_FUNCTIONS = ['eval', 'assert'];

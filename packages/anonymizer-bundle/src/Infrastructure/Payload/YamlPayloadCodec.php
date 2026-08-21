@@ -17,7 +17,9 @@ final class YamlPayloadCodec implements PayloadCodecInterface
         return 'yaml';
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * @return array<string, mixed>
+     */
     #[Override]
     public function decode(string $payload): array
     {
@@ -37,7 +39,9 @@ final class YamlPayloadCodec implements PayloadCodecInterface
         return $decoded;
     }
 
-    /** @param array<string, mixed> $data */
+    /**
+     * @param array<string, mixed> $data
+     */
     #[Override]
     public function encode(array $data): string
     {

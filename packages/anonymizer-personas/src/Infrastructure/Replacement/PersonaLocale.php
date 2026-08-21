@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace PhpAnonymizer\AnonymizerPersonas\Infrastructure\Replacement;
 
 use InvalidArgumentException;
-
 use function mb_strtolower;
 
 enum PersonaLocale: string

@@ -40,6 +40,7 @@ final class YamlPayloadCodecTest extends TestCase
     public function testRejectsScalarAndMalformedRoots(): void
     {
         $codec = new YamlPayloadCodec();
+
         try {
             $codec->decode('value');
             self::fail('A scalar root must be rejected.');

@@ -39,6 +39,7 @@ final class LegacyRuleConverterTest extends TestCase
 
         /** @var array{field: string, each: list<array<string, mixed>>} $customers */
         $customers = $result['anonymizer']['profiles']['legacy']['rules'][0];
+
         /** @var array{field: string, strategy: string} $name */
         $name = $result['anonymizer']['profiles']['legacy']['rules'][1];
         self::assertSame('customers', $customers['field']);
@@ -49,6 +50,7 @@ final class LegacyRuleConverterTest extends TestCase
     public function testRejectsObjectAccessAndMissingRules(): void
     {
         $converter = new LegacyRuleConverter(new LegacyRuleCollectionConverter(new LegacyRuleNodeConverter(new LegacyRuleValueConverter(), new LegacyRulePathConverter(new LegacyRuleValueConverter()))), new LegacyRuleMerger());
+
         try {
             $converter->convert(['rules' => ['user' => ['name' => 'user', 'data_access' => 'property']]]);
             self::fail('Object access should be rejected.');
@@ -177,6 +179,7 @@ final class LegacyRuleConverterTest extends TestCase
         }
 
         $this->expectException(LegacyImportException::class);
+
         /** @var array<int, mixed> $invalidPaths */
         $invalidPaths = [1 => 'email'];
         $collections->convert($invalidPaths);

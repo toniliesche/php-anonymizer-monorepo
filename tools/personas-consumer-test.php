@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 $root = dirname(__DIR__);
 $directory = sys_get_temp_dir() . '/php-anonymizer-personas-consumer-' . bin2hex(random_bytes(6));
-mkdir($directory, 0777, true);
+mkdir($directory, 0o777, true);
 
 try {
     $composer = [
@@ -18,14 +18,15 @@ try {
     ];
     file_put_contents($directory . '/composer.json', json_encode($composer, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
     file_put_contents($directory . '/fixture.php', <<<'PHP'
-<?php
-declare(strict_types=1);
-require __DIR__ . '/vendor/autoload.php';
-use PhpAnonymizer\AnonymizerPersonas\Infrastructure\Replacement\PersonaReplacementStrategyFactory;
-$strategies = PersonaReplacementStrategyFactory::create('es');
-if ($strategies[0]->replace('x') !== 'Juan García') { exit(1); }
-PHP);
+        <?php
+        declare(strict_types=1);
+        require __DIR__ . '/vendor/autoload.php';
+        use PhpAnonymizer\AnonymizerPersonas\Infrastructure\Replacement\PersonaReplacementStrategyFactory;
+        $strategies = PersonaReplacementStrategyFactory::create('es');
+        if ($strategies[0]->replace('x') !== 'Juan García') { exit(1); }
+        PHP);
     passthru(sprintf('cd %s && composer install --no-interaction --no-progress --no-dev && php fixture.php', escapeshellarg($directory)), $exitCode);
+
     exit($exitCode);
 } finally {
     $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);

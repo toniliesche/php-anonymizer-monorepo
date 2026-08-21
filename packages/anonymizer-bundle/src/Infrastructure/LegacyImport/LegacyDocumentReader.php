@@ -4,26 +4,28 @@ declare(strict_types=1);
 
 namespace PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport;
 
-use function mb_strtolower;
-
 use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyImportException;
-
+use Symfony\Component\Yaml\Yaml;
+use Throwable;
+use function mb_strtolower;
 use function Safe\file_get_contents;
 use function Safe\json_decode;
 
-use Symfony\Component\Yaml\Yaml;
-use Throwable;
-
-/** @codeCoverageIgnore Input adapter is covered by command integration tests. */
+/**
+ * @codeCoverageIgnore Input adapter is covered by command integration tests.
+ */
 final class LegacyDocumentReader
 {
-    /** @return array<string, mixed> */
+    /**
+     * @return array<string, mixed>
+     */
     public function read(string $path): array
     {
         if (!is_file($path) || !is_readable($path)) {
             throw LegacyImportException::message(sprintf('Input file "%s" does not exist or is not readable.', $path));
         }
         $extension = mb_strtolower(pathinfo($path, PATHINFO_EXTENSION), 'UTF-8');
+
         try {
             $document = match ($extension) {
                 'yaml', 'yml' => Yaml::parseFile($path),
@@ -43,6 +45,7 @@ final class LegacyDocumentReader
                 throw LegacyImportException::message('The input document must use string mapping keys.');
             }
         }
+
         /** @var array<string, mixed> $document */
         return $document;
     }

@@ -6,9 +6,6 @@ namespace PhpAnonymizer\AnonymizerBundle\Tests\Integration;
 
 use Override;
 use PhpAnonymizer\AnonymizerBundle\AnonymizerBundle;
-
-use function Safe\getmypid;
-
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -18,10 +15,13 @@ use Symfony\Component\HttpKernel\Bundle\BundleInterface;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
+use function Safe\getmypid;
 
 final class TestKernel extends Kernel
 {
-    /** @return iterable<BundleInterface> */
+    /**
+     * @return iterable<BundleInterface>
+     */
     #[Override]
     // @phpstan-ignore return.deprecatedInterface (Symfony 8.1 marks the bundle interface as deprecated.)
     public function registerBundles(): iterable

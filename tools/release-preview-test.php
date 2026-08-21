@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 $root = dirname(__DIR__);
 $directory = sys_get_temp_dir() . '/php-anonymizer-release-' . bin2hex(random_bytes(6));
-mkdir($directory, 0777, true);
+mkdir($directory, 0o777, true);
 
 $run = static function (array $command, string $cwd): string {
     $process = proc_open($command, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $cwd);
@@ -40,7 +40,7 @@ try {
     }
 
     $firstReleaseDirectory = $directory . '/first';
-    mkdir($firstReleaseDirectory, 0777, true);
+    mkdir($firstReleaseDirectory, 0o777, true);
     $run(['git', 'init', '-b', 'main'], $firstReleaseDirectory);
     $run(['git', 'config', 'user.email', 'fixture@example.test'], $firstReleaseDirectory);
     $run(['git', 'config', 'user.name', 'Release Fixture'], $firstReleaseDirectory);

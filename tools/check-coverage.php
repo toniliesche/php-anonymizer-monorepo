@@ -5,12 +5,14 @@ declare(strict_types=1);
 $coverageFile = $argv[1] ?? dirname(__DIR__) . '/var/coverage.xml';
 if (!is_file($coverageFile)) {
     fwrite(STDERR, sprintf("Coverage file not found: %s\n", $coverageFile));
+
     exit(2);
 }
 
 $xml = simplexml_load_file($coverageFile);
 if ($xml === false) {
     fwrite(STDERR, "Coverage report is not valid XML.\n");
+
     exit(2);
 }
 
@@ -28,6 +30,7 @@ if ($statements === 0 || $coveredStatements !== $statements || $coveredCondition
         $coveredConditionals,
         $conditionals,
     ));
+
     exit(1);
 }
 

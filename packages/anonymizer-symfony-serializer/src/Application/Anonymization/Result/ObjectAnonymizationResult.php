@@ -13,7 +13,8 @@ final readonly class ObjectAnonymizationResult implements AnonymizationResultInt
     public function __construct(
         private object $anonymizedObject,
         private AnonymizationResult $report,
-    ) {}
+    ) {
+    }
 
     #[Override]
     public function data(): object
@@ -26,14 +27,18 @@ final readonly class ObjectAnonymizationResult implements AnonymizationResultInt
         return $this->anonymizedObject;
     }
 
-    /** @return list<string> */
+    /**
+     * @return list<string>
+     */
     #[Override]
     public function anonymizedPaths(): array
     {
         return $this->report->anonymizedPaths();
     }
 
-    /** @return list<string> */
+    /**
+     * @return list<string>
+     */
     #[Override]
     public function missingPaths(): array
     {

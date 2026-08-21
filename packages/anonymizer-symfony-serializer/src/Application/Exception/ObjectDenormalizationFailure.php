@@ -6,4 +6,6 @@ namespace PhpAnonymizer\AnonymizerSymfonySerializer\Application\Exception;
 
 use RuntimeException;
 
-final class ObjectDenormalizationFailure extends RuntimeException {}
+final class ObjectDenormalizationFailure extends RuntimeException
+{
+}

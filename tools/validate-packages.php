@@ -9,6 +9,7 @@ sort($packages);
 
 if ($packages === []) {
     fwrite(STDERR, "No package manifests found.\n");
+
     exit(2);
 }
 
@@ -29,12 +30,14 @@ foreach ($packages as $manifest) {
 
         if (!is_resource($process)) {
             fwrite(STDERR, sprintf("Could not start Composer for %s.\n", $relativeManifest));
+
             exit(2);
         }
 
         $exitCode = proc_close($process);
         if ($exitCode !== 0) {
             fwrite(STDERR, sprintf("Composer metadata check failed for %s.\n", $relativeManifest));
+
             exit($exitCode);
         }
     }
