@@ -3,6 +3,38 @@
 Profiles are immutable definitions compiled from PHP arrays. The same
 vocabulary is reserved for the future Symfony YAML adapter.
 
+## Governance metadata and reusable fragments
+
+Profiles may include optional governance metadata. The map may contain any
+subset of `schema_version`, `profile_version`, `owner`, `status`, and `purpose`;
+unknown keys and empty values are rejected. `status` is `active` or
+`deprecated`. Metadata is inspectable through the profile inspector and does
+not affect anonymization or the behavior fingerprint. Do not put secrets in
+metadata.
+
+Reusable fragments are local to one profile and are declared as an ordered
+list. This preserves deterministic expansion and duplicate-name diagnostics:
+
+```php
+'fragments' => [
+    [
+        'name' => 'contact',
+        'rules' => [['field' => 'email'], ['field' => 'phone']],
+    ],
+],
+'rules' => [
+    ['use' => 'contact'],
+],
+```
+
+`use` entries may appear in top-level rules, nested `children`, and list-form
+`each` rules. Fragments may reference other fragments, but references cannot
+cross profiles and `global_rules` cannot use fragments. Expansion occurs at
+startup: nested references are expanded depth-first, the first fragment rule
+wins a fragment-to-fragment field collision, and a direct profile rule replaces
+a fragment rule selecting the same field at that level. Duplicate direct rules,
+missing references, duplicate names, and cycles are invalid.
+
 ```php
 $profile = ProfileDefinition::fromArray('customer', [
     'mode' => 'redact', // redact or preserve

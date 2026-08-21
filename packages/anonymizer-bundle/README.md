@@ -16,12 +16,28 @@ anonymizer:
           strategy: star_mask
       global_rules:
         - field: email_address
+      metadata:
+        owner: privacy-platform
+        status: active
+      fragments:
+        - name: contact
+          rules:
+            - field: phone
+        - name: identity
+          rules:
+            - use: contact
+            - field: customer_id
 ```
 
 The core anonymizer is available through the autowireable
 `PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface`.
 Profile key normalization is comparison-only, and global rules apply within
 the configured profile at every map depth without renaming dataset keys.
+Fragments are profile-local ordered lists expanded during container compilation.
+The first fragment rule wins a fragment collision; direct profile rules replace
+fragment rules selecting the same field. The public
+`ProfileInspectorInterface` exposes only safe profile summaries and behavior
+fingerprints.
 
 Custom extension services use explicit IDs on their tags:
 

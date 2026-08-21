@@ -135,6 +135,47 @@ rules, preserve mode, embedded JSON, and Serializer adaptation.
 - Test fragment expansion, cycle diagnostics, compatibility of existing
   profiles, metadata visibility, and deterministic compiled output.
 
+## Iteration 16 — Portable Profile Providers
+
+- Keep the existing `ProfileProviderInterface::profiles(): iterable` as the
+  stable v1 extension port for library-owned rule sets.
+- Add `AnonymizerFactory::fromProfileProviders(iterable $providers, ...)` as an
+  additive plain-PHP construction helper. Flatten providers in caller order and
+  retain duplicate-name and profile-reference validation.
+- Document provider-package conventions, explicit opt-in registration, and
+  collision-resistant dotted profile names such as `vendor.package.profile`.
+- Retain Symfony’s `anonymizer.profile_provider` tag and define Laravel’s
+  corresponding service-provider registration in Iteration 17.
+- Do not add Composer scanning, provider metadata, inheritance, or profile
+  overrides.
+- Test deterministic composition, generator-backed providers, duplicate names,
+  invalid references, package installation, and unchanged existing factory
+  behavior.
+
+## Iteration 17 — Laravel Framework Integration
+
+- Add an auto-discoverable `php-anonymizer/anonymizer-laravel` package for
+  Laravel 13 and PHP 8.5, using service providers and dependency injection
+  without facades.
+- Publish Laravel configuration for local profiles and execution limits, then
+  compose configured profiles with explicitly tagged providers, strategies,
+  codecs, and transformations during application boot.
+- Bind the core and applicable additive anonymizer interfaces, with optional
+  contextual capabilities enabled only when their dependencies are present.
+- Define the library-author convention for tagging a package-provided
+  `ProfileProviderInterface` implementation as
+  `anonymizer.profile_provider`.
+- Support the existing standalone Symfony Serializer adapter in Laravel when
+  explicitly enabled and supplied with an application-owned
+  `Symfony\Component\Serializer\SerializerInterface`; the Symfony bundle is
+  not required and the Laravel package must not construct the Serializer.
+- Keep Eloquent adapters, generic Laravel object normalization, API Resource or
+  HTTP response mutation, middleware, and automatic model-profile mapping out
+  of scope.
+- Test package discovery, boot/configuration validation, tagged composition,
+  optional Serializer binding, DTO round-trips, source immutability, failure
+  diagnostics, package installation, and unchanged array/document behavior.
+
 ## Compatibility and API Policy
 
 - Keep the 1.0 source contract stable: do not add methods to

@@ -9,6 +9,8 @@ use PhpAnonymizer\Anonymizer\Application\Anonymization\ArrayAnonymizer;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AuditAnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\BatchAnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\ContextualAnonymizerInterface;
+use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspector;
+use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspectorInterface;
 use PhpAnonymizer\Anonymizer\Domain\Exception\InvalidProfileDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\RuleOptionsCompiler;
@@ -75,6 +77,7 @@ final class AnonymizerExtensionTest extends TestCase
         self::assertSame('anonymizer', $extension->getAlias());
         self::assertTrue($container->hasDefinition(ArrayAnonymizer::class));
         self::assertTrue($container->hasDefinition(ConfiguredProfileProvider::class . '.customer'));
+        self::assertSame(ProfileInspector::class, (string) $container->getAlias(ProfileInspectorInterface::class));
     }
 
     public function testRegistersConfiguredLimitsExactly(): void
