@@ -98,6 +98,7 @@
         "consumer:bundle": "@php tools/bundle-consumer-test.php",
         "consumer:faker": "@php tools/faker-consumer-test.php",
         "consumer:personas": "@php tools/personas-consumer-test.php",
+        "consumer:profile-provider": "@php tools/profile-provider-consumer-test.php",
         "dependencies": "@php vendor/bin/composer-dependency-analyser",
         "fix": "@php vendor/bin/php-cs-fixer fix",
         "lint": "@php vendor/bin/php-cs-fixer fix --dry-run --diff",
@@ -110,6 +111,7 @@
             "@consumer:bundle",
             "@consumer:faker",
             "@consumer:personas",
+            "@consumer:profile-provider",
             "@release:preview:test",
             "@artifacts"
         ],

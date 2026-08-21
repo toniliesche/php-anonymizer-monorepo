@@ -2,11 +2,19 @@
 
 ## Unreleased
 
+## 1.7.0
+
+- Documented explicit `anonymizer.profile_provider` consumption order for
+  configured and tagged profile providers.
+
+## 1.6.0
+
+- Bundle configuration now supports governed profile metadata, ordered local
+  fragments, startup composition diagnostics, and a public profile inspector.
+
 ## 1.5.0
 
 - Bundle profiles now support key normalization and global scalar rules.
-- Bundle configuration now supports governed profile metadata, ordered local
-  fragments, startup composition diagnostics, and a public profile inspector.
 
 ## 1.4.0
 
