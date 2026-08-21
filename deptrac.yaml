@@ -3,6 +3,7 @@ deptrac:
     - packages/anonymizer/src
     - packages/anonymizer-bundle/src
     - packages/anonymizer-faker/src
+    - packages/anonymizer-laravel/src
     - packages/anonymizer-personas/src
     - packages/anonymizer-pseudonymization/src
     - packages/anonymizer-symfony-serializer/src
@@ -40,6 +41,10 @@ deptrac:
       collectors:
         - type: classNameRegex
           value: "#^PhpAnonymizer\\\\AnonymizerSymfonySerializer\\\\.*#"
+    - name: LaravelIntegration
+      collectors:
+        - type: classNameRegex
+          value: "#^PhpAnonymizer\\\\AnonymizerLaravel\\\\.*#"
     - name: Symfony
       collectors:
         - type: classNameRegex
@@ -52,6 +57,10 @@ deptrac:
       collectors:
         - type: classNameRegex
           value: "#^Psr\\\\.*#"
+    - name: Laravel
+      collectors:
+        - type: classNameRegex
+          value: "#^Illuminate\\\\.*#"
   ruleset:
     Domain: ~
     Application:
@@ -82,3 +91,13 @@ deptrac:
       - Application
       - Domain
       - Symfony
+    LaravelIntegration:
+      - Application
+      - Domain
+      - FakerIntegration
+      - PersonasIntegration
+      - PseudonymizationIntegration
+      - SerializerIntegration
+      - Symfony
+      - Psr
+      - Laravel

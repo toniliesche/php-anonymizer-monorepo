@@ -3,6 +3,13 @@
 This repository contains the clean v1 rewrite of PHP Anonymizer. Development
 uses PHP 8.5+, Composer, and the root Composer scripts.
 
+The current work-in-progress release is 1.7.0. Install the packages you need
+with Composer; the Laravel integration is available for Laravel 13:
+
+```sh
+composer require php-anonymizer/anonymizer php-anonymizer/anonymizer-laravel
+```
+
 The first core API is intentionally small and array-only:
 
 ```php
@@ -80,5 +87,16 @@ configure the same profiles under `anonymizer.profiles`. The Bundle exposes an
 autowireable `AnonymizerInterface` and discovers custom providers, strategies,
 and codecs through explicit `anonymizer.*` service tags. See the Bundle
 README for installation and Flex/manual registration details.
+
+Laravel 13 applications can install `php-anonymizer/anonymizer-laravel`. Its
+service provider is auto-discovered, composes configured profiles with ordered
+`anonymizer.*` tags, and supports the standalone Symfony Serializer adapter
+when explicitly enabled with an application-owned Serializer service.
+
+Reusable profile libraries can expose immutable `ProfileDefinition` objects
+through `ProfileProviderInterface`. Register providers explicitly with
+`AnonymizerFactory::fromProfileProviders()` (or Laravel's
+`anonymizer.profile_provider` tag); providers are never scanned or discovered
+implicitly.
 
 Run `composer qa` for the complete quality gate.

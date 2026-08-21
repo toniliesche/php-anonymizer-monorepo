@@ -17,6 +17,12 @@ should register providers explicitly, either with
 as `vendor.package.profile`. Providers must not expose raw source data,
 secrets, or replacement values, and profiles are never inherited or overridden.
 
+Laravel packages should register their provider in the package service
+provider's `register()` method and apply the same logical tag with
+`$this->app->tag(Provider::class, 'anonymizer.profile_provider')`. Laravel
+package discovery registers the integration provider; it does not scan for
+profile packages.
+
 ## Replacement strategies
 
 Implement `ReplacementStrategyInterface`:
