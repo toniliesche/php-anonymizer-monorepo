@@ -2,8 +2,27 @@
 
 ## Unreleased
 
+- Bundle profiles now support key normalization and global scalar rules.
+
+## 1.4.0
+
 - Added JSON/YAML document payload support, NDJSON services, and document
   interface aliases.
+
+## 1.3.0
+
+- Registered core typed transformations and the optional contextual
+  `date_shift` transformation through Bundle tags and aliases.
+
+## 1.2.0
+
+- Added optional pseudonymization configuration, key-provider wiring, and
+  contextual capability aliases.
+
+## 1.1.0
+
+- Added execution-limit configuration and optional PSR-3 audit logging with
+  safe aggregate audit context.
 
 ## 1.0.0
 

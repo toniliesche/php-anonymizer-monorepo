@@ -31,6 +31,34 @@ $profile = ProfileDefinition::fromArray('records', [
 ]);
 ```
 
+### Key normalization and global rules
+
+Set `key_normalization: true` to match equivalent ASCII identifier spellings
+such as `email_address`, `email-address`, and `emailAddress`. Matching never
+renames keys: the original spelling is retained in output and report paths.
+Exact spellings win normalized collisions; otherwise rules use declaration
+order.
+
+`global_rules` applies scalar rules at every map depth, including maps inside
+lists. Global rules are local to the profile and do not cross embedded payload
+boundaries. A profile may contain only global rules, but must contain at least
+one selector list overall:
+
+```php
+$profile = ProfileDefinition::fromArray('customer', [
+    'mode' => 'redact',
+    'key_normalization' => true,
+    'global_rules' => [
+        ['field' => 'email_address', 'strategy' => 'star_mask'],
+        ['field' => 'tags', 'each' => true],
+    ],
+]);
+```
+
+Global rules are scalar leaves or `each: true` string-list selectors. They may
+use conditions, strategies, transformations, and contextual key IDs, but may
+not contain `children`, nested `each`, `embedded`, or `on_scalar`.
+
 `redact` applies rules as a selection of string values. `preserve` applies
 rules as an allow-list: selected strings stay unchanged and every other
 string in the input tree becomes `[REDACTED]`. Numbers, booleans, nulls, and
