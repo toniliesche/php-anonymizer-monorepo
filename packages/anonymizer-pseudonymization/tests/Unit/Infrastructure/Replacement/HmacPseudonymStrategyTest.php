@@ -5,17 +5,15 @@ declare(strict_types=1);
 namespace PhpAnonymizer\AnonymizerPseudonymization\Tests\Unit\Infrastructure\Replacement;
 
 use LogicException;
-use Override;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizationContext;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Path\JsonPointer;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\ReplacementContext;
-use PhpAnonymizer\AnonymizerPseudonymization\Application\PseudonymKeyProviderInterface;
 use PhpAnonymizer\AnonymizerPseudonymization\Application\PseudonymKeyUnavailable;
 use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Replacement\HmacPseudonymStrategy;
+use PhpAnonymizer\AnonymizerPseudonymization\Tests\Support\StaticPseudonymKeyProvider;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
-use RuntimeException;
 
 #[CoversClass(HmacPseudonymStrategy::class)]
 #[CoversClass(PseudonymKeyUnavailable::class)]
@@ -26,13 +24,7 @@ final class HmacPseudonymStrategyTest extends TestCase
 {
     public function testOutputIsDeterministicAndScopeSensitive(): void
     {
-        $strategy = new HmacPseudonymStrategy(new class () implements PseudonymKeyProviderInterface {
-            #[Override]
-            public function keyFor(string $keyId): string
-            {
-                return 'secret-' . $keyId;
-            }
-        });
+        $strategy = new HmacPseudonymStrategy(new StaticPseudonymKeyProvider());
         $context = new ReplacementContext('customer', JsonPointer::fromString('/email'), 'primary', new AnonymizationContext(['scope' => 'billing', 'tenant' => 'acme']));
         self::assertSame('pseudonymize', $strategy->id());
         $same = $strategy->replaceWithContext('Jörg@example.test', $context);
@@ -44,13 +36,7 @@ final class HmacPseudonymStrategyTest extends TestCase
 
     public function testProviderFailuresDoNotExposeKeyMaterial(): void
     {
-        $strategy = new HmacPseudonymStrategy(new class () implements PseudonymKeyProviderInterface {
-            #[Override]
-            public function keyFor(string $keyId): string
-            {
-                throw new RuntimeException('secret-key-material');
-            }
-        });
+        $strategy = new HmacPseudonymStrategy(new StaticPseudonymKeyProvider(failure: 'secret-key-material'));
 
         try {
             $strategy->replaceWithContext('value', new ReplacementContext('customer', JsonPointer::root(), 'primary', new AnonymizationContext()));
@@ -63,26 +49,14 @@ final class HmacPseudonymStrategyTest extends TestCase
 
     public function testEmptyKeyAndNonContextualCallAreRejected(): void
     {
-        $strategy = new HmacPseudonymStrategy(new class () implements PseudonymKeyProviderInterface {
-            #[Override]
-            public function keyFor(string $keyId): string
-            {
-                return '';
-            }
-        });
+        $strategy = new HmacPseudonymStrategy(new StaticPseudonymKeyProvider(fixed: ''));
         $this->expectException(PseudonymKeyUnavailable::class);
         $strategy->replaceWithContext('value', new ReplacementContext('customer', JsonPointer::root(), 'primary', new AnonymizationContext()));
     }
 
     public function testPlainReplacementCallIsRejected(): void
     {
-        $strategy = new HmacPseudonymStrategy(new class () implements PseudonymKeyProviderInterface {
-            #[Override]
-            public function keyFor(string $keyId): string
-            {
-                return 'key';
-            }
-        });
+        $strategy = new HmacPseudonymStrategy(new StaticPseudonymKeyProvider(fixed: 'key'));
         $this->expectException(LogicException::class);
         $strategy->replace('value');
     }

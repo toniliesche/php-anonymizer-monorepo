@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PhpAnonymizer\AnonymizerBundle\Tests\Integration;
+namespace PhpAnonymizer\AnonymizerBundle\Tests\Support\Extension;
 
 use Override;
 use PhpAnonymizer\Anonymizer\Application\Extension\Payload\PayloadCodecInterface;

@@ -1,5 +1,7 @@
 # Iteration 22 — Structural Code Cleanup and PSR-4 Compliance
 
+Status: In progress
+
 ## Goal
 
 Improve structural consistency across production and testing code without
@@ -24,6 +26,11 @@ The current user-guide, migration, and release-closure work moves to Iteration
   existing domain guards, or Webmozart Assert where the existing contract is
   already preserved.
 - A structural convention check that prevents regressions.
+
+The implementation uses package-local `Tests\\Support` fixtures and keeps the
+documented 2.0 façade and extension namespaces canonical. Public aliases are
+not added for structural moves; the runtime contracts remain unchanged except
+for the internal NDJSON result provider replacing its closure constructor seam.
 
 ## Structural and namespace rules
 

@@ -10,6 +10,7 @@ use PhpAnonymizer\Anonymizer\Application\Anonymization\ObjectAnonymizationReques
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Result\AnonymizationResult;
 use PhpAnonymizer\AnonymizerSymfonySerializer\Application\Anonymization\Result\ObjectAnonymizationResult;
 use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyObjectAnonymizerAdapter;
+use PhpAnonymizer\AnonymizerSymfonySerializer\Tests\Support\Serializer\AdapterPerson;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
@@ -41,12 +42,5 @@ final class SymfonyObjectAnonymizerAdapterTest extends TestCase
         self::assertSame($result->data(), $result->object());
         self::assertSame(['/name'], $result->anonymizedPaths());
         self::assertSame([], $result->missingPaths());
-    }
-}
-
-final class AdapterPerson
-{
-    public function __construct(public string $name)
-    {
     }
 }

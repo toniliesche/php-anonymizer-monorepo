@@ -124,8 +124,8 @@ final class AnonymizerBundleTest extends KernelTestCase
         $kernel = self::$kernel;
         self::assertInstanceOf(KernelInterface::class, $kernel);
 
-        /** @var AnonymizerInterface $anonymizer */
         $anonymizer = $kernel->getContainer()->get(AnonymizerInterface::class);
+        self::assertInstanceOf(AnonymizerInterface::class, $anonymizer);
 
         self::assertSame(['email' => '*****'], $anonymizer->anonymize('customer', ['email' => 'hello']));
         self::assertSame(['email' => 'custom:hello'], $anonymizer->anonymize('custom', ['email' => 'hello']));

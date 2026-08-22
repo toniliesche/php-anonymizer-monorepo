@@ -4,6 +4,9 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Iteration 22: enforced PSR-4 declaration paths, extracted traversal and
+  deferred NDJSON collaborators, replaced anonymous test implementations with
+  reusable package-local fixtures, and added structural regression checks.
 - Iteration 21: selectively removed coverage suppressions from JSON payload
   validation and transformation registration/option compilation, resolved the
   corresponding PHPStan ignore, and retained justified equivalent mutation and

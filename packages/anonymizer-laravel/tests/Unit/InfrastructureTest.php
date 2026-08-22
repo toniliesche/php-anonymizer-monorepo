@@ -5,18 +5,17 @@ declare(strict_types=1);
 namespace PhpAnonymizer\AnonymizerLaravel\Tests\Unit;
 
 use InvalidArgumentException;
-use Override;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Result\AuditAnonymizationResult;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Result\AuditEntry;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileCollection;
-use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileProviderInterface;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\RuleOptionsCompiler;
 use PhpAnonymizer\Anonymizer\Domain\Rule\RuleDefinition;
 use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Audit\AuditLoggerAdapter;
 use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Payload\YamlPayloadCodec;
 use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Profile\ProfileComposer;
+use PhpAnonymizer\AnonymizerLaravel\Tests\Support\Profile\TestProfileProvider;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
@@ -37,13 +36,7 @@ final class InfrastructureTest extends TestCase
 {
     public function testProfileComposerCombinesConfiguredAndTaggedDefinitions(): void
     {
-        $provider = new class () implements ProfileProviderInterface {
-            #[Override]
-            public function profiles(): iterable
-            {
-                yield ProfileDefinition::fromArray('tagged', ['mode' => 'redact', 'rules' => [['field' => 'email']]]);
-            }
-        };
+        $provider = new TestProfileProvider();
 
         $collection = new ProfileComposer()->compose([
             'configured' => ['mode' => 'redact', 'rules' => [['field' => 'email']]],

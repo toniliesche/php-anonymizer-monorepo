@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace PhpAnonymizer\AnonymizerLaravel\Tests\Unit;
 
 use Illuminate\Config\Repository;
-use Illuminate\Support\ServiceProvider;
 use Orchestra\Testbench\TestCase;
 use Override;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizationLimits;
@@ -30,7 +29,6 @@ use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileCollection;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspection;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspector;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspectorInterface;
-use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileProviderInterface;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileRegistry;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\Validation\EmbeddedProfileReferenceGraph;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\Validation\ProfileReferenceValidator;
@@ -45,6 +43,7 @@ use PhpAnonymizer\Anonymizer\Domain\Rule\RuleDefinition;
 use PhpAnonymizer\AnonymizerLaravel\AnonymizerServiceProvider;
 use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Payload\YamlPayloadCodec;
 use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Profile\ProfileComposer;
+use PhpAnonymizer\AnonymizerLaravel\Tests\Support\ServiceProvider\TestProfileProviderServiceProvider;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 
@@ -122,27 +121,5 @@ final class AnonymizerServiceProviderTest extends TestCase
         self::assertNotNull($this->app);
 
         return $this->app->make($abstract);
-    }
-}
-
-final class TestProfileProviderServiceProvider extends ServiceProvider
-{
-    #[Override]
-    public function register(): void
-    {
-        $this->app->singleton(TestProfileProvider::class);
-        $this->app->tag(TestProfileProvider::class, 'anonymizer.profile_provider');
-    }
-}
-
-final readonly class TestProfileProvider implements ProfileProviderInterface
-{
-    #[Override]
-    public function profiles(): iterable
-    {
-        yield ProfileDefinition::fromArray('tagged', [
-            'mode' => 'redact',
-            'rules' => [['field' => 'email']],
-        ]);
     }
 }

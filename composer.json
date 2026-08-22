@@ -94,6 +94,7 @@
             "@static",
             "@dependencies",
             "@public-api",
+            "@structure",
             "@collisions",
             "@architecture",
             "@refactor:check",
@@ -134,6 +135,7 @@
         "release:publish": "@php tools/release-publish.php",
         "release:verify": "@php tools/release-verify.php",
         "static": "@php vendor/bin/phpstan analyse --configuration=phpstan.neon",
+        "structure": "@php tools/check-structure.php",
         "test": "@php vendor/bin/phpunit --configuration=phpunit.xml",
         "test:coverage": [
             "@php tools/run-coverage.php",
