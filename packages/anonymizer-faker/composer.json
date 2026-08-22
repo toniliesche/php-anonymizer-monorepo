@@ -6,11 +6,16 @@
     "require": {
         "php": "^8.5",
         "fakerphp/faker": "^1.24",
-        "php-anonymizer/anonymizer": "^1.0"
+        "php-anonymizer/anonymizer": "^2.0"
     },
     "autoload": {
         "psr-4": {
             "PhpAnonymizer\\AnonymizerFaker\\": "src/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-develop": "2.0.x-dev"
         }
     }
 }

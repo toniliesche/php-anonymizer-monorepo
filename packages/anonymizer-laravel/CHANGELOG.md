@@ -2,9 +2,14 @@
 
 ## Unreleased
 
+## 2.0.0
+
 - Prepared service registration for the 2.0 unified façade and builder-based
   extension modules.
 - Added `anonymizer.extension` module discovery in Laravel tag order.
+- Added focused package documentation for Laravel configuration and migration.
+- Added a copyable Laravel configuration example covering profiles, limits, and
+  optional persona integration.
 
 ## 1.7.0
 

@@ -3,7 +3,7 @@
 This repository contains the clean v1 rewrite of PHP Anonymizer. Development
 uses PHP 8.5+, Composer, and the root Composer scripts.
 
-The current work-in-progress release is 1.7.0. Install the packages you need
+The current work-in-progress release is 2.0.0. Install the packages you need
 with Composer; the Laravel integration is available for Laravel 13:
 
 ```sh
@@ -44,6 +44,10 @@ $safe = $anonymizer->anonymize('customer-safe', [
 
 The profile schema, conditions, and scalar fallbacks are documented in
 [`docs/profile-schema.md`](docs/profile-schema.md).
+
+See the complete [user guide](docs/user-guide.md) and
+[2.0 migration guide](docs/migration-v2.md) for application setup and upgrade
+instructions.
 
 The core also supports named string strategies and encoded payloads:
 

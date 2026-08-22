@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+## 2.0.0
+
+- Added focused package documentation for deterministic persona strategy use.
+- Added an executable persona strategy example.
+
 ## 1.3.0
 
 - Normalized surrounding whitespace in locale input before resolving regional

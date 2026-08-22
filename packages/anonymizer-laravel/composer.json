@@ -6,7 +6,7 @@
     "require": {
         "php": "^8.5",
         "illuminate/support": "^13.0",
-        "php-anonymizer/anonymizer": "^1.2",
+        "php-anonymizer/anonymizer": "^2.0",
         "psr/log": "^3.0",
         "symfony/yaml": "^7.4 || ^8.0"
     },
@@ -31,6 +31,9 @@
         }
     },
     "extra": {
+        "branch-alias": {
+            "dev-develop": "2.0.x-dev"
+        },
         "laravel": {
             "providers": [
                 "PhpAnonymizer\\AnonymizerLaravel\\AnonymizerServiceProvider"

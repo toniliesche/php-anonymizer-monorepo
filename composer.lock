@@ -5675,7 +5675,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/anonymizer",
-                "reference": "0a82e274ef0fd9b1c5fdb1d9b8497c5e62862504"
+                "reference": "07b7194fb17267f3486fda0208663e7f9ad128a7"
             },
             "require": {
                 "ext-mbstring": "*",
@@ -5685,7 +5685,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-develop": "1.2.x-dev"
+                    "dev-develop": "2.0.x-dev"
                 }
             },
             "autoload": {
@@ -5713,12 +5713,12 @@
             "dist": {
                 "type": "path",
                 "url": "packages/anonymizer-bundle",
-                "reference": "4cd03047208e56347700c7249b7b741181411912"
+                "reference": "b05d08417fc5eb2b6c76f7e497f243f6f2506d90"
             },
             "require": {
                 "php": "^8.5",
-                "php-anonymizer/anonymizer": "^1.2",
-                "php-anonymizer/anonymizer-symfony-serializer": "^1.0",
+                "php-anonymizer/anonymizer": "^2.0",
+                "php-anonymizer/anonymizer-symfony-serializer": "^2.0",
                 "psr/log": "^3.0",
                 "symfony/config": "^8.1.4",
                 "symfony/console": "^8.1.4",
@@ -5735,6 +5735,9 @@
             },
             "type": "symfony-bundle",
             "extra": {
+                "branch-alias": {
+                    "dev-develop": "2.0.x-dev"
+                },
                 "symfony": {
                     "extension-class": "PhpAnonymizer\\AnonymizerBundle\\DependencyInjection\\AnonymizerExtension"
                 }
@@ -5764,14 +5767,19 @@
             "dist": {
                 "type": "path",
                 "url": "packages/anonymizer-faker",
-                "reference": "1e901f4d13890d2c10cff065f2d7a05358de0388"
+                "reference": "92fc8b5d4ba78ca19f9f2f84c3d400ca3c75ad8f"
             },
             "require": {
                 "fakerphp/faker": "^1.24",
                 "php": "^8.5",
-                "php-anonymizer/anonymizer": "^1.0"
+                "php-anonymizer/anonymizer": "^2.0"
             },
             "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-develop": "2.0.x-dev"
+                }
+            },
             "autoload": {
                 "psr-4": {
                     "PhpAnonymizer\\AnonymizerFaker\\": "src/"
@@ -5792,12 +5800,12 @@
             "dist": {
                 "type": "path",
                 "url": "packages/anonymizer-laravel",
-                "reference": "10b6071f80cf6b4061291f54a3314ed898ab06bf"
+                "reference": "66022c2d7febfe2fcdb8df0a9172bdc45342256e"
             },
             "require": {
                 "illuminate/support": "^13.0",
                 "php": "^8.5",
-                "php-anonymizer/anonymizer": "^1.2",
+                "php-anonymizer/anonymizer": "^2.0",
                 "psr/log": "^3.0",
                 "symfony/yaml": "^7.4 || ^8.0"
             },
@@ -5813,6 +5821,9 @@
             },
             "type": "library",
             "extra": {
+                "branch-alias": {
+                    "dev-develop": "2.0.x-dev"
+                },
                 "laravel": {
                     "providers": [
                         "PhpAnonymizer\\AnonymizerLaravel\\AnonymizerServiceProvider"
@@ -5844,13 +5855,18 @@
             "dist": {
                 "type": "path",
                 "url": "packages/anonymizer-personas",
-                "reference": "ed07108850db3064897791cb9db80b0e82d98f97"
+                "reference": "f65e93d636ca502b022f522c87e9538f4937b5fb"
             },
             "require": {
                 "php": "^8.5",
-                "php-anonymizer/anonymizer": "^1.0"
+                "php-anonymizer/anonymizer": "^2.0"
             },
             "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-develop": "2.0.x-dev"
+                }
+            },
             "autoload": {
                 "psr-4": {
                     "PhpAnonymizer\\AnonymizerPersonas\\": "src/"
@@ -5871,16 +5887,16 @@
             "dist": {
                 "type": "path",
                 "url": "packages/anonymizer-pseudonymization",
-                "reference": "35455bfa636944f7718e6a6858c62e036b2b99f4"
+                "reference": "872151cfe3fe9be52379a7c3bc4965a1140089da"
             },
             "require": {
                 "php": "^8.5",
-                "php-anonymizer/anonymizer": "^1.2"
+                "php-anonymizer/anonymizer": "^2.0"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-develop": "1.2.x-dev"
+                    "dev-develop": "2.0.x-dev"
                 }
             },
             "autoload": {
@@ -5908,17 +5924,17 @@
             "dist": {
                 "type": "path",
                 "url": "packages/anonymizer-symfony-serializer",
-                "reference": "bc9fafbe5323cc473446b2c4e386f559749f326c"
+                "reference": "93aad749011bc8e5c185172377464cebcf3235ac"
             },
             "require": {
                 "php": "^8.5",
-                "php-anonymizer/anonymizer": "^1.2",
+                "php-anonymizer/anonymizer": "^2.0",
                 "symfony/serializer": "^8.1.4"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-develop": "1.0.x-dev"
+                    "dev-develop": "2.0.x-dev"
                 }
             },
             "autoload": {

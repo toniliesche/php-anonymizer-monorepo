@@ -2,8 +2,15 @@
 
 declare(strict_types=1);
 
+use PhpAnonymizer\Release\ReleaseReadiness;
+
 $root = dirname(__DIR__);
 $version = $argv[1] ?? 'dev';
+
+require_once $root . '/tools/Release/ReleaseReadiness.php';
+if (preg_match('/^\d+\.\d+\.\d+$/', $version) === 1) {
+    new ReleaseReadiness()->assert($version, $root);
+}
 $target = $root . '/var/artifacts/' . preg_replace('/[^A-Za-z0-9_.-]+/', '-', $version);
 $expected = ['anonymizer', 'anonymizer-bundle', 'anonymizer-faker', 'anonymizer-laravel', 'anonymizer-personas', 'anonymizer-pseudonymization', 'anonymizer-symfony-serializer'];
 $packages = [];
@@ -48,6 +55,31 @@ foreach ($packages as $package) {
     $tar->compress(Phar::GZ);
     unset($tar);
     @unlink($target . '/' . $name . '-' . $version . '.tar');
+
+    $readiness = new ReleaseReadiness();
+    $required = array_merge(['README.md', 'CHANGELOG.md'], $readiness->documentationFor($name));
+    $zip = new ZipArchive();
+    if ($zip->open($zipPath) !== true) {
+        throw new RuntimeException('Could not inspect ' . $zipPath);
+    }
+    foreach ($required as $relative) {
+        if ($zip->locateName($prefix . $relative) === false) {
+            throw new RuntimeException(sprintf('%s archive is missing %s.', $name, $relative));
+        }
+    }
+    foreach (['tests/', 'phpunit.xml', 'phpstan.neon'] as $forbidden) {
+        if ($zip->locateName($prefix . $forbidden) !== false) {
+            throw new RuntimeException(sprintf('%s archive contains excluded %s.', $name, $forbidden));
+        }
+    }
+    $zip->close();
+
+    $tar = new PharData($tarPath);
+    foreach ($required as $relative) {
+        if (!$tar->offsetExists($prefix . $relative)) {
+            throw new RuntimeException(sprintf('%s archive is missing %s.', $name, $relative));
+        }
+    }
 
     $metadata = json_decode((string) file_get_contents($package . '/composer.json'), true, 512, JSON_THROW_ON_ERROR);
     if (!is_array($metadata) || !isset($metadata['name']) || !is_string($metadata['name'])) {

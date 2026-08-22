@@ -2,11 +2,15 @@
 
 ## Unreleased
 
+## 2.0.0
+
 - Added `SymfonySerializerExtension` for registering object anonymization with
   the core builder.
 - Removed the legacy `SymfonyAnonymizer` and `SymfonyObjectAnonymizer`
   dispatchers; object normalization and denormalization now live in the
   builder object adapter.
+- Added focused package documentation for object anonymization and migration.
+- Added an executable object anonymization example showing source immutability.
 
 ## 1.3.0
 

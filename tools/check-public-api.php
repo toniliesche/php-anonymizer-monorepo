@@ -22,6 +22,7 @@ $files = array_merge(
     glob($root . '/README.md') ?: [],
     glob($root . '/docs/*.md') ?: [],
     glob($root . '/packages/*/README.md') ?: [],
+    glob($root . '/packages/*/docs/*.md') ?: [],
     glob($root . '/tools/*-consumer-test.php') ?: [],
 );
 $violations = [];

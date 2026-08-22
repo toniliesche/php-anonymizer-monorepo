@@ -1,6 +1,6 @@
 # PHP Anonymizer Laravel Integration
 
-Install the 1.7.0 work-in-progress package in Laravel 13 applications:
+Install the 2.0.0 work-in-progress package in Laravel 13 applications:
 
 ```sh
 composer require php-anonymizer/anonymizer-laravel
@@ -34,3 +34,5 @@ constructs a Serializer and does not require the Symfony Bundle.
 
 The package has no facade and does not provide Eloquent, middleware, response,
 or automatic model-to-profile integration.
+
+See the package-local [usage guide](docs/usage.md).

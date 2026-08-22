@@ -4,6 +4,8 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+## 2.0.0
+
 - Iteration 22: enforced PSR-4 declaration paths, extracted traversal and
   deferred NDJSON collaborators, replaced anonymous test implementations with
   reusable package-local fixtures, and added structural regression checks.
@@ -19,6 +21,13 @@ All notable changes to this project will be documented here.
   internalization policy, and refined cleanup plan.
 - Iteration 19: added the immutable builder, unified façade operations, and
   object/extension module contracts for the 2.0 construction path.
+- Iteration 23: added the application user guide, 2.0 migration guide,
+  package-local documentation, executable examples, and release-train checks.
+- Expanded the profile schema and user guide with runnable ruleset, payload,
+  document, batch, audit, and NDJSON configuration examples.
+- Expanded the profile reference into a complete syntax guide for nested
+  traversal, list rules, fragments, conditions, transformations, and
+  validation precedence.
 
 ## 1.7.0
 

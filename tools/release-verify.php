@@ -3,10 +3,13 @@
 declare(strict_types=1);
 
 use PhpAnonymizer\Release\ReleasePlanner;
+use PhpAnonymizer\Release\ReleaseReadiness;
 
 $root = dirname(__DIR__);
 
 require_once __DIR__ . '/Release/ReleasePlanner.php';
+
+require_once __DIR__ . '/Release/ReleaseReadiness.php';
 
 if (getenv('CI') !== 'true' && getenv('GITHUB_ACTIONS') !== 'true') {
     fwrite(STDERR, "release:verify is intended for a release workflow or CI environment.\n");
@@ -33,6 +36,7 @@ try {
     if ($existing !== '') {
         throw new RuntimeException('Release tag already exists: ' . $plan['version']);
     }
+    new ReleaseReadiness()->assert($plan['version'], $root);
     printf("Release verification passed for %s.\n", $plan['version']);
 } catch (Throwable $exception) {
     fwrite(STDERR, $exception->getMessage() . "\n");

@@ -84,3 +84,5 @@ anonymizer:
     enabled: true
     logger_service: monolog.logger.anonymizer
 ```
+
+See the package-local [usage guide](docs/usage.md).
