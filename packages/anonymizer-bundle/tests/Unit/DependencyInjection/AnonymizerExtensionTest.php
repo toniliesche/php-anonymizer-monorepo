@@ -6,9 +6,6 @@ namespace PhpAnonymizer\AnonymizerBundle\Tests\Unit\DependencyInjection;
 
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizationLimits;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\ArrayAnonymizer;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\AuditAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\BatchAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\ContextualAnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspector;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspectorInterface;
 use PhpAnonymizer\Anonymizer\Domain\Exception\InvalidProfileDefinition;
@@ -165,8 +162,6 @@ final class AnonymizerExtensionTest extends TestCase
         self::assertTrue($container->hasDefinition(AuditLoggerAdapter::class));
         $audit = $container->getDefinition(AuditLoggerAdapter::class)->getArguments();
         self::assertSame([ArrayAnonymizer::class, 'logger'], $this->referenceIds($audit));
-        self::assertTrue($container->hasAlias(AuditAnonymizerInterface::class));
-        self::assertTrue($container->getAlias(AuditAnonymizerInterface::class)->isPublic());
     }
 
     public function testRegistersConfiguredPseudonymization(): void
@@ -181,7 +176,6 @@ final class AnonymizerExtensionTest extends TestCase
         self::assertSame([['id' => 'pseudonymize', 'builtin' => true]], $tags);
         self::assertSame(['keys'], $this->referenceIds($container->getDefinition(DateShiftTransformation::class)->getArguments()));
         self::assertSame([['id' => 'date_shift', 'builtin' => true]], $container->getDefinition(DateShiftTransformation::class)->getTag('anonymizer.value_transformation'));
-        self::assertTrue($container->getAlias(ContextualAnonymizerInterface::class)->isPublic());
     }
 
     public function testPseudonymizationRequiresKeyProvider(): void
@@ -250,7 +244,6 @@ final class AnonymizerExtensionTest extends TestCase
             LegacyRuleCollectionConverter::class,
             LegacyRuleMerger::class,
         ], $this->referenceIds($converter));
-        self::assertTrue($container->getAlias(BatchAnonymizerInterface::class)->isPublic());
     }
 
     public function testBundleRegistersBothCompilerPasses(): void

@@ -18,6 +18,12 @@ payload codecs, value transformations, execution limits, extension modules,
 and an optional object adapter. Direct construction of `ArrayAnonymizer` and
 the current `AnonymizerFactory` helpers is not part of the 2.0 contract.
 
+The builder is immutable and reusable. Registration methods return a new
+builder, while `build()` returns an independent façade snapshot. The façade
+keeps named array, payload, document, batch, NDJSON, report, and audit methods;
+contextual execution is an optional `AnonymizationContext` argument. Object
+calls that need adapter-specific options use `ObjectAnonymizationRequest`.
+
 ## Extension ports
 
 The following ports are open for third-party implementations:
@@ -31,6 +37,8 @@ The following ports are open for third-party implementations:
 - `ContextualValueTransformationInterface`
 - `ObjectAnonymizerInterface` (new in Iteration 19)
 - `AnonymizerExtensionInterface` (new in Iteration 19)
+- `PhpAnonymizer\AnonymizerSymfonySerializer\SymfonySerializerExtension` from
+  the optional Serializer package
 - `PseudonymKeyProviderInterface` from the optional pseudonymization package
 
 Extension IDs are stable, case-sensitive identifiers. Implementations must

@@ -6,8 +6,10 @@ All notable changes to this project will be documented here.
 
 - Iteration 18: documented the 2.0 public API inventory, semver boundary,
   internalization policy, and refined cleanup plan.
+- Iteration 19: added the immutable builder, unified façade operations, and
+  object/extension module contracts for the 2.0 construction path.
 
-## 1.7.0 (WIP)
+## 1.7.0
 
 - Iteration 18: added `php-anonymizer/anonymizer-laravel` with Laravel 13 service-provider
   discovery, ordered tagged extension composition, published configuration,

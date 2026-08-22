@@ -12,15 +12,9 @@ use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
 use Override;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizationLimits;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilder;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\ArrayAnonymizer;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\AuditAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\BatchAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\ContextualAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\ContextualDocumentAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\ContextualNdjsonAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\DocumentAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\NdjsonAnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Extension\Payload\PayloadCodecInterface;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileCollection;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspector;
@@ -37,11 +31,13 @@ use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Replacement\HmacPseu
 use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Transformation\DateShiftTransformation;
 use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyAnonymizer;
 use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyObjectAnonymizer;
+use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyObjectAnonymizerAdapter;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 
+// @phpstan-ignore complexity.classLike (framework registrar extraction is scheduled for Iteration 20)
 final class AnonymizerServiceProvider extends ServiceProvider
 {
     private const string PROFILE_TAG = 'anonymizer.profile_provider';
@@ -123,10 +119,35 @@ final class AnonymizerServiceProvider extends ServiceProvider
 
             return new ArrayAnonymizer($app->make(ProfileCollection::class), $strategies, $codecs, $app->make(AnonymizationLimits::class), $transformations);
         });
-        $this->app->alias(ArrayAnonymizer::class, BatchAnonymizerInterface::class);
-        $this->app->alias(ArrayAnonymizer::class, DocumentAnonymizerInterface::class);
-        $this->app->alias(ArrayAnonymizer::class, NdjsonAnonymizerInterface::class);
-        $this->app->singleton(AnonymizerInterface::class, fn (Container $app): AnonymizerInterface => $this->serializerEnabled() ? $app->make(SymfonyAnonymizer::class) : $app->make(ArrayAnonymizer::class));
+        $this->registerBuilder();
+        $this->app->singleton(AnonymizerInterface::class, fn (Container $app): AnonymizerInterface => $app->make(AnonymizerBuilder::class)->build());
+    }
+
+    private function registerBuilder(): void
+    {
+        $this->app->singleton(AnonymizerBuilder::class, function (Container $app): AnonymizerBuilder {
+            /** @var iterable<ReplacementStrategyInterface> $strategies */
+            $strategies = $app->tagged(self::STRATEGY_TAG);
+
+            /** @var iterable<PayloadCodecInterface> $codecs */
+            $codecs = $app->tagged(self::CODEC_TAG);
+
+            /** @var iterable<ValueTransformationInterface> $transformations */
+            $transformations = $app->tagged(self::TRANSFORMATION_TAG);
+
+            $builder = AnonymizerBuilder::create()
+                ->withProfileProvider($app->make(ProfileCollection::class))
+                ->withReplacementStrategies($strategies)
+                ->withPayloadCodecs($codecs)
+                ->withValueTransformations($transformations)
+                ->withLimits($app->make(AnonymizationLimits::class));
+
+            if ($this->serializerEnabled() && class_exists(SymfonyObjectAnonymizerAdapter::class)) {
+                return $builder->withObjectAnonymizer($app->make(SymfonyObjectAnonymizerAdapter::class));
+            }
+
+            return $builder;
+        });
     }
 
     private function registerOptionalExtensions(): void
@@ -203,9 +224,6 @@ final class AnonymizerServiceProvider extends ServiceProvider
             return new $transformation($keys);
         });
         $this->app->tag($transformation, self::TRANSFORMATION_TAG);
-        $this->app->alias(ArrayAnonymizer::class, ContextualAnonymizerInterface::class);
-        $this->app->alias(ArrayAnonymizer::class, ContextualDocumentAnonymizerInterface::class);
-        $this->app->alias(ArrayAnonymizer::class, ContextualNdjsonAnonymizerInterface::class);
     }
 
     private function registerAudit(): void
@@ -223,7 +241,6 @@ final class AnonymizerServiceProvider extends ServiceProvider
 
             return new AuditLoggerAdapter($app->make(ArrayAnonymizer::class), $loggerInstance);
         });
-        $this->app->alias(AuditLoggerAdapter::class, AuditAnonymizerInterface::class);
     }
 
     private function registerSerializer(): void
@@ -238,6 +255,12 @@ final class AnonymizerServiceProvider extends ServiceProvider
         $service = is_string($service) && $service !== '' ? $service : SerializerInterface::class;
         $objectAnonymizer = SymfonyObjectAnonymizer::class;
         $anonymizer = SymfonyAnonymizer::class;
+        $this->app->singleton(SymfonyObjectAnonymizerAdapter::class, function (Container $app) use ($service): SymfonyObjectAnonymizerAdapter {
+            /** @var DenormalizerInterface&NormalizerInterface $serializer */
+            $serializer = $this->serializer($app, $service);
+
+            return new SymfonyObjectAnonymizerAdapter($serializer);
+        });
         $this->app->singleton($objectAnonymizer, function (Container $app) use ($objectAnonymizer, $service): object {
             /** @var DenormalizerInterface&NormalizerInterface $serializer */
             $serializer = $this->serializer($app, $service);

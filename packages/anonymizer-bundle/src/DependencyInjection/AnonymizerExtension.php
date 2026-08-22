@@ -6,15 +6,10 @@ namespace PhpAnonymizer\AnonymizerBundle\DependencyInjection;
 
 use Override;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizationLimits;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilder;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilderFactory;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\ArrayAnonymizer;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\AuditAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\BatchAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\ContextualAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\ContextualDocumentAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\ContextualNdjsonAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\DocumentAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\NdjsonAnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspector;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspectorInterface;
 use PhpAnonymizer\Anonymizer\Domain\Exception\InvalidProfileDefinition;
@@ -39,6 +34,7 @@ use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Replacement\HmacPseu
 use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Transformation\DateShiftTransformation;
 use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyAnonymizer;
 use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyObjectAnonymizer;
+use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyObjectAnonymizerAdapter;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -142,14 +138,27 @@ final class AnonymizerExtension extends Extension
             new Reference(ArrayAnonymizer::class),
             new Reference('serializer'),
         ]));
+        $container->setDefinition(SymfonyObjectAnonymizerAdapter::class, new Definition(SymfonyObjectAnonymizerAdapter::class, [
+            new Reference('serializer'),
+        ]));
         $container->setDefinition(SymfonyAnonymizer::class, new Definition(SymfonyAnonymizer::class, [
             new Reference(ArrayAnonymizer::class),
             new Reference(SymfonyObjectAnonymizer::class),
         ]));
-        $container->setAlias(AnonymizerInterface::class, SymfonyAnonymizer::class)->setPublic(true);
-        $container->setAlias(BatchAnonymizerInterface::class, ArrayAnonymizer::class)->setPublic(true);
-        $container->setAlias(DocumentAnonymizerInterface::class, ArrayAnonymizer::class)->setPublic(true);
-        $container->setAlias(NdjsonAnonymizerInterface::class, ArrayAnonymizer::class)->setPublic(true);
+        $builder = new Definition(AnonymizerBuilder::class);
+        $builder->setFactory([AnonymizerBuilderFactory::class, 'create'])
+            ->setArguments([
+                new Reference(CompositeProfileProvider::class),
+                new TaggedIteratorArgument('anonymizer.replacement_strategy'),
+                new TaggedIteratorArgument('anonymizer.payload_codec'),
+                new Reference(AnonymizationLimits::class),
+                new TaggedIteratorArgument('anonymizer.value_transformation'),
+                new Reference(SymfonyObjectAnonymizerAdapter::class),
+            ]);
+        $container->setDefinition(AnonymizerBuilder::class, $builder);
+        $facade = new Definition(AnonymizerInterface::class);
+        $facade->setFactory([new Reference(AnonymizerBuilder::class), 'build']);
+        $container->setDefinition(AnonymizerInterface::class, $facade)->setPublic(true);
         if ($config['audit']['enabled']) {
             if ($config['audit']['logger_service'] === null || $config['audit']['logger_service'] === '') {
                 throw new InvalidConfigurationException('anonymizer.audit.logger_service is required when anonymizer.audit.enabled is true.');
@@ -158,7 +167,6 @@ final class AnonymizerExtension extends Extension
                 new Reference(ArrayAnonymizer::class),
                 new Reference($config['audit']['logger_service']),
             ]));
-            $container->setAlias(AuditAnonymizerInterface::class, AuditLoggerAdapter::class)->setPublic(true);
         }
     }
 
@@ -199,9 +207,6 @@ final class AnonymizerExtension extends Extension
             ->addTag('anonymizer.replacement_strategy', ['id' => 'pseudonymize', 'builtin' => true]);
         $container->setDefinition(DateShiftTransformation::class, new Definition(DateShiftTransformation::class, [new Reference($config['key_provider'])]))
             ->addTag('anonymizer.value_transformation', ['id' => 'date_shift', 'builtin' => true]);
-        $container->setAlias(ContextualAnonymizerInterface::class, ArrayAnonymizer::class)->setPublic(true);
-        $container->setAlias(ContextualDocumentAnonymizerInterface::class, ArrayAnonymizer::class)->setPublic(true);
-        $container->setAlias(ContextualNdjsonAnonymizerInterface::class, ArrayAnonymizer::class)->setPublic(true);
     }
 
     /** @param array<string, mixed> $definitions

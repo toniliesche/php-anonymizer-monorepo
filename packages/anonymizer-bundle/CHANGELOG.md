@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Prepared the integration for the 2.0 unified façade and builder-based
+  extension registration.
+
 ## 1.7.0
 
 - Documented explicit `anonymizer.profile_provider` consumption order for

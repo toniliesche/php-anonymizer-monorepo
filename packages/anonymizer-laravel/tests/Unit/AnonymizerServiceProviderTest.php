@@ -9,11 +9,11 @@ use Illuminate\Support\ServiceProvider;
 use Orchestra\Testbench\TestCase;
 use Override;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizationLimits;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilder;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerFacade;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerRuntime;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\ArrayAnonymizer;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\BatchAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\DocumentAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\NdjsonAnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Path\JsonPointer;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Policy\PreserveStringSelection;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Policy\PreserveTraversalPolicy;
@@ -48,6 +48,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 
 #[CoversClass(AnonymizerServiceProvider::class)]
+#[UsesClass(AnonymizerBuilder::class)]
+#[UsesClass(AnonymizerFacade::class)]
+#[UsesClass(AnonymizerRuntime::class)]
 #[UsesClass(ProfileDefinition::class)]
 #[UsesClass(AnonymizationLimits::class)]
 #[UsesClass(ArrayAnonymizer::class)]
@@ -87,9 +90,6 @@ final class AnonymizerServiceProviderTest extends TestCase
 
         self::assertSame(['email' => '[REDACTED]'], $anonymizer->anonymize('consumer', ['email' => 'secret']));
         self::assertSame(['email' => '[REDACTED]'], $anonymizer->anonymize('tagged', ['email' => 'secret']));
-        self::assertInstanceOf(BatchAnonymizerInterface::class, $this->resolve(BatchAnonymizerInterface::class));
-        self::assertInstanceOf(DocumentAnonymizerInterface::class, $this->resolve(DocumentAnonymizerInterface::class));
-        self::assertInstanceOf(NdjsonAnonymizerInterface::class, $this->resolve(NdjsonAnonymizerInterface::class));
         $inspector = $this->resolve(ProfileInspectorInterface::class);
         self::assertInstanceOf(ProfileInspectorInterface::class, $inspector);
         self::assertNotNull($inspector->inspect('tagged'));

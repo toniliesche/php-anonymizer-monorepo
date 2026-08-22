@@ -10,16 +10,18 @@ with Composer; the Laravel integration is available for Laravel 13:
 composer require php-anonymizer/anonymizer php-anonymizer/anonymizer-laravel
 ```
 
-The first core API is intentionally small and array-only:
+The core API is built around one façade and an immutable builder:
 
 ```php
-use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerFactory;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilder;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
 
-$anonymizer = AnonymizerFactory::fromArrays(['customer' => [
-    'mode' => 'redact',
-    'rules' => [['field' => 'email']],
-]]);
+$anonymizer = AnonymizerBuilder::create()
+    ->withProfile(ProfileDefinition::fromArray('customer', [
+        'mode' => 'redact',
+        'rules' => [['field' => 'email']],
+    ]))
+    ->build();
 $safe = $anonymizer->anonymize('customer', ['email' => 'user@example.com']);
 // ['email' => '[REDACTED]']
 ```
@@ -72,8 +74,8 @@ keyed deterministic pseudonyms. Register an application key provider, use a
 leaf rule with `strategy: pseudonymize` and a non-secret `key_id`, then call
 the contextual anonymizer with per-request scope attributes.
 
-Execution limits are enabled by default. `AnonymizationLimits` can be passed to
-`AnonymizerFactory::fromArrays()` as its final argument. Encoded payloads are
+Execution limits are enabled by default. Configure `AnonymizationLimits` with
+`AnonymizerBuilder::withLimits()`. Encoded payloads are
 limited to 10 MiB by default, with additional bounds for traversal depth,
 visited nodes, collection entries, and embedded payload depth.
 
@@ -95,7 +97,7 @@ when explicitly enabled with an application-owned Serializer service.
 
 Reusable profile libraries can expose immutable `ProfileDefinition` objects
 through `ProfileProviderInterface`. Register providers explicitly with
-`AnonymizerFactory::fromProfileProviders()` (or Laravel's
+`AnonymizerBuilder::withProfileProviders()` (or Laravel's
 `anonymizer.profile_provider` tag); providers are never scanned or discovered
 implicitly.
 

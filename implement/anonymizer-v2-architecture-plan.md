@@ -51,6 +51,9 @@ binding policy, and developer-facing API index are recorded in
 
 ## Iteration 19 — Unified façade, fluent builder, and extension contracts
 
+The implementation-ready specification is [Refined Iteration 19 — Unified
+façade, immutable builder, and extension modules](refined-iteration-19-unified-facade-builder-plan.md).
+
 - Retain one generic `AnonymizerInterface` for array and object callers and
   make all supported payload, document, batch, stream, audit, and contextual
   operations available through that façade.

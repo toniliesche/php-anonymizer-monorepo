@@ -1,7 +1,8 @@
 # Extension author guide
 
-The core accepts three extension ports. They are plain PHP interfaces and do
-not depend on Symfony or any container.
+The core accepts profile, replacement, payload, transformation, object, and
+module extension ports. They are plain PHP interfaces and do not depend on
+Symfony or any container.
 
 ## Profile providers
 
@@ -12,7 +13,7 @@ Embedded profile references must be acyclic.
 
 Provider libraries should depend only on the core package and applications
 should register providers explicitly, either with
-`AnonymizerFactory::fromProfileProviders()` or the Symfony
+`AnonymizerBuilder::create()->withProfileProviders()` or the Symfony
 `anonymizer.profile_provider` tag. Prefer dotted, package-qualified names such
 as `vendor.package.profile`. Providers must not expose raw source data,
 secrets, or replacement values, and profiles are never inherited or overridden.
@@ -84,16 +85,22 @@ public function encodeDocument(array $data): string;
 These methods may represent either a map or a list root. They are used only by
 the additive document API; the legacy codec methods remain map-only.
 
-Register extensions through the factory; applications do not need to construct
+Register extensions through the immutable builder; applications do not need to construct
 the concrete engine or profile provider:
 
 ```php
-$anonymizer = AnonymizerFactory::fromProfiles(
-    [$profile],
-    strategies: [new StarMask()],
-    codecs: [new PipeCodec()],
-);
+$anonymizer = AnonymizerBuilder::create()
+    ->withProfiles([$profile])
+    ->withReplacementStrategy(new StarMask())
+    ->withPayloadCodec(new PipeCodec())
+    ->build();
 ```
+
+Packages that register several related ports can implement
+`AnonymizerExtensionInterface::configure()` and return a builder with their
+providers, strategies, codecs, transformations, or object adapter added.
+Modules are applied in registration order and duplicate IDs are rejected;
+extensions cannot override core built-ins.
 Typed value transformations implement `ValueTransformationInterface`, declare
 supported input types and output type, and validate their named-map options.
 Register custom implementations through the `anonymizer.value_transformation`

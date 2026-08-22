@@ -6,10 +6,12 @@ namespace PhpAnonymizer\AnonymizerBundle\Tests\Integration;
 
 use Override;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizationLimits;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilder;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilderFactory;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerFacade;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerRuntime;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\ArrayAnonymizer;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\DocumentAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\NdjsonAnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Path\JsonPointer;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Policy\PreserveStringSelection;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Policy\PreserveTraversalPolicy;
@@ -22,6 +24,7 @@ use PhpAnonymizer\Anonymizer\Application\Anonymization\Traversal\RuleTreeTravers
 use PhpAnonymizer\Anonymizer\Application\Extension\Payload\EmbeddedPayloadTraversal;
 use PhpAnonymizer\Anonymizer\Application\Extension\Payload\JsonPayloadCodec;
 use PhpAnonymizer\Anonymizer\Application\Extension\Payload\PayloadCodecRegistry;
+use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileCollection;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileRegistry;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\Validation\EmbeddedProfileReferenceGraph;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\Validation\ProfileReferenceValidator;
@@ -53,7 +56,9 @@ use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\CompositeProfileProvid
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\ConfiguredProfileProvider;
 use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyAnonymizer;
 use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyObjectAnonymizer;
+use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyObjectAnonymizerAdapter;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use ReflectionMethod;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
@@ -61,6 +66,12 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\KernelInterface;
 
 #[CoversClass(AnonymizerBundle::class)]
+#[UsesClass(AnonymizerBuilder::class)]
+#[UsesClass(AnonymizerBuilderFactory::class)]
+#[UsesClass(AnonymizerFacade::class)]
+#[UsesClass(AnonymizerRuntime::class)]
+#[UsesClass(ProfileCollection::class)]
+#[UsesClass(SymfonyObjectAnonymizerAdapter::class)]
 #[CoversClass(AnonymizerConfiguration::class)]
 #[CoversClass(AnonymizerExtension::class)]
 #[CoversClass(ExtensionTagCompilerPass::class)]
@@ -124,8 +135,6 @@ final class AnonymizerBundleTest extends KernelTestCase
         self::assertSame(['email' => 'custom:hello'], $anonymizer->anonymize('custom', ['email' => 'hello']));
         self::assertSame(['email' => 'custom:hello'], $anonymizer->anonymize('provided', ['email' => 'hello']));
         self::assertSame(['body' => 'custom:hello'], $anonymizer->anonymize('payload', ['body' => 'hello']));
-        self::assertInstanceOf(DocumentAnonymizerInterface::class, $kernel->getContainer()->get(DocumentAnonymizerInterface::class));
-        self::assertInstanceOf(NdjsonAnonymizerInterface::class, $kernel->getContainer()->get(NdjsonAnonymizerInterface::class));
     }
 
     public function testBuildRegistersBothCompilerPasses(): void

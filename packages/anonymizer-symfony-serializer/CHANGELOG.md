@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Added `SymfonySerializerExtension` for registering object anonymization with
+  the core builder.
+
 ## 1.3.0
 
 - Added contextual object anonymization and contextual report methods while

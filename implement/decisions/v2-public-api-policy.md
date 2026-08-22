@@ -56,6 +56,10 @@ replacement is documented.
 - New public symbols require an API-index entry, a contract test, and a
   changelog/migration note when they affect a released package.
 
+The exact Iteration 19 contract, builder lifecycle, object request shape,
+module ordering, and framework binding policy are fixed in [the refined
+Iteration 19 plan](../refined-iteration-19-unified-facade-builder-plan.md).
+
 ## Review gate
 
 Before Iteration 19 starts, every production symbol must have one disposition
