@@ -6,7 +6,7 @@ namespace PhpAnonymizer\AnonymizerLaravel\Tests\Unit;
 
 use InvalidArgumentException;
 use Override;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\AuditAnonymizerInterface;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Result\AuditAnonymizationResult;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Result\AuditEntry;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileCollection;
@@ -85,7 +85,7 @@ final class InfrastructureTest extends TestCase
 
     public function testAuditAdapterLogsEntries(): void
     {
-        $anonymizer = $this->createMock(AuditAnonymizerInterface::class);
+        $anonymizer = $this->createMock(AnonymizerInterface::class);
         $result = new AuditAnonymizationResult(['email' => '[REDACTED]'], [new AuditEntry('p', 'fingerprint', '/email', 'redact', null, 1)]);
         $anonymizer->expects($this->once())->method('anonymizeWithAudit')->willReturn($result);
 

@@ -40,8 +40,8 @@ final readonly class SymfonyAnonymizer implements AnonymizerInterface
         }
 
         return $context instanceof AnonymizationContext
-            ? $this->objectAnonymizer->anonymizeWithContext($profile, $data, $context->attributes())
-            : $this->objectAnonymizer->anonymize($profile, $data);
+            ? $this->objectAnonymizer->anonymizeWithReportAndContext($profile, $data, $context)->object()
+            : $this->objectAnonymizer->anonymizeWithReport($profile, $data)->object();
     }
 
     #[Override]
@@ -113,7 +113,7 @@ final readonly class SymfonyAnonymizer implements AnonymizerInterface
     #[Override]
     public function anonymizeObject(ObjectAnonymizationRequest $request): object
     {
-        return $this->objectAnonymizer->anonymizeWithContext($request->profile(), $request->object(), $request->context()->attributes(), $request->adapterOptions());
+        return $this->objectAnonymizer->anonymizeWithReportAndContext($request->profile(), $request->object(), $request->context(), $request->adapterOptions())->object();
     }
 
     #[Override]

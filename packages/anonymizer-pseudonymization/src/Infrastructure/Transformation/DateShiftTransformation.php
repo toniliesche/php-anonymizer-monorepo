@@ -66,12 +66,27 @@ final readonly class DateShiftTransformation implements ContextualValueTransform
     /**
      * @param array<string,mixed> $options
      */
-    // @phpstan-ignore complexity.functionLike (bounded validation flow)
     #[Override]
     public function transformWithContext(mixed $value, array $options, ValueTransformationContext $context): mixed
     {
         $this->validateOptions($options);
         $isString = is_string($value);
+        $date = $this->date($value, $isString);
+
+        /** @var array{0: string, 1: int, 2: string} $scopeData */
+        $scopeData = $this->scope($options, $context);
+        [$scopeAttribute, $maxDays, $scope] = $scopeData;
+        $offset = $this->offset($context, $scopeAttribute, $scope, $maxDays);
+        $shifted = $date->modify(sprintf('%+d days', $offset));
+
+        return $isString ? $shifted->format(DateTimeInterface::RFC3339_EXTENDED) : $shifted;
+    }
+
+    private function date(mixed $value, bool $isString): DateTimeImmutable
+    {
+        if ($isString && !is_string($value)) {
+            throw new InvalidArgumentException('date_shift requires a valid RFC 3339 date or DateTimeInterface.');
+        }
 
         try {
             // @phpstan-ignore theCodingMachineSafe.class (guarded date conversion)
@@ -82,15 +97,32 @@ final readonly class DateShiftTransformation implements ContextualValueTransform
         if (!$date instanceof DateTimeImmutable || ($isString && preg_match('/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)$/D', $value) !== 1)) {
             throw new InvalidArgumentException('date_shift requires a valid RFC 3339 date or DateTimeInterface.');
         }
-        $scopeAttribute = $options['scope_attribute'];
-        $maxDays = $options['max_days'];
+
+        return $date;
+    }
+
+    /**
+     * @param array<string, mixed> $options
+     *
+     * @return array{0: string, 1: int, 2: string}
+     */
+    private function scope(array $options, ValueTransformationContext $context): array
+    {
+        $scopeAttribute = $options['scope_attribute'] ?? null;
+        $maxDays = $options['max_days'] ?? null;
         if (!is_string($scopeAttribute) || !is_int($maxDays)) {
             throw new InvalidArgumentException('date_shift options are invalid.');
-        } $scope = $context->attributes()[$scopeAttribute] ?? null;
-        if ($scope === null) {
+        }
+        $scope = $context->attributes()[$scopeAttribute] ?? null;
+        if (!is_string($scope)) {
             throw new InvalidArgumentException('date_shift scope attribute is missing from context.');
         }
 
+        return [$scopeAttribute, $maxDays, $scope];
+    }
+
+    private function offset(ValueTransformationContext $context, string $scopeAttribute, string $scope, int $maxDays): int
+    {
         try {
             $key = $this->keys->keyFor($context->keyId() ?? '');
         } catch (Throwable) {
@@ -107,10 +139,7 @@ final readonly class DateShiftTransformation implements ContextualValueTransform
 
         /** @var array{1:int} $unpacked */
         $unpacked = unpack('N', hash_hmac('sha256', $message, $key, true));
-        $number = $unpacked[1];
-        $offset = ($number % (2 * $maxDays + 1)) - $maxDays;
-        $shifted = $date->modify(sprintf('%+d days', $offset));
 
-        return $isString ? $shifted->format(DateTimeInterface::RFC3339_EXTENDED) : $shifted;
+        return ($unpacked[1] % (2 * $maxDays + 1)) - $maxDays;
     }
 }

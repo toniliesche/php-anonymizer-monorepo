@@ -71,18 +71,18 @@ foreach ($anonymizer->anonymizeRecords('customer', $records) as $safe) {
 
 The optional `php-anonymizer/anonymizer-pseudonymization` package provides
 keyed deterministic pseudonyms. Register an application key provider, use a
-leaf rule with `strategy: pseudonymize` and a non-secret `key_id`, then call
-the contextual anonymizer with per-request scope attributes.
+leaf rule with `strategy: pseudonymize` and a non-secret `key_id`, then pass an
+`AnonymizationContext` with per-request scope attributes to the façade call.
 
 Execution limits are enabled by default. Configure `AnonymizationLimits` with
 `AnonymizerBuilder::withLimits()`. Encoded payloads are
 limited to 10 MiB by default, with additional bounds for traversal depth,
 visited nodes, collection entries, and embedded payload depth.
 
-Array-only callers that need safe operational telemetry can use the optional
-`AuditAnonymizerInterface`. Audit entries contain profile identity, a compiled
-profile fingerprint, paths, actions, handler IDs, and counts—never source or
-replacement values.
+Callers that need safe operational telemetry can use the façade's
+`anonymizeWithAudit()` method. Audit entries contain profile identity, a
+compiled profile fingerprint, paths, actions, handler IDs, and counts—never
+source or replacement values.
 
 Symfony applications can install `php-anonymizer/anonymizer-bundle` and
 configure the same profiles under `anonymizer.profiles`. The Bundle exposes an

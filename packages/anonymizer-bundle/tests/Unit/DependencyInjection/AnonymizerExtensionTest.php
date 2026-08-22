@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace PhpAnonymizer\AnonymizerBundle\Tests\Unit\DependencyInjection;
 
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizationLimits;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\ArrayAnonymizer;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspector;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspectorInterface;
 use PhpAnonymizer\Anonymizer\Domain\Exception\InvalidProfileDefinition;
@@ -72,7 +72,7 @@ final class AnonymizerExtensionTest extends TestCase
         ]], $container);
 
         self::assertSame('anonymizer', $extension->getAlias());
-        self::assertTrue($container->hasDefinition(ArrayAnonymizer::class));
+        self::assertTrue($container->hasDefinition(AnonymizerInterface::class));
         self::assertTrue($container->hasDefinition(ConfiguredProfileProvider::class . '.customer'));
         self::assertSame(ProfileInspector::class, (string) $container->getAlias(ProfileInspectorInterface::class));
     }
@@ -161,7 +161,7 @@ final class AnonymizerExtensionTest extends TestCase
 
         self::assertTrue($container->hasDefinition(AuditLoggerAdapter::class));
         $audit = $container->getDefinition(AuditLoggerAdapter::class)->getArguments();
-        self::assertSame([ArrayAnonymizer::class, 'logger'], $this->referenceIds($audit));
+        self::assertSame([AnonymizerInterface::class, 'logger'], $this->referenceIds($audit));
     }
 
     public function testRegistersConfiguredPseudonymization(): void

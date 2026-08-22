@@ -15,26 +15,39 @@ final readonly class LegacyRuleCollectionConverter
      *
      * @return list<array<string, mixed>>
      */
-    // @phpstan-ignore complexity.functionLike (legacy map and node-list formats require explicit dispatch)
     public function convert(array $rules): array
+    {
+        return array_is_list($rules) ? $this->convertNodes($rules) : $this->convertPaths($rules);
+    }
+
+    /** @param list<mixed> $rules
+     * @return list<array<string, mixed>> */
+    private function convertNodes(array $rules): array
+    {
+        $converted = [];
+        foreach ($rules as $definition) {
+            if (!is_array($definition)) {
+                throw LegacyImportException::message('Legacy rule nodes must be maps.');
+            }
+            foreach (array_keys($definition) as $nodeKey) {
+                if (!is_string($nodeKey)) {
+                    throw LegacyImportException::message('Legacy rule nodes must use string keys.');
+                }
+            }
+
+            /** @var array<string, mixed> $definition */
+            $converted[] = $this->nodes->convertNode($definition);
+        }
+
+        return $converted;
+    }
+
+    /** @param array<mixed, mixed> $rules
+     * @return list<array<string, mixed>> */
+    private function convertPaths(array $rules): array
     {
         $converted = [];
         foreach ($rules as $key => $definition) {
-            if (array_is_list($rules)) {
-                if (!is_array($definition)) {
-                    throw LegacyImportException::message('Legacy rule nodes must be maps.');
-                }
-                foreach (array_keys($definition) as $nodeKey) {
-                    if (!is_string($nodeKey)) {
-                        throw LegacyImportException::message('Legacy rule nodes must use string keys.');
-                    }
-                }
-
-                /** @var array<string, mixed> $definition */
-                $converted[] = $this->nodes->convertNode($definition);
-
-                continue;
-            }
             if (!is_string($key)) {
                 throw LegacyImportException::message('Legacy rule paths must be strings.');
             }

@@ -14,7 +14,6 @@ use Override;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizationLimits;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilder;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\ArrayAnonymizer;
 use PhpAnonymizer\Anonymizer\Application\Extension\Payload\PayloadCodecInterface;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileCollection;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspector;
@@ -22,22 +21,18 @@ use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspectorInter
 use PhpAnonymizer\Anonymizer\Application\Extension\Replacement\ReplacementStrategyInterface;
 use PhpAnonymizer\Anonymizer\Application\Extension\Transformation\ValueTransformationInterface;
 use PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement\FakerReplacementStrategyFactory;
-use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Audit\AuditLoggerAdapter;
+use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Audit\AuditRegistrar;
 use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Payload\YamlPayloadCodec;
 use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Profile\ProfileComposer;
 use PhpAnonymizer\AnonymizerPersonas\Infrastructure\Replacement\PersonaReplacementStrategyFactory;
 use PhpAnonymizer\AnonymizerPseudonymization\Application\PseudonymKeyProviderInterface;
 use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Replacement\HmacPseudonymStrategy;
 use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Transformation\DateShiftTransformation;
-use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyAnonymizer;
-use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyObjectAnonymizer;
 use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyObjectAnonymizerAdapter;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 
-// @phpstan-ignore complexity.classLike (framework registrar extraction is scheduled for Iteration 20)
 final class AnonymizerServiceProvider extends ServiceProvider
 {
     private const string PROFILE_TAG = 'anonymizer.profile_provider';
@@ -107,18 +102,6 @@ final class AnonymizerServiceProvider extends ServiceProvider
                 $this->limit($limits, 'max_embedded_payload_depth', 8),
             );
         });
-        $this->app->singleton(ArrayAnonymizer::class, function (Container $app): ArrayAnonymizer {
-            /** @var iterable<ReplacementStrategyInterface> $strategies */
-            $strategies = $app->tagged(self::STRATEGY_TAG);
-
-            /** @var iterable<PayloadCodecInterface> $codecs */
-            $codecs = $app->tagged(self::CODEC_TAG);
-
-            /** @var iterable<ValueTransformationInterface> $transformations */
-            $transformations = $app->tagged(self::TRANSFORMATION_TAG);
-
-            return new ArrayAnonymizer($app->make(ProfileCollection::class), $strategies, $codecs, $app->make(AnonymizationLimits::class), $transformations);
-        });
         $this->registerBuilder();
         $this->app->singleton(AnonymizerInterface::class, fn (Container $app): AnonymizerInterface => $app->make(AnonymizerBuilder::class)->build());
     }
@@ -155,7 +138,7 @@ final class AnonymizerServiceProvider extends ServiceProvider
         $this->registerFaker();
         $this->registerPersonas();
         $this->registerPseudonymization();
-        $this->registerAudit();
+        new AuditRegistrar()->register($this->app, fn (string $key, mixed $default = null): mixed => $this->configuration($key, $default));
         $this->registerSerializer();
     }
 
@@ -226,48 +209,22 @@ final class AnonymizerServiceProvider extends ServiceProvider
         $this->app->tag($transformation, self::TRANSFORMATION_TAG);
     }
 
-    private function registerAudit(): void
-    {
-        if (!(bool) $this->configuration('anonymizer.audit.enabled', false)) {
-            return;
-        }
-        $logger = $this->configuration('anonymizer.audit.logger_service');
-        if (!is_string($logger) || $logger === '') {
-            throw new InvalidArgumentException('anonymizer.audit.logger_service is required when audit is enabled.');
-        }
-        $this->app->singleton(AuditLoggerAdapter::class, function (Container $app) use ($logger): AuditLoggerAdapter {
-            /** @var LoggerInterface $loggerInstance */
-            $loggerInstance = $app->make($logger);
-
-            return new AuditLoggerAdapter($app->make(ArrayAnonymizer::class), $loggerInstance);
-        });
-    }
-
     private function registerSerializer(): void
     {
         if (!$this->serializerEnabled()) {
             return;
         }
-        if (!class_exists(SymfonyObjectAnonymizer::class)) {
+        if (!class_exists(SymfonyObjectAnonymizerAdapter::class)) {
             throw new InvalidArgumentException('Serializer integration is enabled but php-anonymizer/anonymizer-symfony-serializer is not installed.');
         }
         $service = $this->configuration('anonymizer.serializer.service');
         $service = is_string($service) && $service !== '' ? $service : SerializerInterface::class;
-        $objectAnonymizer = SymfonyObjectAnonymizer::class;
-        $anonymizer = SymfonyAnonymizer::class;
         $this->app->singleton(SymfonyObjectAnonymizerAdapter::class, function (Container $app) use ($service): SymfonyObjectAnonymizerAdapter {
             /** @var DenormalizerInterface&NormalizerInterface $serializer */
             $serializer = $this->serializer($app, $service);
 
             return new SymfonyObjectAnonymizerAdapter($serializer);
         });
-        $this->app->singleton($objectAnonymizer, function (Container $app) use ($objectAnonymizer, $service): object {
-            /** @var DenormalizerInterface&NormalizerInterface $serializer */
-            $serializer = $this->serializer($app, $service);
-
-            return new $objectAnonymizer($app->make(ArrayAnonymizer::class), $serializer);
-        });
-        $this->app->singleton($anonymizer, fn (Container $app): SymfonyAnonymizer => new $anonymizer($app->make(ArrayAnonymizer::class), $app->make($objectAnonymizer)));
     }
 
     private function serializerEnabled(): bool

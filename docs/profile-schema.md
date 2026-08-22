@@ -150,9 +150,10 @@ Core transformations include `nullify`, `partial_mask`,
 adds contextual `date_shift`, which requires `key_id`, `max_days`, and a
 `scope_attribute`; call the contextual array or object API when using it.
 
-Use `ContextualAnonymizerInterface` with an `AnonymizationContext` containing
-canonical string attributes such as `tenant` and `scope`. Key material is
-resolved by the application and never belongs in profiles or logs.
+Pass an `AnonymizationContext` to the unified façade method when contextual
+execution is required. It contains canonical string attributes such as
+`tenant` and `scope`. Key material is resolved by the application and never
+belongs in profiles or logs.
 
 Strategies are leaf-only and cannot be combined with `children`, `each`, or
 `embedded`.
@@ -189,23 +190,24 @@ Core execution limits are enabled by default and can be overridden with
 100,000 visited nodes, 50,000 entries per collection, and embedded depth 8.
 Limit failures identify the profile and current JSON Pointer.
 
-`BatchAnonymizerInterface::anonymizeRecords()` accepts an iterable of map
-records and yields transformed maps lazily. Records are processed independently
-without reports; iteration stops at the first invalid or failing record.
+`AnonymizerInterface::anonymizeRecords()` accepts an iterable of map records and
+yields transformed maps lazily. Records are processed independently without
+reports; iteration stops at the first invalid or failing record.
 
-`AuditAnonymizerInterface` is array-only. Its aggregate entries identify the
-profile, compiled-profile fingerprint, path, action, handler, and count. Audit
-results never contain input or replacement values.
+`AnonymizerInterface::anonymizeWithAudit()` returns aggregate entries that
+identify the profile, compiled-profile fingerprint, path, action, handler, and
+count. Audit results never contain input or replacement values.
 
 ## Document and NDJSON APIs
 
-`DocumentAnonymizerInterface` accepts codecs implementing
+`AnonymizerInterface::anonymizeDocument()` accepts codecs implementing
 `DocumentPayloadCodecInterface` and preserves either a map or an explicitly
 declared list root. The core JSON codec and Bundle YAML codec support both
 roots; the existing `anonymizePayload*()` methods remain map-only.
 
-`NdjsonAnonymizerInterface` accepts an iterable of logical JSON lines and
-returns a lazy result. NDJSON profiles must use `root: list`; each line must be
-a JSON object. Consume `lines()` to process records, then call `audit()` for
-the aggregate safe audit. Stream audit paths use a wildcard record prefix such
-as `/*/email` and are unavailable after partial or failed consumption.
+`AnonymizerInterface::anonymizeNdjson()` accepts an iterable of logical JSON
+lines and returns a lazy result. NDJSON profiles must use `root: list`; each
+line must be a JSON object. Consume `lines()` to process records, then call
+`audit()` for the aggregate safe audit. Stream audit paths use a wildcard record
+prefix such as `/*/email` and are unavailable after partial or failed
+consumption.

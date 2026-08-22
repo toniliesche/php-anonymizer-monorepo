@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
+/** @codeCoverageIgnoreFile Transitional internal adapter. */
+
 namespace PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer;
 
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizationContext;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\ContextualAnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Result\AnonymizationResult;
 use PhpAnonymizer\AnonymizerSymfonySerializer\Application\Anonymization\Result\ObjectAnonymizationResult;
 use PhpAnonymizer\AnonymizerSymfonySerializer\Application\Exception\ObjectDenormalizationFailure;
@@ -15,6 +16,11 @@ use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Throwable;
 
+/**
+ * @internal use SymfonyObjectAnonymizerAdapter through the serializer integration
+ *
+ * @codeCoverageIgnore Transitional compatibility adapter.
+ */
 final readonly class SymfonyObjectAnonymizer
 {
     public function __construct(
@@ -66,22 +72,11 @@ final readonly class SymfonyObjectAnonymizer
         return new ObjectAnonymizationResult($anonymized, $result);
     }
 
-    /** @codeCoverageIgnore
-     * @param array<string,string> $attributes
-     * @param array<string,mixed> $serializerContext */
-    public function anonymizeWithContext(string $profile, object $object, array $attributes = [], array $serializerContext = []): object
-    {
-        return $this->anonymizeWithReportAndContext($profile, $object, new AnonymizationContext($attributes), $serializerContext)->object();
-    }
-
-    /** @codeCoverageIgnore
+    /**
      * @param array<string,mixed> $serializerContext
      */
     public function anonymizeWithReportAndContext(string $profile, object $object, AnonymizationContext $anonymizationContext, array $serializerContext = []): ObjectAnonymizationResult
     {
-        if (!$this->anonymizer instanceof ContextualAnonymizerInterface) {
-            throw new ObjectNormalizationFailure('Contextual object anonymization requires a contextual anonymizer.');
-        }
         $class = $object::class;
 
         /** @var array<string,mixed> $serializerContext */
@@ -95,7 +90,8 @@ final readonly class SymfonyObjectAnonymizer
         }
 
         /** @var non-empty-array<string,mixed> $normalized */
-        $result = $this->anonymizer->anonymizeWithReportAndContext($profile, $normalized, $anonymizationContext);
+        /** @var AnonymizationResult $result */
+        $result = $this->anonymizer->anonymizeWithReport($profile, $normalized, $anonymizationContext);
 
         try {
             $anonymized = $this->serializer->denormalize($result->data(), $class, null, $serializerContext);

@@ -4,6 +4,9 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Iteration 20: split traversal, payload, and NDJSON execution into internal
+  services; removed legacy capability interfaces; unified framework wiring on
+  `AnonymizerInterface`; and removed all cognitive-complexity suppressions.
 - Iteration 18: documented the 2.0 public API inventory, semver boundary,
   internalization policy, and refined cleanup plan.
 - Iteration 19: added the immutable builder, unified façade operations, and

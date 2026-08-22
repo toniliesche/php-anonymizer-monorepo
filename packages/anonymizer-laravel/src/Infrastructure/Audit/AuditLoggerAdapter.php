@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace PhpAnonymizer\AnonymizerLaravel\Infrastructure\Audit;
 
-use PhpAnonymizer\Anonymizer\Application\Anonymization\AuditAnonymizerInterface;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Result\AuditAnonymizationResult;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Result\AuditEntry;
 use Psr\Log\LoggerInterface;
 
 final readonly class AuditLoggerAdapter
 {
-    public function __construct(private AuditAnonymizerInterface $anonymizer, private LoggerInterface $logger)
+    public function __construct(private AnonymizerInterface $anonymizer, private LoggerInterface $logger)
     {
     }
 

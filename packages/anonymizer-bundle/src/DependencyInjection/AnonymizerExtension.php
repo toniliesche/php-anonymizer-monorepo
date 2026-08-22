@@ -9,7 +9,6 @@ use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizationLimits;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilder;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilderFactory;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\ArrayAnonymizer;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspector;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspectorInterface;
 use PhpAnonymizer\Anonymizer\Domain\Exception\InvalidProfileDefinition;
@@ -32,8 +31,6 @@ use PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement\FakerReplacementStr
 use PhpAnonymizer\AnonymizerPersonas\Infrastructure\Replacement\PersonaReplacementStrategyFactory;
 use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Replacement\HmacPseudonymStrategy;
 use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Transformation\DateShiftTransformation;
-use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyAnonymizer;
-use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyObjectAnonymizer;
 use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyObjectAnonymizerAdapter;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
@@ -126,24 +123,8 @@ final class AnonymizerExtension extends Extension
         $container->setDefinition(ProfileInspector::class, new Definition(ProfileInspector::class, [new Reference(CompositeProfileProvider::class)]));
         $container->setAlias(ProfileInspectorInterface::class, ProfileInspector::class)->setPublic(true);
 
-        $anonymizer = new Definition(ArrayAnonymizer::class, [
-            new Reference(CompositeProfileProvider::class),
-            new TaggedIteratorArgument('anonymizer.replacement_strategy'),
-            new TaggedIteratorArgument('anonymizer.payload_codec'),
-            new Reference(AnonymizationLimits::class),
-            new TaggedIteratorArgument('anonymizer.value_transformation'),
-        ]);
-        $container->setDefinition(ArrayAnonymizer::class, $anonymizer);
-        $container->setDefinition(SymfonyObjectAnonymizer::class, new Definition(SymfonyObjectAnonymizer::class, [
-            new Reference(ArrayAnonymizer::class),
-            new Reference('serializer'),
-        ]));
         $container->setDefinition(SymfonyObjectAnonymizerAdapter::class, new Definition(SymfonyObjectAnonymizerAdapter::class, [
             new Reference('serializer'),
-        ]));
-        $container->setDefinition(SymfonyAnonymizer::class, new Definition(SymfonyAnonymizer::class, [
-            new Reference(ArrayAnonymizer::class),
-            new Reference(SymfonyObjectAnonymizer::class),
         ]));
         $builder = new Definition(AnonymizerBuilder::class);
         $builder->setFactory([AnonymizerBuilderFactory::class, 'create'])
@@ -164,7 +145,7 @@ final class AnonymizerExtension extends Extension
                 throw new InvalidConfigurationException('anonymizer.audit.logger_service is required when anonymizer.audit.enabled is true.');
             }
             $container->setDefinition(AuditLoggerAdapter::class, new Definition(AuditLoggerAdapter::class, [
-                new Reference(ArrayAnonymizer::class),
+                new Reference(AnonymizerInterface::class),
                 new Reference($config['audit']['logger_service']),
             ]));
         }
