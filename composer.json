@@ -93,6 +93,7 @@
             "@lint",
             "@static",
             "@dependencies",
+            "@public-api",
             "@collisions",
             "@architecture",
             "@refactor:check",
@@ -109,6 +110,7 @@
         "fix": "@php vendor/bin/php-cs-fixer fix",
         "lint": "@php vendor/bin/php-cs-fixer fix --dry-run --diff",
         "mutation": "@php tools/run-infection.php",
+        "public-api": "@php tools/check-public-api.php",
         "qa": [
             "@check",
             "@test:coverage",

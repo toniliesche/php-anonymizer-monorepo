@@ -4,6 +4,7 @@
 
 - Prepared service registration for the 2.0 unified façade and builder-based
   extension modules.
+- Added `anonymizer.extension` module discovery in Laravel tag order.
 
 ## 1.7.0
 

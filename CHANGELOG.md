@@ -4,6 +4,11 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Iteration 21: selectively removed coverage suppressions from JSON payload
+  validation and transformation registration/option compilation, resolved the
+  corresponding PHPStan ignore, and retained justified equivalent mutation and
+  integration-boundary suppressions; added framework extension-module discovery
+  and removed the legacy factory and Serializer dispatchers.
 - Iteration 20: split traversal, payload, and NDJSON execution into internal
   services; removed legacy capability interfaces; unified framework wiring on
   `AnonymizerInterface`; and removed all cognitive-complexity suppressions.

@@ -51,7 +51,9 @@ binding policy, and developer-facing API index are recorded in
 
 ## Iteration 19 — Unified façade, fluent builder, and extension contracts
 
-The implementation-ready specification is [Refined Iteration 19 — Unified
+The completed iteration record is [Iteration 19 — Unified façade, immutable
+builder, and extension modules](iterations/19-unified-facade-builder.md). The
+implementation-ready specification is [Refined Iteration 19 — Unified
 façade, immutable builder, and extension modules](refined-iteration-19-unified-facade-builder-plan.md).
 
 - Retain one generic `AnonymizerInterface` for array and object callers and
@@ -72,6 +74,10 @@ façade, immutable builder, and extension modules](refined-iteration-19-unified-
 
 ## Iteration 20 — Core and framework cohesion
 
+The completed iteration record is [Iteration 20 — Core and framework
+cohesion](iterations/20-core-framework-cohesion.md). The implementation-ready
+specification is [Refined Iteration 20 — Core and Framework Cohesion](refined-iteration-20-core-framework-cohesion-plan.md).
+
 - Introduce an internal traversal/execution context carrying profile, rules,
   policy, report, budget, pointer, depth, context attributes, global rules,
   and key-normalization state.
@@ -89,21 +95,46 @@ façade, immutable builder, and extension modules](refined-iteration-19-unified-
 
 ## Iteration 21 — Coverage policy, internal boundaries, and extension guide
 
-- Remove project-owned `@codeCoverageIgnore`, `@phpstan-ignore`, and related
-  mutation exemptions from published code; replace them with focused branch,
-  diagnostic, and failure-path tests.
+The completed iteration record is [Iteration 21 — Verified boundaries and
+extension guidance](iterations/21-boundaries-extension-guide.md). The
+implementation-ready specification is [Refined Iteration 21 — Verified
+boundaries and extension guidance](refined-iteration-21-boundaries-extension-guide-plan.md).
+
+- Review project-owned `@codeCoverageIgnore`, `@phpstan-ignore`, and related
+  mutation exemptions individually; remove only those where focused branch,
+  diagnostic, failure-path, or mutation tests provide concrete value, or
+  where a PHPStan error can be resolved with safer typing.
+- Retain justified suppressions for framework wiring, immutable plumbing,
+  optional integrations, impossible defensive paths, vendor contracts, and
+  behaviorally equivalent mutants.
 - Mark registries, validators, traversal/policy classes, parsers/compilers,
   concrete built-ins, framework wiring helpers, and legacy-import internals
-  with `@internal`.
+  with `@internal` for IDE/documentation guidance only.
 - Preserve semver guarantees for the documented façade, extension ports,
   profile/value/result types, and catchable public exceptions.
-- Add architecture checks preventing supported extension packages and public
-  documentation from depending on internal symbols.
+- Keep Deptrac package/namespace rules straightforward and independent of
+  `@internal`; add only the minimal rule needed for supported extension
+  package boundaries. Use the API manifest in a separate small check for
+  implementation symbols in public documentation and examples.
 - Rewrite `docs/extension-author-guide.md` around the builder/module model,
   stable IDs, every extension port, contextual execution, framework
   registration, error contracts, compatibility rules, and contract tests.
 
-## Iteration 22 — User guide, migration, and release closure
+## Iteration 22 — Structural code cleanup and PSR-4 compliance
+
+The implementation outline is [Iteration 22 — Structural code cleanup and
+PSR-4 compliance](iterations/22-structural-code-cleanup.md).
+
+- Enforce one named symbol per PSR-4-matching file across production and tests.
+- Replace anonymous test doubles and deferred callback arguments with named
+  implementations, retaining small `array_*` callbacks and framework-required
+  closures as explicit exceptions.
+- Rework internal role-oriented namespaces and test support folders without
+  changing established public application/domain namespaces.
+- Review `@var` annotations, use Webmozart Assert only where existing
+  validation contracts are preserved, and apply non-behavioral style cleanup.
+
+## Iteration 23 — User guide, migration, and release closure
 
 - Add `docs/user-guide.md` with real-world examples for plain PHP setup,
   redact/preserve profiles, nested data and conditions, strategies and typed
@@ -129,8 +160,9 @@ façade, immutable builder, and extension modules](refined-iteration-19-unified-
 - Preserve regression coverage for profile parsing, fragments, normalized and
   global rules, traversal/report paths, limits, embedded payloads, and legacy
   import.
-- Require no project suppressions in published source, 100% core line/branch
-  coverage, `PHP_VERSION=8.5 composer qa`, all consumer tests, release preview,
+- Require every removed suppression to have focused verification, retain
+  documented justified suppressions, preserve 100% core line/branch coverage,
+  and pass `PHP_VERSION=8.5 composer qa`, all consumer tests, release preview,
   and `graphify update .` after code changes.
 
 ## Decisions and assumptions

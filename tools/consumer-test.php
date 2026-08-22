@@ -20,9 +20,8 @@ try {
         require __DIR__ . '/vendor/autoload.php';
         use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilder;
         use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
-        use PhpAnonymizer\Anonymizer\Infrastructure\Profile\InMemoryProfileProvider;
         $profile = ProfileDefinition::fromArray('consumer', ['mode' => 'redact', 'rules' => [['field' => 'email']]]);
-        $result = AnonymizerBuilder::create()->withProfileProvider(new InMemoryProfileProvider([$profile]))->build()->anonymize('consumer', ['email' => 'secret']);
+        $result = AnonymizerBuilder::create()->withProfile($profile)->build()->anonymize('consumer', ['email' => 'secret']);
         if ($result !== ['email' => '[REDACTED]']) { exit(1); }
         PHP);
     $command = sprintf('cd %s && composer install --no-interaction --no-progress --no-dev && php fixture.php', escapeshellarg($directory));

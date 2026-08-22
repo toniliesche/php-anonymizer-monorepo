@@ -4,6 +4,8 @@
 
 - Prepared the integration for the 2.0 unified façade and builder-based
   extension registration.
+- Added `anonymizer.extension` module discovery with contract validation and
+  priority-aware Symfony tagged iteration.
 
 ## 1.7.0
 

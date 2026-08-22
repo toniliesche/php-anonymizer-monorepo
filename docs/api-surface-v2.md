@@ -44,6 +44,10 @@ The following ports are open for third-party implementations:
 Extension IDs are stable, case-sensitive identifiers. Implementations must
 validate their options, avoid exposing source values or secrets in diagnostics,
 and provide contract tests for success, invalid input, and failure behavior.
+Symfony and Laravel integrations also support the `anonymizer.extension`
+discovery tag for module implementations. Tagged modules are applied after
+individual extension ports; Symfony orders them by descending `priority`,
+while Laravel preserves registration order.
 
 ## Public values, results, and failures
 

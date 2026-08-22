@@ -9,6 +9,7 @@ use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Compiler\ExtensionTagComp
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 #[CoversClass(ExtensionTagCompilerPass::class)]
@@ -94,6 +95,15 @@ final class ExtensionTagCompilerPassTest extends TestCase
         $container->register('extension')->addTag('anonymizer.replacement_strategy', ['id' => "valid\n"]);
 
         $this->expectException(InvalidArgumentException::class);
+        new ExtensionTagCompilerPass()->process($container);
+    }
+
+    public function testRejectsAnExtensionTagWithoutTheModuleContract(): void
+    {
+        $container = new ContainerBuilder();
+        $container->register('invalid')->setClass(stdClass::class)->addTag('anonymizer.extension');
+
+        $this->expectExceptionMessageMatches('/anonymizer\.extension.*AnonymizerExtensionInterface/');
         new ExtensionTagCompilerPass()->process($container);
     }
 }

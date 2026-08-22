@@ -14,6 +14,7 @@ use Override;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizationLimits;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilder;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
+use PhpAnonymizer\Anonymizer\Application\Extension\AnonymizerExtensionInterface;
 use PhpAnonymizer\Anonymizer\Application\Extension\Payload\PayloadCodecInterface;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileCollection;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspector;
@@ -29,6 +30,7 @@ use PhpAnonymizer\AnonymizerPseudonymization\Application\PseudonymKeyProviderInt
 use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Replacement\HmacPseudonymStrategy;
 use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Transformation\DateShiftTransformation;
 use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyObjectAnonymizerAdapter;
+use PhpAnonymizer\AnonymizerSymfonySerializer\SymfonySerializerExtension;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -118,6 +120,9 @@ final class AnonymizerServiceProvider extends ServiceProvider
             /** @var iterable<ValueTransformationInterface> $transformations */
             $transformations = $app->tagged(self::TRANSFORMATION_TAG);
 
+            /** @var iterable<AnonymizerExtensionInterface> $extensions */
+            $extensions = $app->tagged('anonymizer.extension');
+
             $builder = AnonymizerBuilder::create()
                 ->withProfileProvider($app->make(ProfileCollection::class))
                 ->withReplacementStrategies($strategies)
@@ -125,8 +130,8 @@ final class AnonymizerServiceProvider extends ServiceProvider
                 ->withValueTransformations($transformations)
                 ->withLimits($app->make(AnonymizationLimits::class));
 
-            if ($this->serializerEnabled() && class_exists(SymfonyObjectAnonymizerAdapter::class)) {
-                return $builder->withObjectAnonymizer($app->make(SymfonyObjectAnonymizerAdapter::class));
+            foreach ($extensions as $extension) {
+                $builder = $builder->withExtension($extension);
             }
 
             return $builder;
@@ -225,6 +230,13 @@ final class AnonymizerServiceProvider extends ServiceProvider
 
             return new SymfonyObjectAnonymizerAdapter($serializer);
         });
+        $this->app->singleton(SymfonySerializerExtension::class, function (Container $app) use ($service): SymfonySerializerExtension {
+            $serializer = $this->serializer($app, $service);
+
+            /** @var DenormalizerInterface&NormalizerInterface $serializer */
+            return new SymfonySerializerExtension($serializer);
+        });
+        $this->app->tag(SymfonySerializerExtension::class, 'anonymizer.extension');
     }
 
     private function serializerEnabled(): bool

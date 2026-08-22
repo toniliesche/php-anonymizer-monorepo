@@ -4,6 +4,9 @@
 
 - Added `SymfonySerializerExtension` for registering object anonymization with
   the core builder.
+- Removed the legacy `SymfonyAnonymizer` and `SymfonyObjectAnonymizer`
+  dispatchers; object normalization and denormalization now live in the
+  builder object adapter.
 
 ## 1.3.0
 

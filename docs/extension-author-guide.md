@@ -1,115 +1,158 @@
 # Extension author guide
 
-The core accepts profile, replacement, payload, transformation, object, and
-module extension ports. They are plain PHP interfaces and do not depend on
-Symfony or any container.
+PHP Anonymizer extensions are framework-independent PHP objects. Applications
+register them through the immutable `AnonymizerBuilder`; Symfony and Laravel
+can discover the same objects through their documented tags.
 
-## Profile providers
+## The builder and modules
 
-`ProfileProviderInterface::profiles()` returns an iterable of immutable
-`ProfileDefinition` objects. The anonymizer eagerly rejects duplicate profile
-names and validates every strategy, codec, and embedded-profile reference.
-Embedded profile references must be acyclic.
-
-Provider libraries should depend only on the core package and applications
-should register providers explicitly, either with
-`AnonymizerBuilder::create()->withProfileProviders()` or the Symfony
-`anonymizer.profile_provider` tag. Prefer dotted, package-qualified names such
-as `vendor.package.profile`. Providers must not expose raw source data,
-secrets, or replacement values, and profiles are never inherited or overridden.
-
-Laravel packages should register their provider in the package service
-provider's `register()` method and apply the same logical tag with
-`$this->app->tag(Provider::class, 'anonymizer.profile_provider')`. Laravel
-package discovery registers the integration provider; it does not scan for
-profile packages.
-
-## Replacement strategies
-
-Implement `ReplacementStrategyInterface`:
+Registration is eager and additive: IDs are case-sensitive, duplicate IDs and
+built-in IDs fail during `build()`, and a module cannot override an earlier
+registration.
 
 ```php
-final readonly class StarMask implements ReplacementStrategyInterface
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilder;
+use PhpAnonymizer\Anonymizer\Application\Extension\Replacement\ReplacementStrategyInterface;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
+
+final readonly class HashReplacement implements ReplacementStrategyInterface
 {
-    public function id(): string
-    {
-        return 'star_mask';
-    }
+    public function id(): string { return 'acme.hash'; }
 
     public function replace(string $value): string
     {
-        return str_repeat('*', mb_strlen($value, 'UTF-8'));
+        return hash('sha256', $value);
     }
 }
-```
 
-Strategies are string-to-string and are selected by a leaf rule's `strategy`
-ID. IDs are case-sensitive and must match
-`^[A-Za-z][A-Za-z0-9_.-]*$`. Duplicate IDs, including duplicates of built-ins,
-are configuration errors.
-
-## Payload codecs
-
-Implement `PayloadCodecInterface`:
-
-```php
-final readonly class PipeCodec implements PayloadCodecInterface
-{
-    public function id(): string { return 'pipe'; }
-
-    public function decode(string $payload): array
-    {
-        return ['email' => $payload];
-    }
-
-    public function encode(array $data): string
-    {
-        return (string) $data['email'];
-    }
-}
-```
-
-Codecs decode and encode associative maps. They can be selected by the
-top-level payload API or by an `embedded: {codec, profile}` rule. Codec errors
-should be reported with the profile, operation, codec ID, and embedded JSON
-Pointer path supplied by the core.
-
-Document-capable codecs may additionally implement
-`DocumentPayloadCodecInterface`:
-
-```php
-public function decodeDocument(string $payload): array;
-public function encodeDocument(array $data): string;
-```
-
-These methods may represent either a map or a list root. They are used only by
-the additive document API; the legacy codec methods remain map-only.
-
-Register extensions through the immutable builder; applications do not need to construct
-the concrete engine or profile provider:
-
-```php
 $anonymizer = AnonymizerBuilder::create()
-    ->withProfiles([$profile])
-    ->withReplacementStrategy(new StarMask())
-    ->withPayloadCodec(new PipeCodec())
+    ->withProfile(ProfileDefinition::fromArray('customer', [
+        'mode' => 'redact',
+        'rules' => [['field' => 'email', 'strategy' => 'acme.hash']],
+    ]))
+    ->withReplacementStrategy(new HashReplacement())
     ->build();
 ```
 
-Packages that register several related ports can implement
-`AnonymizerExtensionInterface::configure()` and return a builder with their
-providers, strategies, codecs, transformations, or object adapter added.
-Modules are applied in registration order and duplicate IDs are rejected;
-extensions cannot override core built-ins.
-Typed value transformations implement `ValueTransformationInterface`, declare
-supported input types and output type, and validate their named-map options.
-Register custom implementations through the `anonymizer.value_transformation`
-Bundle tag with a unique `id`. Contextual implementations may receive the
-profile, JSON Pointer, key ID, and application attributes through
-`ContextualValueTransformationInterface`.
+Use a module when several related ports belong together:
 
-Profile matching can optionally enable ASCII key normalization and global
-scalar rules. Extension authors should treat normalized field names as
-comparison aliases only; anonymizers must preserve the original dataset keys
-and report pointers. Global rules are evaluated within the profile that owns
-them and are not inherited by embedded profiles.
+```php
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilder;
+use PhpAnonymizer\Anonymizer\Application\Extension\AnonymizerExtensionInterface;
+
+final readonly class AcmeExtension implements AnonymizerExtensionInterface
+{
+    public function configure(AnonymizerBuilder $builder): AnonymizerBuilder
+    {
+        return $builder
+            ->withProfileProvider(new AcmeProfileProvider())
+            ->withReplacementStrategy(new HashReplacement());
+    }
+}
+
+$anonymizer = AnonymizerBuilder::create()
+    ->withExtension(new AcmeExtension())
+    ->build();
+```
+
+Builders are immutable and reusable. Iterables are materialized when
+registered, so a generator can safely be supplied once without changing a
+later `build()` result.
+
+## Extension ports
+
+### Profiles
+
+`ProfileProviderInterface::profiles()` returns immutable
+`ProfileDefinition` values. Provider names must be unique across configured
+profiles and providers. Providers are not scanned implicitly and must not
+expose source data, replacement values, or secrets.
+
+### Replacement strategies
+
+Implement `ReplacementStrategyInterface` for a string-to-string handler.
+Contextual handlers implement `ContextualReplacementStrategyInterface` and
+receive profile, JSON Pointer, key ID, and application attributes through
+`ReplacementContext`. IDs must match `^[A-Za-z][A-Za-z0-9_.-]*$`.
+
+### Payload and document codecs
+
+`PayloadCodecInterface` decodes and encodes associative maps. A codec that
+supports document roots may additionally implement
+`DocumentPayloadCodecInterface`; document methods may return either a map or a
+list. Codec failures should preserve the operation, codec ID, profile, and
+path in the public `PayloadCodecFailure` diagnostic without including payload
+contents.
+
+### Value transformations
+
+`ValueTransformationInterface` declares supported input types, output type,
+options validation, and transformation. Contextual transformations implement
+`ContextualValueTransformationInterface` and receive a
+`ValueTransformationContext`. Validate every named option and reject wrong
+runtime values with a stable `InvalidArgumentException` or the documented
+profile exception.
+
+### Object adapters
+
+`ObjectAnonymizerInterface` receives an immutable
+`ObjectAnonymizationRequest` and the generic façade. Adapters must not mutate
+the source object and must return the source runtime class. Adapter-specific
+options belong in `adapterOptions()` and are opaque to the core. A façade
+without an adapter raises `ObjectAnonymizationUnavailable`.
+
+## Framework registration
+
+Symfony applications can tag a module, or register individual ports:
+
+```yaml
+App\Privacy\AcmeExtension:
+  tags:
+    - { name: anonymizer.extension, priority: 20 }
+```
+
+Symfony modules are applied in descending `priority`, then service order.
+Existing `anonymizer.profile_provider`,
+`anonymizer.replacement_strategy`, `anonymizer.payload_codec`, and
+`anonymizer.value_transformation` tags remain supported.
+
+Laravel packages register the same module through the service container:
+
+```php
+$this->app->singleton(AcmeExtension::class);
+$this->app->tag(AcmeExtension::class, 'anonymizer.extension');
+```
+
+Laravel applies tagged modules in registration order. Package discovery only
+registers the provider; it does not scan arbitrary application classes.
+
+## Diagnostics, compatibility, and tests
+
+Never put source values, replacement values, secrets, or raw payloads in an
+exception, audit entry, or profile inspection result. Stable IDs and the
+documented extension interfaces are covered by the 2.0 semver contract.
+Concrete registries, built-ins, parsers, traversal classes, framework
+registrars, and legacy-import collaborators are `@internal` and may change
+without a semver guarantee.
+
+Every extension should have a contract suite covering success, invalid options,
+wrong runtime types, duplicate IDs, missing context, and thrown collaborator
+failures. A minimal strategy contract is:
+
+```php
+#[CoversClass(HashReplacement::class)]
+final class HashReplacementTest extends TestCase
+{
+    public function testItHasAStableIdAndDoesNotReturnTheSourceValue(): void
+    {
+        $strategy = new HashReplacement();
+
+        self::assertSame('acme.hash', $strategy->id());
+        self::assertNotSame('secret', $strategy->replace('secret'));
+    }
+}
+```
+
+For profile, codec, transformation, object, and module ports, add assertions
+for the corresponding public failure contract and verify that all supplied
+iterables and contexts are handled deterministically.

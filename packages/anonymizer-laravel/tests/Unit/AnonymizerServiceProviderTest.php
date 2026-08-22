@@ -38,6 +38,7 @@ use PhpAnonymizer\Anonymizer\Application\Extension\Replacement\DefaultRedactionS
 use PhpAnonymizer\Anonymizer\Application\Extension\Replacement\ReplacementStrategyRegistry;
 use PhpAnonymizer\Anonymizer\Application\Extension\Replacement\StarMaskStrategy;
 use PhpAnonymizer\Anonymizer\Application\Extension\Transformation\CoreTransformationFactory;
+use PhpAnonymizer\Anonymizer\Application\Extension\Transformation\TransformationRegistry;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\RuleOptionsCompiler;
 use PhpAnonymizer\Anonymizer\Domain\Rule\RuleDefinition;
@@ -76,6 +77,7 @@ use PHPUnit\Framework\Attributes\UsesClass;
 #[UsesClass(ReplacementStrategyRegistry::class)]
 #[UsesClass(StarMaskStrategy::class)]
 #[UsesClass(CoreTransformationFactory::class)]
+#[UsesClass(TransformationRegistry::class)]
 #[UsesClass(RuleOptionsCompiler::class)]
 #[UsesClass(RuleDefinition::class)]
 #[UsesClass(YamlPayloadCodec::class)]

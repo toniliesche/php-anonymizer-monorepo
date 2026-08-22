@@ -54,8 +54,6 @@ use PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport\LegacyDocumentRea
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Payload\YamlPayloadCodec;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\CompositeProfileProvider;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\ConfiguredProfileProvider;
-use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyAnonymizer;
-use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyObjectAnonymizer;
 use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyObjectAnonymizerAdapter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -76,8 +74,6 @@ use Symfony\Component\HttpKernel\KernelInterface;
 #[CoversClass(AnonymizerExtension::class)]
 #[CoversClass(ExtensionTagCompilerPass::class)]
 #[CoversClass(SerializerServiceCompilerPass::class)]
-#[CoversClass(SymfonyAnonymizer::class)]
-#[CoversClass(SymfonyObjectAnonymizer::class)]
 #[CoversClass(CompositeProfileProvider::class)]
 #[CoversClass(ConfiguredProfileProvider::class)]
 #[CoversClass(YamlPayloadCodec::class)]

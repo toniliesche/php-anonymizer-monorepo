@@ -6,6 +6,7 @@ namespace PhpAnonymizer\AnonymizerBundle\DependencyInjection\Compiler;
 
 use InvalidArgumentException;
 use Override;
+use PhpAnonymizer\Anonymizer\Application\Extension\AnonymizerExtensionInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use function Safe\preg_match;
@@ -21,8 +22,20 @@ final class ExtensionTagCompilerPass implements CompilerPassInterface
     #[Override]
     public function process(ContainerBuilder $container): void
     {
+        $this->validateModules($container);
         foreach (self::TAGS as $tag => $builtIns) {
             $this->validateTag($container, $tag, $builtIns);
+        }
+    }
+
+    private function validateModules(ContainerBuilder $container): void
+    {
+        foreach ($container->findTaggedServiceIds('anonymizer.extension') as $serviceId => $_tags) {
+            $definition = $container->getDefinition($serviceId);
+            $class = $definition->getClass();
+            if (!is_string($class) || !is_a($class, AnonymizerExtensionInterface::class, true)) {
+                throw new InvalidArgumentException(sprintf('Service "%s" uses tag "anonymizer.extension" without implementing %s.', $serviceId, AnonymizerExtensionInterface::class));
+            }
         }
     }
 

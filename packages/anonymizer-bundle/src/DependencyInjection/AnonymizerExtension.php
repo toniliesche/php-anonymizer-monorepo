@@ -31,7 +31,7 @@ use PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement\FakerReplacementStr
 use PhpAnonymizer\AnonymizerPersonas\Infrastructure\Replacement\PersonaReplacementStrategyFactory;
 use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Replacement\HmacPseudonymStrategy;
 use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Transformation\DateShiftTransformation;
-use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyObjectAnonymizerAdapter;
+use PhpAnonymizer\AnonymizerSymfonySerializer\SymfonySerializerExtension;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -123,9 +123,9 @@ final class AnonymizerExtension extends Extension
         $container->setDefinition(ProfileInspector::class, new Definition(ProfileInspector::class, [new Reference(CompositeProfileProvider::class)]));
         $container->setAlias(ProfileInspectorInterface::class, ProfileInspector::class)->setPublic(true);
 
-        $container->setDefinition(SymfonyObjectAnonymizerAdapter::class, new Definition(SymfonyObjectAnonymizerAdapter::class, [
+        $container->setDefinition(SymfonySerializerExtension::class, new Definition(SymfonySerializerExtension::class, [
             new Reference('serializer'),
-        ]));
+        ]))->addTag('anonymizer.extension', ['priority' => 0]);
         $builder = new Definition(AnonymizerBuilder::class);
         $builder->setFactory([AnonymizerBuilderFactory::class, 'create'])
             ->setArguments([
@@ -134,7 +134,8 @@ final class AnonymizerExtension extends Extension
                 new TaggedIteratorArgument('anonymizer.payload_codec'),
                 new Reference(AnonymizationLimits::class),
                 new TaggedIteratorArgument('anonymizer.value_transformation'),
-                new Reference(SymfonyObjectAnonymizerAdapter::class),
+                null,
+                new TaggedIteratorArgument('anonymizer.extension'),
             ]);
         $container->setDefinition(AnonymizerBuilder::class, $builder);
         $facade = new Definition(AnonymizerInterface::class);
