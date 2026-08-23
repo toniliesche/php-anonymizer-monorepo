@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added a stable strategy ID catalog for framework composition roots.
 - Added a replacement-port factory method while retaining the concrete factory
   method as a transitional compatibility API.
 

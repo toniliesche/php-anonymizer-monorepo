@@ -50,10 +50,15 @@ use PhpAnonymizer\AnonymizerBundle\DependencyInjection\AnonymizerConfiguration;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\AnonymizerExtension;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Compiler\ExtensionTagCompilerPass;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Compiler\SerializerServiceCompilerPass;
+use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Registration\OptionalIntegrationRegistrar;
+use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Registration\ProfileRegistrar;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport\LegacyDocumentReader;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Payload\YamlPayloadCodec;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\CompositeProfileProvider;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\ConfiguredProfileProvider;
+use PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement\FakerFormatter;
+use PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement\FakerReplacementStrategyFactory;
+use PhpAnonymizer\AnonymizerPersonas\Infrastructure\Replacement\PersonaReplacementStrategyFactory;
 use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyObjectAnonymizerAdapter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -77,6 +82,11 @@ use Symfony\Component\HttpKernel\KernelInterface;
 #[CoversClass(CompositeProfileProvider::class)]
 #[CoversClass(ConfiguredProfileProvider::class)]
 #[CoversClass(YamlPayloadCodec::class)]
+#[UsesClass(FakerReplacementStrategyFactory::class)]
+#[UsesClass(FakerFormatter::class)]
+#[UsesClass(PersonaReplacementStrategyFactory::class)]
+#[CoversClass(OptionalIntegrationRegistrar::class)]
+#[CoversClass(ProfileRegistrar::class)]
 #[CoversClass(ArrayAnonymizer::class)]
 #[CoversClass(JsonPointer::class)]
 #[CoversClass(AnonymizationLimits::class)]
@@ -159,9 +169,9 @@ final class AnonymizerBundleTest extends KernelTestCase
         /** @var array<int, array{id: string}> $tags */
         self::assertSame('yaml', $tags[0]['id']);
 
-        $method = new ReflectionMethod(AnonymizerExtension::class, 'requireFakerFactory');
+        $method = new ReflectionMethod(OptionalIntegrationRegistrar::class, 'factory');
         $this->expectException(InvalidConfigurationException::class);
-        $method->invoke(new AnonymizerExtension(), 'Missing\FakerFactory');
+        $method->invoke(new OptionalIntegrationRegistrar(), 'Missing\FakerFactory', 'faker');
     }
 
     public function testPersonaConfigurationRegistersStrategies(): void

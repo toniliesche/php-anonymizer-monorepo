@@ -13,6 +13,14 @@ final class PersonaReplacementStrategyFactory
     public const array IDS = ['persona.name', 'persona.first_name', 'persona.last_name', 'persona.email', 'persona.username', 'persona.company', 'persona.phone', 'persona.street', 'persona.street_number', 'persona.city', 'persona.postcode', 'persona.country'];
 
     /**
+     * @return list<string>
+     */
+    public static function ids(): array
+    {
+        return self::IDS;
+    }
+
+    /**
      * @return list<PersonaReplacementStrategy>
      */
     public static function create(string $locale = 'en'): array

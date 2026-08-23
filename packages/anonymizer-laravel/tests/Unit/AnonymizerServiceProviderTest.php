@@ -43,6 +43,8 @@ use PhpAnonymizer\Anonymizer\Domain\Rule\RuleDefinition;
 use PhpAnonymizer\AnonymizerLaravel\AnonymizerServiceProvider;
 use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Payload\YamlPayloadCodec;
 use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Profile\ProfileComposer;
+use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Registration\CoreRegistrar;
+use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Registration\ProfileRegistrar as LaravelProfileRegistrar;
 use PhpAnonymizer\AnonymizerLaravel\Tests\Support\ServiceProvider\TestProfileProviderServiceProvider;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -81,6 +83,8 @@ use PHPUnit\Framework\Attributes\UsesClass;
 #[UsesClass(RuleDefinition::class)]
 #[UsesClass(YamlPayloadCodec::class)]
 #[UsesClass(ProfileComposer::class)]
+#[UsesClass(CoreRegistrar::class)]
+#[UsesClass(LaravelProfileRegistrar::class)]
 final class AnonymizerServiceProviderTest extends TestCase
 {
     public function testItComposesConfiguredAndTaggedProfilesAndBindsInterfaces(): void

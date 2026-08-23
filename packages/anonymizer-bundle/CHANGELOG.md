@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Split framework registration into internal composition collaborators and made
+  Symfony serializer integration explicitly opt-in.
 ## 2.0.0
 
 - Prepared the integration for the 2.0 unified façade and builder-based

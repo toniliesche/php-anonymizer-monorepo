@@ -9,6 +9,10 @@ codec, transformation, and `anonymizer.extension` tags.
 ordered by descending `priority`. Limits, audit logging, YAML payloads, Faker,
 Personas, and keyed pseudonyms are optional configuration capabilities.
 
+Object anonymization is opt-in. Set `anonymizer.serializer.enabled: true` and
+register a service named `serializer`, or set `anonymizer.serializer.service`
+to an application-owned Symfony Serializer service.
+
 See the repository [`user guide`](../../../docs/user-guide.md),
 [`migration guide`](../../../docs/migration-v2.md), and
 [`legacy importer guide`](../../../docs/legacy-rule-import.md).

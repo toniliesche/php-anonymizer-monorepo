@@ -15,6 +15,11 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(FakerReplacementStrategyFactory::class)]
 final class FakerReplacementStrategyFactoryTest extends TestCase
 {
+    public function testExposesCanonicalStrategyIds(): void
+    {
+        self::assertSame(array_map(static fn (FakerFormatter $formatter): string => $formatter->id(), FakerFormatter::cases()), FakerReplacementStrategyFactory::ids());
+    }
+
     public function testCreatesAllDocumentedStrategies(): void
     {
         $strategies = FakerReplacementStrategyFactory::create(seed: 1234);

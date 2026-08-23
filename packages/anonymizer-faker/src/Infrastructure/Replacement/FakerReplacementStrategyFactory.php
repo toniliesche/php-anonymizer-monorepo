@@ -12,6 +12,14 @@ use function Safe\unpack;
 final class FakerReplacementStrategyFactory
 {
     /**
+     * @return list<string>
+     */
+    public static function ids(): array
+    {
+        return array_map(static fn (FakerFormatter $formatter): string => $formatter->id(), FakerFormatter::cases());
+    }
+
+    /**
      * @return list<FakerReplacementStrategy>
      */
     public static function create(string $locale = 'en_US', int|string|null $seed = null): array

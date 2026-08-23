@@ -33,6 +33,8 @@ $violations = [];
 $allowlistedClosureFiles = [
     '/packages/anonymizer-laravel/src/AnonymizerServiceProvider.php',
     '/packages/anonymizer-laravel/src/Infrastructure/Audit/AuditRegistrar.php',
+    '/packages/anonymizer-laravel/src/Infrastructure/Registration/CoreRegistrar.php',
+    '/packages/anonymizer-laravel/src/Infrastructure/Registration/ProfileRegistrar.php',
     '/packages/anonymizer-bundle/tests/Integration/TestKernel.php',
 ];
 

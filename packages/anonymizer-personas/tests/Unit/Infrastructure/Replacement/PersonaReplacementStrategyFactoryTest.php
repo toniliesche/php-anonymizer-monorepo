@@ -22,6 +22,11 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(PersonaReplacementStrategyFactory::class)]
 final class PersonaReplacementStrategyFactoryTest extends TestCase
 {
+    public function testExposesCanonicalStrategyIds(): void
+    {
+        self::assertSame(PersonaReplacementStrategyFactory::IDS, PersonaReplacementStrategyFactory::ids());
+    }
+
     public function testCreatesStableEuropeanPersonaValues(): void
     {
         $strategies = PersonaReplacementStrategyFactory::create('pt_PT');

@@ -11,20 +11,13 @@ use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
 use Override;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizationLimits;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilder;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Extension\AnonymizerExtensionInterface;
-use PhpAnonymizer\Anonymizer\Application\Extension\Payload\PayloadCodecInterface;
-use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileCollection;
-use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspector;
-use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspectorInterface;
-use PhpAnonymizer\Anonymizer\Application\Extension\Replacement\ReplacementStrategyInterface;
-use PhpAnonymizer\Anonymizer\Application\Extension\Transformation\ValueTransformationInterface;
 use PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement\FakerReplacementStrategyFactory;
 use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Audit\AuditRegistrar;
 use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Payload\YamlPayloadCodec;
 use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Profile\ProfileComposer;
+use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Registration\CoreRegistrar;
+use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Registration\ProfileRegistrar;
 use PhpAnonymizer\AnonymizerPersonas\Infrastructure\Replacement\PersonaReplacementStrategyFactory;
 use PhpAnonymizer\AnonymizerPseudonymization\Application\PseudonymKeyProviderInterface;
 use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Replacement\HmacPseudonymStrategy;
@@ -45,9 +38,6 @@ final class AnonymizerServiceProvider extends ServiceProvider
 
     private const string TRANSFORMATION_TAG = 'anonymizer.value_transformation';
 
-    /** @var list<string> */
-    private const array FAKER_IDS = ['faker.building_number', 'faker.city', 'faker.company', 'faker.country', 'faker.email', 'faker.first_name', 'faker.house_number', 'faker.last_name', 'faker.name', 'faker.password', 'faker.postcode', 'faker.street', 'faker.street_number', 'faker.username', 'faker.zip'];
-
     #[Override]
     public function register(): void
     {
@@ -55,8 +45,16 @@ final class AnonymizerServiceProvider extends ServiceProvider
         $this->app->singleton(ProfileComposer::class);
         $this->app->singleton(YamlPayloadCodec::class);
         $this->app->tag(YamlPayloadCodec::class, self::CODEC_TAG);
-        $this->registerProfiles();
-        $this->registerCore();
+        $configuration = fn (string $key, mixed $default = null): mixed => $this->configuration($key, $default);
+        new ProfileRegistrar()->register($this->app, $configuration, self::PROFILE_TAG);
+        new CoreRegistrar()->register(
+            $this->app,
+            $configuration,
+            fn (array $limits, string $key, int $default): int => $this->limit($limits, $key, $default),
+            self::STRATEGY_TAG,
+            self::CODEC_TAG,
+            self::TRANSFORMATION_TAG,
+        );
         $this->registerOptionalExtensions();
     }
 
@@ -70,72 +68,6 @@ final class AnonymizerServiceProvider extends ServiceProvider
 
         // Resolve the public service eagerly so configuration and extension failures occur at boot.
         $this->app->make(AnonymizerInterface::class);
-    }
-
-    private function registerProfiles(): void
-    {
-        $this->app->singleton(ProfileCollection::class, function (Container $app): ProfileCollection {
-            $configured = $this->configuration('anonymizer.profiles', []);
-            if (!is_array($configured)) {
-                throw new InvalidArgumentException('anonymizer.profiles must be a map.');
-            }
-
-            /** @var array<string, mixed> $configured */
-            return $app->make(ProfileComposer::class)->compose($configured, $app->tagged(self::PROFILE_TAG));
-        });
-        $this->app->singleton(ProfileInspector::class, fn (Container $app): ProfileInspector => new ProfileInspector($app->make(ProfileCollection::class)));
-        $this->app->alias(ProfileInspector::class, ProfileInspectorInterface::class);
-    }
-
-    private function registerCore(): void
-    {
-        $this->app->singleton(AnonymizationLimits::class, function (): AnonymizationLimits {
-            $limits = $this->configuration('anonymizer.limits', []);
-            if (!is_array($limits)) {
-                throw new InvalidArgumentException('anonymizer.limits must be a map.');
-            }
-
-            /** @var array<string, mixed> $limits */
-            return new AnonymizationLimits(
-                $this->limit($limits, 'max_input_bytes', 10_485_760),
-                $this->limit($limits, 'max_depth', 64),
-                $this->limit($limits, 'max_visited_nodes', 100_000),
-                $this->limit($limits, 'max_collection_entries', 50_000),
-                $this->limit($limits, 'max_embedded_payload_depth', 8),
-            );
-        });
-        $this->registerBuilder();
-        $this->app->singleton(AnonymizerInterface::class, fn (Container $app): AnonymizerInterface => $app->make(AnonymizerBuilder::class)->build());
-    }
-
-    private function registerBuilder(): void
-    {
-        $this->app->singleton(AnonymizerBuilder::class, function (Container $app): AnonymizerBuilder {
-            /** @var iterable<ReplacementStrategyInterface> $strategies */
-            $strategies = $app->tagged(self::STRATEGY_TAG);
-
-            /** @var iterable<PayloadCodecInterface> $codecs */
-            $codecs = $app->tagged(self::CODEC_TAG);
-
-            /** @var iterable<ValueTransformationInterface> $transformations */
-            $transformations = $app->tagged(self::TRANSFORMATION_TAG);
-
-            /** @var iterable<AnonymizerExtensionInterface> $extensions */
-            $extensions = $app->tagged('anonymizer.extension');
-
-            $builder = AnonymizerBuilder::create()
-                ->withProfileProvider($app->make(ProfileCollection::class))
-                ->withReplacementStrategies($strategies)
-                ->withPayloadCodecs($codecs)
-                ->withValueTransformations($transformations)
-                ->withLimits($app->make(AnonymizationLimits::class));
-
-            foreach ($extensions as $extension) {
-                $builder = $builder->withExtension($extension);
-            }
-
-            return $builder;
-        });
     }
 
     private function registerOptionalExtensions(): void
@@ -161,7 +93,7 @@ final class AnonymizerServiceProvider extends ServiceProvider
         }
         $generator = 'anonymizer.faker.generator';
         $this->app->singleton($generator, fn (Container $app): object => $factory::createGenerator($this->stringConfiguration('anonymizer.faker.locale', 'en_US'), $this->configuration('anonymizer.faker.seed')));
-        foreach (self::FAKER_IDS as $id) {
+        foreach ($factory::ids() as $id) {
             $service = 'anonymizer.faker.' . str_replace('.', '_', $id);
             $this->app->singleton($service, fn (Container $app) => $factory::createStrategy($app->make($generator), $id));
             $this->app->tag($service, self::STRATEGY_TAG);

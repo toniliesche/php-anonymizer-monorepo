@@ -4,6 +4,8 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Refactored Symfony and Laravel framework composition roots, added canonical
+  optional-integration catalogs, and made Symfony serializer wiring opt-in.
 - Centralized builder and direct-constructor runtime assembly in one validated
   internal runtime graph without changing façade behavior.
 - Added executable public API manifest/signature checks and transitional

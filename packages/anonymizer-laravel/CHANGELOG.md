@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Centralized profile and core service registration in internal composition
+  collaborators and consumed the canonical Faker strategy catalog.
 ## 2.0.0
 
 - Prepared service registration for the 2.0 unified façade and builder-based

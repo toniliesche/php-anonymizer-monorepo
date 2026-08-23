@@ -24,11 +24,14 @@ use PhpAnonymizer\AnonymizerBundle\DependencyInjection\AnonymizerConfiguration;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\AnonymizerExtension;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Compiler\ExtensionTagCompilerPass;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Compiler\SerializerServiceCompilerPass;
+use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Registration\OptionalIntegrationRegistrar;
+use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Registration\ProfileRegistrar;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Audit\AuditLoggerAdapter;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport\AtomicFileWriter;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport\BundleConfigRenderer;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport\LegacyDocumentReader;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\ConfiguredProfileProvider;
+use PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement\FakerFormatter;
 use PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement\FakerReplacementStrategyFactory;
 use PhpAnonymizer\AnonymizerPersonas\Infrastructure\Replacement\PersonaReplacementStrategyFactory;
 use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Replacement\HmacPseudonymStrategy;
@@ -48,6 +51,11 @@ use Symfony\Component\DependencyInjection\Reference;
 #[CoversClass(ProfileDefinition::class)]
 #[CoversClass(RuleOptionsCompiler::class)]
 #[CoversClass(RuleDefinition::class)]
+#[CoversClass(FakerReplacementStrategyFactory::class)]
+#[CoversClass(PersonaReplacementStrategyFactory::class)]
+#[CoversClass(FakerFormatter::class)]
+#[CoversClass(OptionalIntegrationRegistrar::class)]
+#[CoversClass(ProfileRegistrar::class)]
 final class AnonymizerExtensionTest extends TestCase
 {
     #[DataProvider('invalidProfilesProvider')]
@@ -186,8 +194,8 @@ final class AnonymizerExtensionTest extends TestCase
 
     public function testReportsMissingFakerIntegrationsPrecisely(): void
     {
-        $method = new ReflectionMethod(AnonymizerExtension::class, 'requireFakerFactory');
-        $extension = new AnonymizerExtension();
+        $method = new ReflectionMethod(OptionalIntegrationRegistrar::class, 'factory');
+        $extension = new OptionalIntegrationRegistrar();
         foreach ([
             ['personas', 'Personas integration is enabled but php-anonymizer/anonymizer-personas is not installed.'],
             ['faker', 'Faker integration is enabled but php-anonymizer/anonymizer-faker is not installed.'],

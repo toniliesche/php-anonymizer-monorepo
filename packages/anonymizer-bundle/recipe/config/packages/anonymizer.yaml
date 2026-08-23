@@ -1,2 +1,4 @@
 anonymizer:
   profiles: {}
+  serializer:
+    enabled: false
