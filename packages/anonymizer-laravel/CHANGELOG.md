@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Iteration 29: validated framework-resolved services, tagged extensions, and
+  configured profile maps with runtime assertions.
 - Centralized profile and core service registration in internal composition
   collaborators and consumed the canonical Faker strategy catalog.
 ## 2.0.0

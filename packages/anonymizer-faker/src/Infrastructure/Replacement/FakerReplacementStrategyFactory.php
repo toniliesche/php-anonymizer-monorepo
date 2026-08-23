@@ -7,6 +7,7 @@ namespace PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement;
 use Faker\Factory;
 use Faker\Generator;
 use PhpAnonymizer\Anonymizer\Application\Extension\Replacement\ReplacementStrategyInterface;
+use Webmozart\Assert\Assert;
 use function Safe\unpack;
 
 final class FakerReplacementStrategyFactory
@@ -60,8 +61,9 @@ final class FakerReplacementStrategyFactory
 
         $bytes = hash('sha256', $seed, true);
 
-        /** @var array{seed: int} $parts */
         $parts = unpack('Nseed', $bytes);
+        Assert::keyExists($parts, 'seed');
+        Assert::integer($parts['seed']);
 
         return $parts['seed'];
     }

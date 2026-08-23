@@ -9,6 +9,7 @@ use Override;
 use PhpAnonymizer\Anonymizer\Application\Extension\AnonymizerExtensionInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Webmozart\Assert\Assert;
 use function Safe\preg_match;
 
 // @internal
@@ -41,7 +42,7 @@ final class ExtensionTagCompilerPass implements CompilerPassInterface
         $ids = [];
         foreach ($container->findTaggedServiceIds($tag) as $serviceId => $tags) {
             foreach ($tags as $attributes) {
-                /** @var array<string, mixed> $attributes */
+                Assert::isMap($attributes);
                 $id = $attributes['id'] ?? null;
                 if (!is_string($id) || preg_match('/^[A-Za-z][A-Za-z0-9_.-]*$/D', $id) !== 1) {
                     throw new InvalidArgumentException(sprintf('Service "%s" uses tag "%s" without a valid id.', $serviceId, $tag));

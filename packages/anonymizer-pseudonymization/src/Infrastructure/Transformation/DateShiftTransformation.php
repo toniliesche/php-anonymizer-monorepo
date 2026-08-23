@@ -12,6 +12,7 @@ use PhpAnonymizer\Anonymizer\Application\Anonymization\ValueTransformationContex
 use PhpAnonymizer\Anonymizer\Application\Extension\Transformation\ContextualValueTransformationInterface;
 use PhpAnonymizer\AnonymizerPseudonymization\Application\PseudonymKeyProviderInterface;
 use Throwable;
+use Webmozart\Assert\Assert;
 use function Safe\preg_match;
 use function Safe\unpack;
 
@@ -71,7 +72,6 @@ final readonly class DateShiftTransformation implements ContextualValueTransform
         $isString = is_string($value);
         $date = $this->date($value, $isString);
 
-        /** @var array{0: string, 1: int, 2: string} $scopeData */
         $scopeData = $this->scope($options, $context);
         [$scopeAttribute, $maxDays, $scope] = $scopeData;
         $offset = $this->offset($context, $scopeAttribute, $scope, $maxDays);
@@ -107,8 +107,8 @@ final readonly class DateShiftTransformation implements ContextualValueTransform
         $scopeAttribute = $options['scope_attribute'] ?? null;
         $maxDays = $options['max_days'] ?? null;
 
-        /** @var string $scopeAttribute */
-        /** @var int $maxDays */
+        Assert::string($scopeAttribute);
+        Assert::integer($maxDays);
         $scope = $context->attributes()[$scopeAttribute] ?? null;
         if (!is_string($scope)) {
             throw new InvalidArgumentException('date_shift scope attribute is missing from context.');
@@ -133,8 +133,9 @@ final readonly class DateShiftTransformation implements ContextualValueTransform
             $message .= pack('N', mb_strlen($part, 'UTF-8')) . $part;
         }
 
-        /** @var array{1:int} $unpacked */
         $unpacked = unpack('N', hash_hmac('sha256', $message, $key, true));
+        Assert::keyExists($unpacked, 1);
+        Assert::integer($unpacked[1]);
 
         return ($unpacked[1] % (2 * $maxDays + 1)) - $maxDays;
     }

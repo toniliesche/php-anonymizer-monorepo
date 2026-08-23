@@ -8,23 +8,23 @@ use InvalidArgumentException;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileCollection;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileProviderInterface;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
+use Webmozart\Assert\Assert;
 
 // @internal
 final class ProfileComposer
 {
     /**
-     * @param array<string, mixed> $configured
+     * @param array<mixed, mixed> $configured
      * @param iterable<mixed> $providers
      */
     public function compose(array $configured, iterable $providers): ProfileCollection
     {
         $profiles = [];
         foreach ($configured as $name => $definition) {
-            if (!is_array($definition)) {
-                throw new InvalidArgumentException(sprintf('Profile "%s" must be a map.', $name));
-            }
-
-            /** @var array<string, mixed> $definition */
+            Assert::string($name, 'Profile names must be strings.');
+            Assert::isArray($definition, sprintf('Profile "%s" must be a map.', $name));
+            Assert::allString(array_keys($definition), sprintf('Profile "%s" must use string keys.', $name));
+            Assert::isMap($definition, sprintf('Profile "%s" must be a map.', $name));
             $profiles[] = ProfileDefinition::fromArray($name, $definition);
         }
         foreach ($providers as $provider) {

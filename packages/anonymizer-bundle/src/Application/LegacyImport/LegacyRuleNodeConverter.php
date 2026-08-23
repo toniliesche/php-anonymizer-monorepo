@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PhpAnonymizer\AnonymizerBundle\Application\LegacyImport;
 
+use Webmozart\Assert\Assert;
+
 /**
  * @phpstan-type Rule array<string, mixed>
  *
@@ -70,7 +72,7 @@ final readonly class LegacyRuleNodeConverter
                 throw LegacyImportException::message(sprintf('Child nodes for "%s" must be maps.', $name));
             }
 
-            /** @var array<string, mixed> $child */
+            Assert::isMap($child);
             $converted[] = $this->convertNode($child);
         }
 

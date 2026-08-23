@@ -17,6 +17,7 @@ use PhpAnonymizer\AnonymizerSymfonySerializer\Application\Exception\ObjectNormal
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Throwable;
+use Webmozart\Assert\Assert;
 
 /**
  * @internal symfony Serializer object adapter implementation
@@ -53,13 +54,14 @@ final readonly class SymfonyObjectAnonymizerAdapter implements ObjectAnonymizerI
         } catch (Throwable $exception) {
             throw new ObjectNormalizationFailure(sprintf('Unable to normalize %s for profile "%s".', $class, $profile), 0, $exception);
         }
+
         if (!is_array($normalized) || array_is_list($normalized)) {
             throw new ObjectNormalizationFailure(sprintf('The serializer must normalize %s to an associative array.', $class));
         }
 
-        /** @var non-empty-array<string, mixed> $normalized */
-        /** @var AnonymizationResult $result */
+        Assert::isNonEmptyMap($normalized);
         $result = $anonymizer->anonymizeWithReport($profile, $normalized, $context);
+        Assert::isInstanceOf($result, AnonymizationResult::class);
 
         try {
             $anonymized = $this->serializer->denormalize($result->data(), $class, null, $serializerContext);

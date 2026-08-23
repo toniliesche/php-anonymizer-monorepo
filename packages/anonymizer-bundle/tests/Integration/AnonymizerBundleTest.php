@@ -174,7 +174,7 @@ final class AnonymizerBundleTest extends KernelTestCase
         self::assertSame([['id' => 'faker.first_name', 'builtin' => true]], $container->getDefinition('anonymizer.faker.faker_first_name')->getTag('anonymizer.replacement_strategy'));
         $tags = $container->getDefinition(YamlPayloadCodec::class)->getTag('anonymizer.payload_codec');
 
-        /** @var array<int, array{id: string}> $tags */
+        /** @var list<array{id: string}> $tags */
         self::assertSame('yaml', $tags[0]['id']);
 
         $method = new ReflectionMethod(OptionalIntegrationRegistrar::class, 'factory');

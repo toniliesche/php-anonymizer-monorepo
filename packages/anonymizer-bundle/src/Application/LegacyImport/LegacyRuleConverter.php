@@ -6,6 +6,7 @@ namespace PhpAnonymizer\AnonymizerBundle\Application\LegacyImport;
 
 use PhpAnonymizer\Anonymizer\Domain\Exception\InvalidProfileDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
+use Webmozart\Assert\Assert;
 
 /**
  * @phpstan-type Rule array<string, mixed>
@@ -30,6 +31,7 @@ final readonly class LegacyRuleConverter
         $converted = $this->collections->convert($rules);
 
         /** @var list<array<string, mixed>> $converted */
+        Assert::isList($converted);
         $profile = ['mode' => 'redact', 'rules' => $this->merger->merge($converted)];
 
         // @codeCoverageIgnoreStart Defensive validation branch requires an invalid converter collaborator.
@@ -57,8 +59,8 @@ final readonly class LegacyRuleConverter
         }
         $locale = $faker['locale'] ?? 'en_US';
 
-        /** @var array<string, mixed> $anonymizer */
         $anonymizer = $result['anonymizer'];
+        Assert::isMap($anonymizer);
         $anonymizer['faker'] = ['enabled' => true, 'locale' => is_string($locale) ? $locale : 'en_US', 'seed' => $faker['seed'] ?? null];
         $result['anonymizer'] = $anonymizer;
     }

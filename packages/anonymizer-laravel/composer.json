@@ -8,7 +8,8 @@
         "illuminate/support": "^13.0",
         "php-anonymizer/anonymizer": "^2.0",
         "psr/log": "^3.0",
-        "symfony/yaml": "^7.4 || ^8.0"
+        "symfony/yaml": "^7.4 || ^8.0",
+        "webmozart/assert": "^2.4"
     },
     "require-dev": {
         "laravel/framework": "^13.0",

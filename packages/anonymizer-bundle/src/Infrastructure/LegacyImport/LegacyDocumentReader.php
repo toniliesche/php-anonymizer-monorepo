@@ -7,6 +7,7 @@ namespace PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport;
 use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyImportException;
 use Symfony\Component\Yaml\Yaml;
 use Throwable;
+use Webmozart\Assert\Assert;
 use function mb_strtolower;
 use function Safe\file_get_contents;
 use function Safe\json_decode;
@@ -47,7 +48,8 @@ final class LegacyDocumentReader
             }
         }
 
-        /** @var array<string, mixed> $document */
+        Assert::isMap($document);
+
         return $document;
     }
 }

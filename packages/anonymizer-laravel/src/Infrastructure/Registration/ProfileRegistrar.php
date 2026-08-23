@@ -13,6 +13,7 @@ use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileCollection;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspector;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspectorInterface;
 use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Profile\ProfileComposer;
+use Webmozart\Assert\Assert;
 
 /**
  * @internal
@@ -30,7 +31,8 @@ final readonly class ProfileRegistrar
                 throw new InvalidArgumentException('anonymizer.profiles must be a map.');
             }
 
-            /** @var array<string, mixed> $configured */
+            Assert::isMap($configured);
+
             return $app->make(ProfileComposer::class)->compose($configured, $app->tagged($profileTag));
         });
         $app->singleton(ProfileInspector::class, fn (Container $app): ProfileInspector => new ProfileInspector($app->make(ProfileCollection::class)));

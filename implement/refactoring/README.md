@@ -19,6 +19,8 @@
 6. [Performance observability](06-performance-observability.md)
 7. [Release, documentation, and closeout](07-release-documentation-and-closeout.md)
 8. [Iteration 28: Release readiness and performance baseline](../refined-iteration-28-release-readiness-performance-baseline-plan.md)
+9. [Iteration 29: Runtime assertions at untyped boundaries](../refined-iteration-29-webmozart-assert-type-safety-plan.md)
+10. [Iteration 30: Replace coverage ignores with behavioral tests](../refined-iteration-30-coverage-ignore-test-plan.md)
 
 Each slice is independently reviewable and releasable. Run focused checks
 first; run `PHP_VERSION=8.5 composer qa` before merging a completed slice.

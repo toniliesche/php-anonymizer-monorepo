@@ -52,6 +52,7 @@ use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Registration\ProfileRegistrar
 use PhpAnonymizer\AnonymizerLaravel\Tests\Support\ServiceProvider\TestProfileProviderServiceProvider;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
+use Webmozart\Assert\Assert;
 
 #[CoversClass(AnonymizerServiceProvider::class)]
 #[UsesClass(AnonymizerBuilder::class)]
@@ -117,9 +118,8 @@ final class AnonymizerServiceProviderTest extends TestCase
     #[Override]
     protected function defineEnvironment($app): void
     {
-        /** @var \Illuminate\Foundation\Application $app */
-        /** @var Repository $config */
         $config = $app->make('config');
+        Assert::isInstanceOf($config, Repository::class);
         $config->set('anonymizer.profiles', [
             'consumer' => [
                 'mode' => 'redact',

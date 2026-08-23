@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Iteration 29: asserted date-shift option and hash unpacking invariants.
+
 ## 2.0.0
 
 - Added package README and focused documentation for keyed pseudonymization.

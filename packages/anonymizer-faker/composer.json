@@ -6,7 +6,8 @@
     "require": {
         "php": "^8.5",
         "fakerphp/faker": "^1.24",
-        "php-anonymizer/anonymizer": "^2.0"
+        "php-anonymizer/anonymizer": "^2.0",
+        "webmozart/assert": "^2.4"
     },
     "autoload": {
         "psr-4": {

@@ -17,6 +17,7 @@ use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
+use Webmozart\Assert\Assert;
 
 // @codeCoverageIgnoreStart
 /**
@@ -63,7 +64,8 @@ final class ProfileRegistrar
                 throw new InvalidConfigurationException(sprintf('The profile at "anonymizer.profiles.%s" must be a map.', $name));
             }
 
-            /** @var array<string, mixed> $definition */
+            Assert::isMap($definition);
+
             try {
                 ProfileDefinition::fromArray($name, $definition);
                 $profiles[$name] = $definition;

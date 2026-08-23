@@ -4,6 +4,9 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Iteration 29: replaced unsafe extension and framework-boundary type claims
+  with Webmozart Assert runtime checks, added PHPStan assertion support, and
+  preserved domain-specific validation contracts.
 - Added isolated `composer benchmark` scenarios with median wall-time,
   peak-memory, and output-digest reporting, plus scheduled benchmark artifact
   collection and explicit batch/NDJSON laziness regressions.

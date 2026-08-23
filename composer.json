@@ -6,7 +6,8 @@
     "require": {
         "php": "^8.5",
         "ext-mbstring": "*",
-        "thecodingmachine/safe": "^3.4"
+        "thecodingmachine/safe": "^3.4",
+        "webmozart/assert": "^2.4"
     },
     "require-dev": {
         "deptrac/deptrac": "^4.7.1",
@@ -30,6 +31,7 @@
         "phpstan/phpstan-deprecation-rules": "^2.0.5",
         "phpstan/phpstan-phpunit": "^2.0.18",
         "phpstan/phpstan-strict-rules": "^2.0.12",
+        "phpstan/phpstan-webmozart-assert": "^2.0",
         "phpunit/phpunit": "^13.3.1",
         "psr/log": "^3.0",
         "rector/rector": "^2.6.2",

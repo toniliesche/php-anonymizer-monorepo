@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace PhpAnonymizer\AnonymizerBundle\Application\LegacyImport;
 
 // @internal
+use Webmozart\Assert\Assert;
+
 final readonly class LegacyRuleCollectionConverter
 {
     public function __construct(private LegacyRuleNodeConverter $nodes)
@@ -36,7 +38,7 @@ final readonly class LegacyRuleCollectionConverter
                 }
             }
 
-            /** @var array<string, mixed> $definition */
+            Assert::isMap($definition);
             $converted[] = $this->nodes->convertNode($definition);
         }
 

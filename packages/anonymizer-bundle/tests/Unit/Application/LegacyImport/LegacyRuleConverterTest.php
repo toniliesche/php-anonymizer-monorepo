@@ -180,7 +180,6 @@ final class LegacyRuleConverterTest extends TestCase
 
         $this->expectException(LegacyImportException::class);
 
-        /** @var array<int, mixed> $invalidPaths */
         $invalidPaths = [1 => 'email'];
         $collections->convert($invalidPaths);
     }

@@ -27,6 +27,7 @@ use PhpAnonymizer\AnonymizerSymfonySerializer\SymfonySerializerExtension;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Symfony\Component\Serializer\SerializerInterface;
+use Webmozart\Assert\Assert;
 
 final class AnonymizerServiceProvider extends ServiceProvider
 {
@@ -131,15 +132,13 @@ final class AnonymizerServiceProvider extends ServiceProvider
         $strategy = HmacPseudonymStrategy::class;
         $transformation = DateShiftTransformation::class;
         $this->app->singleton($strategy, function (Container $app) use ($keyProvider, $strategy): object {
-            /** @var PseudonymKeyProviderInterface $keys */
-            $keys = $app->make($keyProvider);
+            $keys = Assert::isInstanceOf($app->make($keyProvider), PseudonymKeyProviderInterface::class, sprintf('Pseudonym key provider "%s" must implement %s.', $keyProvider, PseudonymKeyProviderInterface::class));
 
             return new $strategy($keys);
         });
         $this->app->tag($strategy, self::STRATEGY_TAG);
         $this->app->singleton($transformation, function (Container $app) use ($keyProvider, $transformation): object {
-            /** @var PseudonymKeyProviderInterface $keys */
-            $keys = $app->make($keyProvider);
+            $keys = Assert::isInstanceOf($app->make($keyProvider), PseudonymKeyProviderInterface::class, sprintf('Pseudonym key provider "%s" must implement %s.', $keyProvider, PseudonymKeyProviderInterface::class));
 
             return new $transformation($keys);
         });
@@ -157,7 +156,6 @@ final class AnonymizerServiceProvider extends ServiceProvider
         $service = $this->configuration('anonymizer.serializer.service');
         $service = is_string($service) && $service !== '' ? $service : SerializerInterface::class;
         $this->app->singleton(SymfonyObjectAnonymizerAdapter::class, function (Container $app) use ($service): SymfonyObjectAnonymizerAdapter {
-            /** @var DenormalizerInterface&NormalizerInterface $serializer */
             $serializer = $this->serializer($app, $service);
 
             return new SymfonyObjectAnonymizerAdapter($serializer);
@@ -165,7 +163,6 @@ final class AnonymizerServiceProvider extends ServiceProvider
         $this->app->singleton(SymfonySerializerExtension::class, function (Container $app) use ($service): SymfonySerializerExtension {
             $serializer = $this->serializer($app, $service);
 
-            /** @var DenormalizerInterface&NormalizerInterface $serializer */
             return new SymfonySerializerExtension($serializer);
         });
         $this->app->tag(SymfonySerializerExtension::class, 'anonymizer.extension');
@@ -176,7 +173,7 @@ final class AnonymizerServiceProvider extends ServiceProvider
         return (bool) $this->configuration('anonymizer.serializer.enabled', false);
     }
 
-    private function serializer(Container $app, string $service): object
+    private function serializer(Container $app, string $service): DenormalizerInterface&NormalizerInterface
     {
         $serializer = $app->make($service);
         $normalizer = NormalizerInterface::class;
@@ -185,7 +182,6 @@ final class AnonymizerServiceProvider extends ServiceProvider
             throw new InvalidArgumentException(sprintf('Serializer service "%s" must implement both %s and %s.', $service, $normalizer, $denormalizer));
         }
 
-        /** @var DenormalizerInterface&NormalizerInterface $serializer */
         return $serializer;
     }
 

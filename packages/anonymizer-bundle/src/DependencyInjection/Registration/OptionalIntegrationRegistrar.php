@@ -94,7 +94,6 @@ final class OptionalIntegrationRegistrar
             throw new InvalidConfigurationException('anonymizer.pseudonymization.key_provider is required when pseudonymization is enabled.');
         }
 
-        /** @var non-empty-string $keyProvider */
         $keyProvider = $config['key_provider'];
         $key = new Reference($keyProvider);
         $container->setDefinition(HmacPseudonymStrategy::class, new Definition(HmacPseudonymStrategy::class, [$key])
@@ -128,7 +127,6 @@ final class OptionalIntegrationRegistrar
             throw new InvalidConfigurationException('anonymizer.audit.logger_service is required when anonymizer.audit.enabled is true.');
         }
 
-        /** @var non-empty-string $loggerService */
         $loggerService = $config['logger_service'];
         $container->setDefinition(AuditLoggerAdapter::class, new Definition(AuditLoggerAdapter::class, [
             new Reference(AnonymizerInterface::class), new Reference($loggerService),

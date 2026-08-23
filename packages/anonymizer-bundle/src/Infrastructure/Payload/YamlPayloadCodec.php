@@ -8,6 +8,7 @@ use Override;
 use PhpAnonymizer\Anonymizer\Application\Extension\Payload\DocumentPayloadCodecInterface;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
+use Webmozart\Assert\Assert;
 
 // @internal
 final class YamlPayloadCodec implements DocumentPayloadCodecInterface
@@ -36,7 +37,8 @@ final class YamlPayloadCodec implements DocumentPayloadCodecInterface
             }
         }
 
-        /** @var array<string, mixed> $decoded */
+        Assert::isMap($decoded);
+
         return $decoded;
     }
 

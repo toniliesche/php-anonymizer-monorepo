@@ -10,6 +10,7 @@ use Illuminate\Contracts\Container\Container;
 use InvalidArgumentException;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
 use Psr\Log\LoggerInterface;
+use Webmozart\Assert\Assert;
 
 /**
  * @internal Laravel audit service registrar
@@ -31,8 +32,7 @@ final readonly class AuditRegistrar
             throw new InvalidArgumentException('anonymizer.audit.logger_service is required when audit is enabled.');
         }
         $app->singleton(AuditLoggerAdapter::class, static function (Container $app) use ($logger): AuditLoggerAdapter {
-            /** @var LoggerInterface $loggerInstance */
-            $loggerInstance = $app->make($logger);
+            $loggerInstance = Assert::isInstanceOf($app->make($logger), LoggerInterface::class, sprintf('Audit logger service "%s" must implement %s.', $logger, LoggerInterface::class));
 
             return new AuditLoggerAdapter($app->make(AnonymizerInterface::class), $loggerInstance);
         });
