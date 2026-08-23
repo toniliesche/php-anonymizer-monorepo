@@ -4,6 +4,12 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Iteration 26: compiled immutable traversal rule indexes and snapshot-scoped
+  selection to reduce repeated per-field scans while preserving traversal,
+  reporting, and budget semantics; global rule conditions now follow the
+  documented conditional fallback behavior.
+- Added a fixed local traversal benchmark command for wide-map and normalized
+  key-selection comparisons.
 - Refactored Symfony and Laravel framework composition roots, added canonical
   optional-integration catalogs, and made Symfony serializer wiring opt-in.
 - Centralized builder and direct-constructor runtime assembly in one validated

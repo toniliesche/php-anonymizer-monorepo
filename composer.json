@@ -87,6 +87,7 @@
         "architecture": "@php vendor/bin/deptrac analyse --config-file=deptrac.yaml",
         "artifacts": "@php tools/build-artifacts.php",
         "audit:security": "composer audit --locked",
+        "benchmark:traversal": "@php tools/benchmark-traversal.php",
         "check": [
             "@validate:metadata",
             "@audit:security",
