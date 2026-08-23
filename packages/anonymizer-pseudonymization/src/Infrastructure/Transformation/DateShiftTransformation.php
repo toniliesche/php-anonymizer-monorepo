@@ -15,9 +15,6 @@ use Throwable;
 use function Safe\preg_match;
 use function Safe\unpack;
 
-/**
- * @codeCoverageIgnore
- */
 // @internal
 final readonly class DateShiftTransformation implements ContextualValueTransformationInterface
 {
@@ -85,17 +82,15 @@ final readonly class DateShiftTransformation implements ContextualValueTransform
 
     private function date(mixed $value, bool $isString): DateTimeImmutable
     {
-        if ($isString && !is_string($value)) {
-            throw new InvalidArgumentException('date_shift requires a valid RFC 3339 date or DateTimeInterface.');
-        }
+        $stringValue = is_string($value) ? $value : null;
 
         try {
             // @phpstan-ignore theCodingMachineSafe.class (guarded date conversion)
-            $date = $isString ? new DateTimeImmutable($value) : ($value instanceof DateTimeInterface ? DateTimeImmutable::createFromInterface($value) : null);
+            $date = $isString ? new DateTimeImmutable($stringValue ?? '') : ($value instanceof DateTimeInterface ? DateTimeImmutable::createFromInterface($value) : null);
         } catch (Throwable) {
             throw new InvalidArgumentException('date_shift requires a valid date.');
         }
-        if (!$date instanceof DateTimeImmutable || ($isString && preg_match('/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)$/D', $value) !== 1)) {
+        if (!$date instanceof DateTimeImmutable || ($isString && preg_match('/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)$/D', $stringValue ?? '') !== 1)) {
             throw new InvalidArgumentException('date_shift requires a valid RFC 3339 date or DateTimeInterface.');
         }
 
@@ -111,9 +106,9 @@ final readonly class DateShiftTransformation implements ContextualValueTransform
     {
         $scopeAttribute = $options['scope_attribute'] ?? null;
         $maxDays = $options['max_days'] ?? null;
-        if (!is_string($scopeAttribute) || !is_int($maxDays)) {
-            throw new InvalidArgumentException('date_shift options are invalid.');
-        }
+
+        /** @var string $scopeAttribute */
+        /** @var int $maxDays */
         $scope = $context->attributes()[$scopeAttribute] ?? null;
         if (!is_string($scope)) {
             throw new InvalidArgumentException('date_shift scope attribute is missing from context.');

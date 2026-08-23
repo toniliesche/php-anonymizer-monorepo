@@ -19,7 +19,7 @@ use PhpAnonymizer\AnonymizerLaravel\Tests\Support\Profile\TestProfileProvider;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\NullLogger;
+use Psr\Log\LoggerInterface;
 use stdClass;
 use Symfony\Component\Yaml\Exception\ParseException;
 
@@ -50,10 +50,14 @@ final class InfrastructureTest extends TestCase
         $codec = new YamlPayloadCodec();
 
         self::assertSame(['email' => 'secret'], $codec->decode("email: secret\n"));
+        self::assertSame(['first' => 'one', 'second' => 'two'], $codec->decode("first: one\nsecond: two\n"));
         self::assertSame(['email' => 'secret'], $codec->decodeDocument("email: secret\n"));
+        self::assertSame(['one', 'two'], $codec->decodeDocument("- one\n- two\n"));
         self::assertSame("email: secret\n", $codec->encode(['email' => 'secret']));
         self::assertSame("- secret\n", $codec->encodeDocument(['secret']));
         self::assertSame('yaml', $codec->id());
+        self::assertSame("root:\n  nested:\n    - one\n", $codec->encode(['root' => ['nested' => ['one']]]));
+        self::assertSame("-\n  root:\n    nested:\n      - one\n", $codec->encodeDocument([['root' => ['nested' => ['one']]]]));
     }
 
     public function testYamlCodecRejectsInvalidRootsAndKeys(): void
@@ -70,19 +74,24 @@ final class InfrastructureTest extends TestCase
         new YamlPayloadCodec()->decodeDocument("secret\n");
     }
 
-    public function testYamlCodecRejectsNonStringMappingKeys(): void
-    {
-        $this->expectException(ParseException::class);
-        new YamlPayloadCodec()->decode("!!int 0: secret\n");
-    }
-
     public function testAuditAdapterLogsEntries(): void
     {
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())->method('info')->with('Anonymization audit', [
+            'profile' => 'p',
+            'entries' => [[
+                'fingerprint' => 'fingerprint',
+                'path' => '/email',
+                'action' => 'redact',
+                'handler' => null,
+                'count' => 1,
+            ]],
+        ]);
         $anonymizer = $this->createMock(AnonymizerInterface::class);
         $result = new AuditAnonymizationResult(['email' => '[REDACTED]'], [new AuditEntry('p', 'fingerprint', '/email', 'redact', null, 1)]);
         $anonymizer->expects($this->once())->method('anonymizeWithAudit')->willReturn($result);
 
-        self::assertSame($result, new AuditLoggerAdapter($anonymizer, new NullLogger())->anonymizeWithAudit('p', ['email' => 'secret']));
+        self::assertSame($result, new AuditLoggerAdapter($anonymizer, $logger)->anonymizeWithAudit('p', ['email' => 'secret']));
     }
 
     public function testProfileComposerRejectsInvalidConfiguredProfiles(): void

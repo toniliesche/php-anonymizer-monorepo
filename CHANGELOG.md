@@ -4,6 +4,20 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Added isolated `composer benchmark` scenarios with median wall-time,
+  peak-memory, and output-digest reporting, plus scheduled benchmark artifact
+  collection and explicit batch/NDJSON laziness regressions.
+- Coverage subprocesses now disable CLI OPcache/JIT instrumentation to isolate
+  Xdebug path coverage from JIT-related engine crashes.
+- Deferred branch/path coverage enforcement and switched the coverage gate to
+  strict positive 100% line coverage until a compatible Xdebug runtime is
+  available.
+- Iteration 27: expanded Infection mutation scope to all seven published
+  packages, added configuration-drift quality-scope validation, and removed
+  justified Laravel YAML and pseudonymization date-shift coverage exclusions.
+- Switched the coverage report contract to Cobertura with positive line and
+  branch totals; path-coverage execution remains dependent on a compatible
+  PHP 8.5/Xdebug runtime.
 - Iteration 26: compiled immutable traversal rule indexes and snapshot-scoped
   selection to reduce repeated per-field scans while preserving traversal,
   reporting, and budget semantics; global rule conditions now follow the

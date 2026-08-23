@@ -1,0 +1,22 @@
+name: Performance benchmark
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * 1'
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: mbstring
+      - run: composer install --no-interaction --prefer-dist
+      - run: PHP_VERSION=8.5 composer benchmark > benchmark.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: anonymizer-benchmark-${{ github.sha }}
+          path: benchmark.json

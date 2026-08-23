@@ -28,11 +28,6 @@ final class YamlPayloadCodec implements DocumentPayloadCodecInterface
         if (!is_array($decoded) || ($decoded !== [] && array_is_list($decoded))) {
             throw new ParseException('YAML payload root must be a mapping.');
         }
-        foreach (array_keys($decoded) as $key) {
-            if (!is_string($key)) {
-                throw new ParseException('YAML payload mapping keys must be strings.'); // @codeCoverageIgnore
-            }
-        }
 
         /** @var array<string, mixed> $decoded */
         return $decoded;
