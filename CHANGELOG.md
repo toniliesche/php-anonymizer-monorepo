@@ -4,6 +4,8 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Centralized builder and direct-constructor runtime assembly in one validated
+  internal runtime graph without changing façade behavior.
 - Added executable public API manifest/signature checks and transitional
   string-path and provider-free NDJSON construction contracts.
 

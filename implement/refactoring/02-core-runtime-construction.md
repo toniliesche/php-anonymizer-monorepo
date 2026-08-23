@@ -1,30 +1,66 @@
-# Slice 2: Core Runtime Construction
+# Iteration 24: Core Runtime Construction
 
-## Objective
+## Summary
 
-Make builder-produced runtime assembly the single primary construction path and
-leave the internal engine focused on executing an already validated runtime.
+Move runtime assembly out of `ArrayAnonymizer` so the builder creates one
+validated, fully wired internal runtime graph. Preserve all behavior and keep
+direct `ArrayAnonymizer` construction as an internal compatibility path.
 
-## Changes
+## Implementation changes
 
-- Extract built-in strategy/codec/transformation registration, iterable
-  materialization, registry creation, and profile-reference validation from
-  `ArrayAnonymizer` into an internal runtime assembler.
-- Keep the flow `AnonymizerBuilder -> AnonymizerRuntime -> AnonymizerFacade /
-  ArrayAnonymizer`; the engine receives a validated runtime rather than
-  independently assembling collaborators.
-- Retain the existing direct `ArrayAnonymizer` constructor as an internal,
-  transitional forwarding path. Preserve its defaults, validation timing,
-  exceptions, and iterable-key semantics; document it as deprecated/internal
-  rather than removing it.
-- Keep builder immutability and reusable snapshots. Materialize supplied
-  iterables exactly once when registered, not during operation execution.
+- Add an internal `RuntimeAssembler` responsible for:
+  - materializing registration iterables as values (discarding keys);
+  - registering built-in JSON codecs, replacement strategies, and
+    transformations exactly once per runtime;
+  - constructing profile, codec, strategy, and transformation registries;
+  - validating profile references and embedded-profile cycles;
+  - constructing traversal, payload, and NDJSON collaborators.
+- Change `AnonymizerRuntime` from raw configuration storage into the assembled,
+  validated internal runtime graph. It exposes only the internal collaborators
+  required by the array adapter.
+- Update `AnonymizerBuilder::build()` to collect direct and provider profiles,
+  then invoke the assembler. Builder methods remain immutable; supplied
+  iterables are materialized once at registration and every `build()` returns
+  an independent runtime snapshot.
+- Reduce `ArrayAnonymizer` to an internal execution adapter:
+  - accept an assembled `AnonymizerRuntime` and delegate its existing
+    operations;
+  - retain its existing direct constructor parameters, forwarding them through
+    `RuntimeAssembler`;
+  - preserve defaults, iterable-key behavior, exception classes/messages, and
+    construction-time validation.
+- Keep `AnonymizerFacade` and `AnonymizerInterface` signatures unchanged. The
+  façade receives the preassembled runtime; no per-operation runtime lookup,
+  extra allocation, or lazy configuration processing is introduced.
+- Update the root and core-package changelogs under `Unreleased`; document the
+  completed iteration in the refactoring roadmap. The executable public API
+  manifest remains unchanged.
 
 ## Tests and acceptance
 
-- Cover keyed iterables, duplicate/built-in collisions, validation timing,
-  default registrations, generator materialization, and independent builder
-  snapshots.
-- Characterization tests produce identical transformed data, reports, and
-  exceptions through direct and builder-produced runtimes.
-- No public API manifest change is required; `composer qa` passes.
+- Characterize direct and builder-produced runtimes as equivalent for array,
+  report, audit, payload, document, batch, and NDJSON operations.
+- Assert identical construction-time failures for duplicate registrations,
+  built-in ID collisions, unknown strategy/codec/transformation/profile
+  references, and embedded-profile cycles.
+- Cover keyed iterables, generators, provider aggregation, and independent
+  builder snapshots.
+- Verify default registrations remain available and direct construction remains
+  usable by existing tests.
+- Ensure no configuration iterable is consumed during an anonymization
+  operation; assembly occurs only during construction/build.
+- Run focused core tests, then `PHP_VERSION=8.5 composer test`,
+  `test:coverage`, `public-api`, `static`, `refactor:check`, `qa`, and
+  `graphify update .`.
+
+## Assumptions
+
+- `ArrayAnonymizer`, `AnonymizerRuntime`, and `RuntimeAssembler` remain internal
+  and autoloadable; there is no public API addition or removal.
+- Compatibility means preserving current direct-constructor behavior,
+  including when validation happens, rather than introducing earlier builder
+  validation.
+- Performance work in this iteration is structural: construction happens once,
+  and operation-time behavior stays allocation- and dispatch-neutral. Formal
+  benchmarks and regression thresholds remain part of the later
+  performance-observability iteration.
