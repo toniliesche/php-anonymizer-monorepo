@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement;
 
+// @internal
 enum FakerFormatter: string
 {
     case BuildingNumber = 'faker.building_number';

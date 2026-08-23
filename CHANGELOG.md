@@ -4,6 +4,9 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Added executable public API manifest/signature checks and transitional
+  string-path and provider-free NDJSON construction contracts.
+
 ## 2.0.0
 
 - Iteration 22: enforced PSR-4 declaration paths, extracted traversal and

@@ -9,6 +9,7 @@ use PhpAnonymizer\Anonymizer\Application\Anonymization\Result\AuditAnonymization
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Result\AuditEntry;
 use Psr\Log\LoggerInterface;
 
+// @internal
 final readonly class AuditLoggerAdapter
 {
     public function __construct(private AnonymizerInterface $anonymizer, private LoggerInterface $logger)

@@ -11,6 +11,7 @@ use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use function Safe\preg_match;
 
+// @internal
 final class ExtensionTagCompilerPass implements CompilerPassInterface
 {
     private const array TAGS = [

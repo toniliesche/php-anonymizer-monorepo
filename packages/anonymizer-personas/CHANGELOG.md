@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added a replacement-port factory method while retaining the concrete factory
+  method as a transitional compatibility API.
+
 ## 2.0.0
 
 - Added focused package documentation for deterministic persona strategy use.

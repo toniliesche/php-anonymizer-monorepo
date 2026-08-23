@@ -9,6 +9,7 @@ use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileCollection;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileProviderInterface;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
 
+// @internal
 final class ProfileComposer
 {
     /**

@@ -76,4 +76,11 @@ final class PersonaReplacementStrategyFactoryTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         PersonaReplacementStrategyFactory::createStrategy('en', 'persona.unknown');
     }
+
+    public function testCreatesOneStrategyThroughTheStableReplacementPort(): void
+    {
+        $strategy = PersonaReplacementStrategyFactory::createReplacementStrategy('en', 'persona.name');
+
+        self::assertSame('persona.name', $strategy->id());
+    }
 }

@@ -9,6 +9,7 @@ use PhpAnonymizer\Anonymizer\Application\Extension\Payload\DocumentPayloadCodecI
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 
+// @internal
 final class YamlPayloadCodec implements DocumentPayloadCodecInterface
 {
     #[Override]

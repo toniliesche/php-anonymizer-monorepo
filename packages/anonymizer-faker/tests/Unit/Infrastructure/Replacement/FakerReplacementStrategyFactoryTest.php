@@ -49,4 +49,11 @@ final class FakerReplacementStrategyFactoryTest extends TestCase
         self::assertSame('faker.city', $strategy->id());
         self::assertNotSame('', $strategy->replace('ignored'));
     }
+
+    public function testCreatesOneStrategyThroughTheStableReplacementPort(): void
+    {
+        $strategy = FakerReplacementStrategyFactory::createReplacementStrategy(FakerReplacementStrategyFactory::createGenerator(seed: 1), 'faker.city');
+
+        self::assertSame('faker.city', $strategy->id());
+    }
 }

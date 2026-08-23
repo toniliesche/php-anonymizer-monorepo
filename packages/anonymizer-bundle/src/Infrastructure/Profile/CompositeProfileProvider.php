@@ -8,6 +8,7 @@ use Override;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileProviderInterface;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
 
+// @internal
 final readonly class CompositeProfileProvider implements ProfileProviderInterface
 {
     /**

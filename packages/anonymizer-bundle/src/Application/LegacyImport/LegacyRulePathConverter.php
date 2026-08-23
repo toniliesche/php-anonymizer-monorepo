@@ -7,6 +7,7 @@ namespace PhpAnonymizer\AnonymizerBundle\Application\LegacyImport;
 /**
  * @codeCoverageIgnore Legacy path diagnostics are exercised through command-level integration tests.
  */
+// @internal
 final readonly class LegacyRulePathConverter
 {
     public function __construct(private LegacyRuleValueConverter $values)

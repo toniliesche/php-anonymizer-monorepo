@@ -6,6 +6,7 @@ namespace PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement;
 
 use Faker\Factory;
 use Faker\Generator;
+use PhpAnonymizer\Anonymizer\Application\Extension\Replacement\ReplacementStrategyInterface;
 use function Safe\unpack;
 
 final class FakerReplacementStrategyFactory
@@ -26,6 +27,11 @@ final class FakerReplacementStrategyFactory
     public static function createStrategy(Generator $faker, string $id): FakerReplacementStrategy
     {
         return new FakerReplacementStrategy($faker, FakerFormatter::from($id));
+    }
+
+    public static function createReplacementStrategy(Generator $faker, string $id): ReplacementStrategyInterface
+    {
+        return self::createStrategy($faker, $id);
     }
 
     public static function createGenerator(string $locale = 'en_US', int|string|null $seed = null): Generator

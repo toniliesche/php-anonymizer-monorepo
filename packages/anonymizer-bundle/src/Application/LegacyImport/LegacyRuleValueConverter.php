@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PhpAnonymizer\AnonymizerBundle\Application\LegacyImport;
 
+// @internal
 final class LegacyRuleValueConverter
 {
     private const array FAKER_FIELDS = ['buildingNumber' => 'faker.building_number', 'city' => 'faker.city', 'company' => 'faker.company', 'country' => 'faker.country', 'email' => 'faker.email', 'firstName' => 'faker.first_name', 'houseNumber' => 'faker.house_number', 'lastName' => 'faker.last_name', 'name' => 'faker.name', 'password' => 'faker.password', 'postcode' => 'faker.postcode', 'street' => 'faker.street', 'streetNumber' => 'faker.street_number', 'username' => 'faker.username', 'zip' => 'faker.zip'];

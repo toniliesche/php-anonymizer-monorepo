@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PhpAnonymizer\AnonymizerBundle\Application\LegacyImport;
 
+// @internal
 final readonly class LegacyRuleCollectionConverter
 {
     public function __construct(private LegacyRuleNodeConverter $nodes)

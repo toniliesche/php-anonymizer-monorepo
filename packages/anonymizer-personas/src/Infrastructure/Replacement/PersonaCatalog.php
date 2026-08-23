@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PhpAnonymizer\AnonymizerPersonas\Infrastructure\Replacement;
 
+// @internal
 final class PersonaCatalog
 {
     public static function for(PersonaLocale $locale): Persona

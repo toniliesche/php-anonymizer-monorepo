@@ -12,6 +12,7 @@ use PhpAnonymizer\AnonymizerPseudonymization\Application\PseudonymKeyProviderInt
 use PhpAnonymizer\AnonymizerPseudonymization\Application\PseudonymKeyUnavailable;
 use Throwable;
 
+// @internal
 final readonly class HmacPseudonymStrategy implements ContextualReplacementStrategyInterface
 {
     public function __construct(private PseudonymKeyProviderInterface $keys)

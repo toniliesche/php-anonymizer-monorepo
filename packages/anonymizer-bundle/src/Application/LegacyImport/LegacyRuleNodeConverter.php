@@ -8,6 +8,8 @@ namespace PhpAnonymizer\AnonymizerBundle\Application\LegacyImport;
  * @phpstan-type Rule array<string, mixed>
  *
  * @codeCoverageIgnore Legacy conversion diagnostics are exercised through command-level integration tests.
+ *
+ * @internal
  */
 final readonly class LegacyRuleNodeConverter
 {
@@ -48,7 +50,7 @@ final readonly class LegacyRuleNodeConverter
     }
 
     /**
-     * @return Rule
+     * @return array<string, mixed>
      */
     public function convertPath(string $path, mixed $definition): array
     {

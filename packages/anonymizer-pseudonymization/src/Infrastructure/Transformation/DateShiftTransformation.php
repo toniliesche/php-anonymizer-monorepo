@@ -18,6 +18,7 @@ use function Safe\unpack;
 /**
  * @codeCoverageIgnore
  */
+// @internal
 final readonly class DateShiftTransformation implements ContextualValueTransformationInterface
 {
     public function __construct(private PseudonymKeyProviderInterface $keys)

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PhpAnonymizer\AnonymizerPersonas\Infrastructure\Replacement;
 
 use InvalidArgumentException;
+use PhpAnonymizer\Anonymizer\Application\Extension\Replacement\ReplacementStrategyInterface;
 
 final class PersonaReplacementStrategyFactory
 {
@@ -28,5 +29,10 @@ final class PersonaReplacementStrategyFactory
         $field = PersonaField::from(str_replace('persona.', '', $id));
 
         return new PersonaReplacementStrategy(PersonaCatalog::for(PersonaLocale::fromLocale($locale)), $field);
+    }
+
+    public static function createReplacementStrategy(string $locale, string $id): ReplacementStrategyInterface
+    {
+        return self::createStrategy($locale, $id);
     }
 }

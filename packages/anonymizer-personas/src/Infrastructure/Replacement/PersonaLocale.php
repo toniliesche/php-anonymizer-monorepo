@@ -7,6 +7,7 @@ namespace PhpAnonymizer\AnonymizerPersonas\Infrastructure\Replacement;
 use InvalidArgumentException;
 use function mb_strtolower;
 
+// @internal
 enum PersonaLocale: string
 {
     case English = 'en';

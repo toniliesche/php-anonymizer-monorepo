@@ -6,6 +6,8 @@ namespace PhpAnonymizer\AnonymizerBundle\Application\LegacyImport;
 
 /**
  * @phpstan-type Rule array<string, mixed>
+ *
+ * @internal
  */
 final class LegacyRuleMerger
 {

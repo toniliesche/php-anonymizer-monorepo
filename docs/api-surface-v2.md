@@ -100,3 +100,76 @@ The following v1 usages are transitional and have planned replacements:
 
 The complete symbol-by-symbol disposition is maintained in
 `implement/iterations/18-public-surface-inventory.md`.
+
+## Complete symbol index
+
+The executable contract for these symbols is maintained in
+`tools/public-api-manifest.php`:
+
+### Core
+
+- `PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizationContext`
+- `PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizationLimits`
+- `PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilder`
+- `PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface`
+- `PhpAnonymizer\Anonymizer\Application\Anonymization\ContextualReplacementStrategyInterface`
+- `PhpAnonymizer\Anonymizer\Application\Anonymization\ObjectAnonymizationRequest`
+- `PhpAnonymizer\Anonymizer\Application\Anonymization\ReplacementContext`
+- `PhpAnonymizer\Anonymizer\Application\Anonymization\ValueTransformationContext`
+- `PhpAnonymizer\Anonymizer\Application\Exception\ContextRequired`
+- `PhpAnonymizer\Anonymizer\Application\Exception\ExecutionLimitExceeded`
+- `PhpAnonymizer\Anonymizer\Application\Exception\ObjectAnonymizationUnavailable`
+- `PhpAnonymizer\Anonymizer\Application\Exception\PayloadCodecFailure`
+- `PhpAnonymizer\Anonymizer\Application\Exception\ProfileNotFound`
+- `PhpAnonymizer\Anonymizer\Application\Exception\UnsupportedValue`
+- `PhpAnonymizer\Anonymizer\Application\Extension\AnonymizerExtensionInterface`
+- `PhpAnonymizer\Anonymizer\Application\Extension\ObjectAnonymizerInterface`
+- `PhpAnonymizer\Anonymizer\Application\Extension\Payload\DocumentPayloadCodecInterface`
+- `PhpAnonymizer\Anonymizer\Application\Extension\Payload\PayloadCodecInterface`
+- `PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspection`
+- `PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspectorInterface`
+- `PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileProviderInterface`
+- `PhpAnonymizer\Anonymizer\Application\Extension\Replacement\ReplacementStrategyInterface`
+- `PhpAnonymizer\Anonymizer\Application\Extension\Transformation\ContextualValueTransformationInterface`
+- `PhpAnonymizer\Anonymizer\Application\Extension\Transformation\ValueTransformationInterface`
+- `PhpAnonymizer\Anonymizer\Application\Anonymization\Result\AnonymizationResult`
+- `PhpAnonymizer\Anonymizer\Application\Anonymization\Result\AnonymizationResultInterface`
+- `PhpAnonymizer\Anonymizer\Application\Anonymization\Result\AuditAnonymizationResult`
+- `PhpAnonymizer\Anonymizer\Application\Anonymization\Result\AuditEntry`
+- `PhpAnonymizer\Anonymizer\Application\Anonymization\Result\DocumentAnonymizationResult`
+- `PhpAnonymizer\Anonymizer\Application\Anonymization\Result\DocumentPayloadAnonymizationResult`
+- `PhpAnonymizer\Anonymizer\Application\Anonymization\Result\NdjsonAnonymizationResult`
+- `PhpAnonymizer\Anonymizer\Application\Anonymization\Result\NdjsonAuditResult`
+- `PhpAnonymizer\Anonymizer\Application\Anonymization\Result\PayloadAnonymizationResult`
+- `PhpAnonymizer\Anonymizer\Domain\Exception\InvalidProfileDefinition`
+- `PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition`
+- `PhpAnonymizer\Anonymizer\Domain\Profile\ProfileMetadata`
+- `PhpAnonymizer\Anonymizer\Domain\Profile\ProfileMode`
+- `PhpAnonymizer\Anonymizer\Domain\Profile\ProfileRoot`
+- `PhpAnonymizer\Anonymizer\Domain\Rule\Condition\ConditionDefinition`
+- `PhpAnonymizer\Anonymizer\Domain\Rule\Payload\EmbeddedPayloadDefinition`
+- `PhpAnonymizer\Anonymizer\Domain\Rule\RuleDefinition`
+- `PhpAnonymizer\Anonymizer\Domain\Rule\ScalarAction`
+- `PhpAnonymizer\Anonymizer\Domain\Rule\TransformationDefinition`
+
+### Framework and optional packages
+
+- `PhpAnonymizer\AnonymizerBundle\AnonymizerBundle`
+- `PhpAnonymizer\AnonymizerBundle\Command\ImportLegacyRulesCommand`
+- `PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyImportException`
+- `PhpAnonymizer\AnonymizerBundle\DependencyInjection\AnonymizerConfiguration`
+- `PhpAnonymizer\AnonymizerBundle\DependencyInjection\AnonymizerExtension`
+- `PhpAnonymizer\AnonymizerLaravel\AnonymizerServiceProvider`
+- `PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement\FakerReplacementStrategyFactory`
+- `PhpAnonymizer\AnonymizerPersonas\Infrastructure\Replacement\PersonaReplacementStrategyFactory`
+- `PhpAnonymizer\AnonymizerPseudonymization\Application\PseudonymKeyProviderInterface`
+- `PhpAnonymizer\AnonymizerPseudonymization\Application\PseudonymKeyUnavailable`
+- `PhpAnonymizer\AnonymizerSymfonySerializer\SymfonySerializerExtension`
+- `PhpAnonymizer\AnonymizerSymfonySerializer\Application\Anonymization\Result\ObjectAnonymizationResult`
+- `PhpAnonymizer\AnonymizerSymfonySerializer\Application\Exception\ObjectDenormalizationFailure`
+- `PhpAnonymizer\AnonymizerSymfonySerializer\Application\Exception\ObjectNormalizationFailure`
+
+### Transitional compatibility types
+
+- `PhpAnonymizer\Anonymizer\Application\Anonymization\Path\JsonPointer`
+- `PhpAnonymizer\Anonymizer\Application\Anonymization\Result\NdjsonAuditProviderInterface`

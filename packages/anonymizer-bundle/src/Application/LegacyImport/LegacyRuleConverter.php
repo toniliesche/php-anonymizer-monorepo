@@ -12,6 +12,7 @@ use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
  *
  * @codeCoverageIgnore Legacy conversion is a compatibility boundary; invalid collaborator diagnostics are not reachable through the public importer.
  */
+// @internal
 final readonly class LegacyRuleConverter
 {
     public function __construct(private LegacyRuleCollectionConverter $collections, private LegacyRuleMerger $merger)

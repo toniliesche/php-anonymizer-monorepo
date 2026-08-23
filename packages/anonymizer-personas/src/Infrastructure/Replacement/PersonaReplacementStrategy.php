@@ -7,6 +7,7 @@ namespace PhpAnonymizer\AnonymizerPersonas\Infrastructure\Replacement;
 use Override;
 use PhpAnonymizer\Anonymizer\Application\Extension\Replacement\ReplacementStrategyInterface;
 
+// @internal
 final readonly class PersonaReplacementStrategy implements ReplacementStrategyInterface
 {
     public function __construct(private Persona $persona, private PersonaField $field)
