@@ -8,29 +8,19 @@ use RuntimeException;
 
 final class ReleaseReadiness
 {
-    /** @var array<string, list<string>> */
-    private const array DOCUMENTATION = [
-        'anonymizer' => ['docs/user-guide.md', 'docs/migration-v2.md'],
-        'anonymizer-bundle' => ['docs/usage.md'],
-        'anonymizer-faker' => ['docs/usage.md'],
-        'anonymizer-laravel' => ['docs/usage.md'],
-        'anonymizer-personas' => ['docs/usage.md'],
-        'anonymizer-pseudonymization' => ['docs/usage.md'],
-        'anonymizer-symfony-serializer' => ['docs/usage.md'],
-    ];
-
     /**
      * @return list<string>
      */
     public function validate(string $version, string $root): array
     {
+        $train = new ReleaseTrain();
         $errors = [];
         $rootChangelog = $root . '/CHANGELOG.md';
-        if (!$this->hasHeading($rootChangelog, $version)) {
-            $errors[] = 'Root changelog is missing release ' . $version . '.';
+        if (!$this->hasReleaseSections($rootChangelog, $version)) {
+            $errors[] = 'Root changelog must place Unreleased before release ' . $version . '.';
         }
 
-        foreach (self::DOCUMENTATION as $package => $documentation) {
+        foreach ($train->packages() as $package) {
             $directory = $root . '/packages/' . $package;
             $manifest = $directory . '/composer.json';
             if (!is_file($manifest)) {
@@ -52,23 +42,26 @@ final class ReleaseReadiness
             if (!is_dir($directory . '/src')) {
                 $errors[] = $package . ' is missing its src directory.';
             }
-            if (!$this->hasHeading($directory . '/CHANGELOG.md', $version)) {
-                $errors[] = $package . ' changelog is missing release ' . $version . '.';
+            if (!$this->hasReleaseSections($directory . '/CHANGELOG.md', $version)) {
+                $errors[] = $package . ' changelog must place Unreleased before release ' . $version . '.';
             }
-            foreach ($documentation as $relative) {
+            foreach ($train->documentationFor($package) as $relative) {
                 if (!is_file($directory . '/' . $relative)) {
                     $errors[] = $package . ' is missing ' . $relative . '.';
                 }
             }
 
-            $alias = $metadata['extra']['branch-alias']['dev-develop'] ?? null;
-            if ($alias !== '2.0.x-dev') {
-                $errors[] = $package . ' must declare the 2.0.x-dev branch alias.';
+            if (($metadata['name'] ?? null) !== 'php-anonymizer/' . $package) {
+                $errors[] = $package . ' must declare Composer name php-anonymizer/' . $package . '.';
             }
-            if ($package !== 'anonymizer' && ($metadata['require']['php-anonymizer/anonymizer'] ?? null) !== '^2.0') {
+            $alias = $metadata['extra']['branch-alias']['dev-develop'] ?? null;
+            if ($alias !== ReleaseTrain::DEVELOPMENT_ALIAS) {
+                $errors[] = $package . ' must declare the ' . ReleaseTrain::DEVELOPMENT_ALIAS . ' branch alias.';
+            }
+            if ($train->requiredCoreConstraint($package) !== null && ($metadata['require']['php-anonymizer/anonymizer'] ?? null) !== $train->requiredCoreConstraint($package)) {
                 $errors[] = $package . ' must require php-anonymizer/anonymizer ^2.0.';
             }
-            if ($package === 'anonymizer-bundle' && ($metadata['require']['php-anonymizer/anonymizer-symfony-serializer'] ?? null) !== '^2.0') {
+            if ($train->requiredSerializerConstraint($package) !== null && ($metadata['require']['php-anonymizer/anonymizer-symfony-serializer'] ?? null) !== $train->requiredSerializerConstraint($package)) {
                 $errors[] = 'anonymizer-bundle must require the Serializer package ^2.0.';
             }
         }
@@ -89,15 +82,19 @@ final class ReleaseReadiness
      */
     public function documentationFor(string $package): array
     {
-        return self::DOCUMENTATION[$package] ?? throw new RuntimeException('Unknown package: ' . $package);
+        return new ReleaseTrain()->documentationFor($package);
     }
 
-    private function hasHeading(string $file, string $version): bool
+    private function hasReleaseSections(string $file, string $version): bool
     {
         if (!is_file($file)) {
             return false;
         }
 
-        return str_contains((string) file_get_contents($file), '## ' . $version);
+        $contents = (string) file_get_contents($file);
+        $unreleased = strpos($contents, '## Unreleased');
+        $release = strpos($contents, '## ' . $version);
+
+        return $unreleased !== false && $release !== false && $unreleased < $release;
     }
 }

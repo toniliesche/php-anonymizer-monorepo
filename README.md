@@ -106,3 +106,10 @@ through `ProfileProviderInterface`. Register providers explicitly with
 implicitly.
 
 Run `composer qa` for the complete quality gate.
+
+For performance checks, run `PHP_VERSION=8.5 composer benchmark`. The isolated
+benchmark uses two warmups, seven samples, and 100 iterations per scenario;
+`BENCHMARK_WARMUPS`, `BENCHMARK_SAMPLES`, and `BENCHMARK_ITERATIONS` can tune
+local runs. CI compares the semantic output digest strictly and reports
+warnings above 10% median time or 15% peak memory; these warnings are
+non-blocking because shared runners are noisy.

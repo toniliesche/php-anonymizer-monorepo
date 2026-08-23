@@ -11,6 +11,8 @@ require_once __DIR__ . '/Release/ReleasePlanner.php';
 
 require_once __DIR__ . '/Release/ReleaseReadiness.php';
 
+require_once __DIR__ . '/Release/ReleaseTrain.php';
+
 if (getenv('CI') !== 'true' && getenv('GITHUB_ACTIONS') !== 'true') {
     fwrite(STDERR, "release:verify is intended for a release workflow or CI environment.\n");
 

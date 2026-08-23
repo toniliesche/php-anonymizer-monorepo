@@ -88,6 +88,7 @@
         "artifacts": "@php tools/build-artifacts.php",
         "audit:security": "composer audit --locked",
         "benchmark": "@php tools/benchmark.php",
+        "benchmark:comparison:test": "@php tools/benchmark-comparison-test.php",
         "benchmark:traversal": "@php tools/benchmark-traversal.php",
         "check": [
             "@validate:metadata",
@@ -132,6 +133,8 @@
             "@consumer:serializer",
             "@consumer:laravel",
             "@release:preview:test",
+            "@release:readiness:test",
+            "@benchmark:comparison:test",
             "@artifacts"
         ],
         "quality:scope": "@php tools/check-quality-scope.php",
@@ -143,6 +146,7 @@
         "release:preview": "@php tools/release-preview.php",
         "release:preview:test": "@php tools/release-preview-test.php",
         "release:publish": "@php tools/release-publish.php",
+        "release:readiness:test": "@php tools/release-readiness-test.php",
         "release:verify": "@php tools/release-verify.php",
         "static": "@php vendor/bin/phpstan analyse --configuration=phpstan.neon",
         "structure": "@php tools/check-structure.php",

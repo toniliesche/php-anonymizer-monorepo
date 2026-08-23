@@ -12,12 +12,14 @@ All notable changes to this project will be documented here.
 - Deferred branch/path coverage enforcement and switched the coverage gate to
   strict positive 100% line coverage until a compatible Xdebug runtime is
   available.
+- Iteration 28: added synchronized 2.0 release-readiness fixtures and a
+  warning-only PHP 8.5 benchmark baseline for relevant pull requests.
 - Iteration 27: expanded Infection mutation scope to all seven published
   packages, added configuration-drift quality-scope validation, and removed
   justified Laravel YAML and pseudonymization date-shift coverage exclusions.
-- Switched the coverage report contract to Cobertura with positive line and
-  branch totals; path-coverage execution remains dependent on a compatible
-  PHP 8.5/Xdebug runtime.
+- Switched the coverage report contract to Cobertura with positive line totals;
+  branch/path execution remains dependent on a compatible PHP 8.5/Xdebug
+  runtime.
 - Iteration 26: compiled immutable traversal rule indexes and snapshot-scoped
   selection to reduce repeated per-field scans while preserving traversal,
   reporting, and budget semantics; global rule conditions now follow the

@@ -2,8 +2,8 @@
 
 ## Status
 
-Benchmarking and deterministic laziness protections are implemented. Baseline
-calibration and warning-only comparison remain scheduled follow-up work.
+Benchmarking, deterministic laziness protections, and a calibrated warning-only
+baseline comparison are implemented.
 
 ## Objective
 
@@ -47,8 +47,11 @@ until the returned iterable is started.
   regressions above 15%; keep this workflow non-blocking until a stable runner
   baseline justifies stricter enforcement.
 
-The scheduled/manual artifact workflow is in `.github/workflows/benchmark.yml`;
-baseline comparison is intentionally deferred until runner calibration.
+The pull-request, scheduled, and manual workflow is in
+`.github/workflows/benchmark.yml`; its checked-in PHP 8.5 baseline is in
+`tools/fixtures/benchmark-baseline-php85.json`. Threshold warnings remain
+non-blocking, while semantic output drift and malformed baseline data fail the
+comparison.
 
 ## Optimization policy
 

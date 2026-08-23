@@ -18,6 +18,7 @@
 5. [Quality-scope and coverage gates](05-quality-scope-and-coverage.md)
 6. [Performance observability](06-performance-observability.md)
 7. [Release, documentation, and closeout](07-release-documentation-and-closeout.md)
+8. [Iteration 28: Release readiness and performance baseline](../refined-iteration-28-release-readiness-performance-baseline-plan.md)
 
 Each slice is independently reviewable and releasable. Run focused checks
 first; run `PHP_VERSION=8.5 composer qa` before merging a completed slice.

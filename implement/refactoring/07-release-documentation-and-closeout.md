@@ -1,5 +1,10 @@
 # Slice 7: Release, Documentation, and Closeout
 
+## Status
+
+Iteration 28 implementation is recorded in
+`implement/refined-iteration-28-release-readiness-performance-baseline-plan.md`.
+
 ## Objective
 
 Complete each slice with durable documentation, release hygiene, and full

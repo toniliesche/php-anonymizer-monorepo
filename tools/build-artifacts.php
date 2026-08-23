@@ -3,16 +3,19 @@
 declare(strict_types=1);
 
 use PhpAnonymizer\Release\ReleaseReadiness;
+use PhpAnonymizer\Release\ReleaseTrain;
 
 $root = dirname(__DIR__);
 $version = $argv[1] ?? 'dev';
 
 require_once $root . '/tools/Release/ReleaseReadiness.php';
+
+require_once $root . '/tools/Release/ReleaseTrain.php';
 if (preg_match('/^\d+\.\d+\.\d+$/', $version) === 1) {
     new ReleaseReadiness()->assert($version, $root);
 }
 $target = $root . '/var/artifacts/' . preg_replace('/[^A-Za-z0-9_.-]+/', '-', $version);
-$expected = ['anonymizer', 'anonymizer-bundle', 'anonymizer-faker', 'anonymizer-laravel', 'anonymizer-personas', 'anonymizer-pseudonymization', 'anonymizer-symfony-serializer'];
+$expected = new ReleaseTrain()->packages();
 $packages = [];
 foreach ($expected as $name) {
     $package = $root . '/packages/' . $name;

@@ -1,6 +1,15 @@
 name: Performance benchmark
 
 on:
+  pull_request:
+    paths:
+      - 'packages/**/src/**'
+      - 'tools/benchmark.php'
+      - 'tools/Benchmark/**'
+      - 'tools/check-benchmark.php'
+      - 'tools/fixtures/**'
+      - 'composer.json'
+      - 'composer.lock'
   workflow_dispatch:
   schedule:
     - cron: '17 3 * * 1'
@@ -16,6 +25,7 @@ jobs:
           extensions: mbstring
       - run: composer install --no-interaction --prefer-dist
       - run: PHP_VERSION=8.5 composer benchmark > benchmark.json
+      - run: PHP_VERSION=8.5 php tools/check-benchmark.php tools/fixtures/benchmark-baseline-php85.json benchmark.json
       - uses: actions/upload-artifact@v4
         with:
           name: anonymizer-benchmark-${{ github.sha }}
