@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-/** @codeCoverageIgnoreFile */
-
 namespace PhpAnonymizer\AnonymizerBundle\DependencyInjection\Registration;
 
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspector;
@@ -19,7 +17,6 @@ use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 use Webmozart\Assert\Assert;
 
-// @codeCoverageIgnoreStart
 /**
  * @internal
  */
@@ -27,8 +24,6 @@ final class ProfileRegistrar
 {
     /**
      * @param array<string, mixed> $definitions
-     *
-     * @codeCoverageIgnore Framework wiring.
      */
     public function register(array $definitions, ContainerBuilder $container): void
     {
@@ -77,4 +72,3 @@ final class ProfileRegistrar
         return $profiles;
     }
 }
-// @codeCoverageIgnoreEnd

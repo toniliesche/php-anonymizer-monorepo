@@ -19,9 +19,6 @@ use Throwable;
 use Webmozart\Assert\Assert;
 use function Safe\file_get_contents;
 
-/**
- * @codeCoverageIgnore CLI adapter is covered by command integration tests.
- */
 #[AsCommand(name: 'anonymizer:import-legacy-rules', description: 'Convert legacy PHP Anonymizer rules into Bundle configuration.')]
 final class ImportLegacyRulesCommand extends Command
 {

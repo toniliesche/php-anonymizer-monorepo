@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-/** @codeCoverageIgnoreFile */
-
 namespace PhpAnonymizer\AnonymizerBundle\DependencyInjection\Registration;
 
 use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleCollectionConverter;
@@ -20,15 +18,11 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 
-// @codeCoverageIgnoreStart
 /**
  * @internal
  */
 final class LegacyImportRegistrar
 {
-    /**
-     * @codeCoverageIgnore Framework wiring.
-     */
     public function register(ContainerBuilder $container): void
     {
         $container->setDefinition(LegacyRuleMerger::class, new Definition(LegacyRuleMerger::class));
@@ -46,4 +40,3 @@ final class LegacyImportRegistrar
         ]))->addTag('console.command');
     }
 }
-// @codeCoverageIgnoreEnd

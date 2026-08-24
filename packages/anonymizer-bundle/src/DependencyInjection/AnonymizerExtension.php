@@ -31,5 +31,4 @@ final class AnonymizerExtension extends Extension
     {
         return 'anonymizer';
     }
-    // @codeCoverageIgnoreEnd
 }

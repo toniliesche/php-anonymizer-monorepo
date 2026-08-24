@@ -6,7 +6,9 @@ declare(strict_types=1);
 
 namespace PhpAnonymizer\AnonymizerLaravel\Infrastructure\Registration;
 
+// Coverage rationale: Laravel container wiring is covered by Testbench integration tests.
 // @codeCoverageIgnoreStart
+
 use Illuminate\Contracts\Container\Container;
 use InvalidArgumentException;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileCollection;

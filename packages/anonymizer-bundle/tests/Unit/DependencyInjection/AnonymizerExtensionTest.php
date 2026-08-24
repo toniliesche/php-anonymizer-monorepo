@@ -9,7 +9,12 @@ use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspector;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspectorInterface;
 use PhpAnonymizer\Anonymizer\Domain\Exception\InvalidProfileDefinition;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileCompositionCompiler;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinitionData;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinitionParser;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileMetadataParser;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileRuleAppender;
 use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\RuleOptionsCompiler;
 use PhpAnonymizer\Anonymizer\Domain\Rule\RuleDefinition;
 use PhpAnonymizer\AnonymizerBundle\AnonymizerBundle;
@@ -24,6 +29,8 @@ use PhpAnonymizer\AnonymizerBundle\DependencyInjection\AnonymizerConfiguration;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\AnonymizerExtension;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Compiler\ExtensionTagCompilerPass;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Compiler\SerializerServiceCompilerPass;
+use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Registration\CoreRegistrar;
+use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Registration\LegacyImportRegistrar;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Registration\OptionalIntegrationRegistrar;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Registration\ProfileRegistrar;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Audit\AuditLoggerAdapter;
@@ -36,6 +43,7 @@ use PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement\FakerReplacementStr
 use PhpAnonymizer\AnonymizerPersonas\Infrastructure\Replacement\PersonaReplacementStrategyFactory;
 use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Replacement\HmacPseudonymStrategy;
 use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Transformation\DateShiftTransformation;
+use PhpAnonymizer\AnonymizerSymfonySerializer\SymfonySerializerExtension;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -56,6 +64,13 @@ use Symfony\Component\DependencyInjection\Reference;
 #[CoversClass(FakerFormatter::class)]
 #[CoversClass(OptionalIntegrationRegistrar::class)]
 #[CoversClass(ProfileRegistrar::class)]
+#[CoversClass(CoreRegistrar::class)]
+#[CoversClass(LegacyImportRegistrar::class)]
+#[CoversClass(ProfileDefinitionParser::class)]
+#[CoversClass(ProfileMetadataParser::class)]
+#[CoversClass(ProfileCompositionCompiler::class)]
+#[CoversClass(ProfileDefinitionData::class)]
+#[CoversClass(ProfileRuleAppender::class)]
 final class AnonymizerExtensionTest extends TestCase
 {
     #[DataProvider('invalidProfilesProvider')]
@@ -184,6 +199,21 @@ final class AnonymizerExtensionTest extends TestCase
         self::assertSame([['id' => 'pseudonymize', 'builtin' => true]], $tags);
         self::assertSame(['keys'], $this->referenceIds($container->getDefinition(DateShiftTransformation::class)->getArguments()));
         self::assertSame([['id' => 'date_shift', 'builtin' => true]], $container->getDefinition(DateShiftTransformation::class)->getTag('anonymizer.value_transformation'));
+    }
+
+    public function testRegistersSerializerExtensionWithConfiguredOrDefaultService(): void
+    {
+        $configured = new ContainerBuilder();
+        new AnonymizerExtension()->load([['serializer' => ['enabled' => true, 'service' => 'custom_serializer']]], $configured);
+        $configuredReference = $configured->getDefinition(SymfonySerializerExtension::class)->getArguments()[0];
+        self::assertInstanceOf(Reference::class, $configuredReference);
+        self::assertSame('custom_serializer', (string) $configuredReference);
+
+        $default = new ContainerBuilder();
+        new AnonymizerExtension()->load([['serializer' => ['enabled' => true, 'service' => null]]], $default);
+        $defaultReference = $default->getDefinition(SymfonySerializerExtension::class)->getArguments()[0];
+        self::assertInstanceOf(Reference::class, $defaultReference);
+        self::assertSame('serializer', (string) $defaultReference);
     }
 
     public function testPseudonymizationRequiresKeyProvider(): void

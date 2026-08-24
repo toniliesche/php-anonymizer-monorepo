@@ -39,6 +39,7 @@
         "shipmonk/name-collision-detector": "^2.1.1",
         "spaze/phpstan-disallowed-calls": "^4.14",
         "symfony/config": "^8.1.4",
+        "symfony/console": "^8.1",
         "symfony/dependency-injection": "^8.1.4",
         "symfony/framework-bundle": "^8.1.4",
         "symfony/http-kernel": "^8.1.4",

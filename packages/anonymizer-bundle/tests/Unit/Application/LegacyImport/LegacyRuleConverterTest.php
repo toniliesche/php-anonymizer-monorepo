@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace PhpAnonymizer\AnonymizerBundle\Tests\Unit\Application\LegacyImport;
 
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileCompositionCompiler;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinitionData;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinitionParser;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileMetadataParser;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileRuleAppender;
 use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\RuleOptionsCompiler;
 use PhpAnonymizer\Anonymizer\Domain\Rule\RuleDefinition;
 use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyImportException;
@@ -15,6 +20,7 @@ use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleNodeConver
 use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRulePathConverter;
 use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleValueConverter;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(LegacyRuleConverter::class)]
@@ -27,6 +33,11 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(ProfileDefinition::class)]
 #[CoversClass(RuleOptionsCompiler::class)]
 #[CoversClass(RuleDefinition::class)]
+#[UsesClass(ProfileDefinitionParser::class)]
+#[UsesClass(ProfileMetadataParser::class)]
+#[UsesClass(ProfileCompositionCompiler::class)]
+#[UsesClass(ProfileDefinitionData::class)]
+#[UsesClass(ProfileRuleAppender::class)]
 final class LegacyRuleConverterTest extends TestCase
 {
     public function testConvertsNestedListsAndFakerFields(): void
@@ -197,6 +208,13 @@ final class LegacyRuleConverterTest extends TestCase
         }
 
         try {
+            $nodes->convertNode(['name' => 'user', 'children' => ['city' => ['name' => 'city']]]);
+            self::fail('Associative children should be rejected.');
+        } catch (LegacyImportException $exception) {
+            self::assertStringContainsString('must be a list', $exception->getMessage());
+        }
+
+        try {
             $nodes->convertNode(['name' => 'user', 'data_access' => 'property']);
             self::fail('Object access should be rejected.');
         } catch (LegacyImportException $exception) {
@@ -204,6 +222,13 @@ final class LegacyRuleConverterTest extends TestCase
         }
 
         self::assertSame(['field' => 'user', 'children' => [['field' => 'email', 'strategy' => 'faker.email']]], $nodes->convertPath('user.email', ['name' => 'email', 'value_type' => 'email']));
+
+        try {
+            $nodes->convertPath('user..email', 'email');
+            self::fail('Interior-empty paths should be rejected.');
+        } catch (LegacyImportException $exception) {
+            self::assertStringContainsString('Invalid legacy path', $exception->getMessage());
+        }
 
         $this->expectException(LegacyImportException::class);
         $nodes->convertNode([]);

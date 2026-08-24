@@ -21,6 +21,7 @@ use Symfony\Component\Serializer\Serializer;
 #[CoversClass(ObjectAnonymizationResult::class)]
 #[CoversClass(AnonymizationResult::class)]
 #[UsesClass(AnonymizationContext::class)]
+#[UsesClass(ObjectAnonymizationRequest::class)]
 final class SymfonyObjectAnonymizerAdapterTest extends TestCase
 {
     public function testAnonymizesObjectsThroughTheBuilderObjectPort(): void

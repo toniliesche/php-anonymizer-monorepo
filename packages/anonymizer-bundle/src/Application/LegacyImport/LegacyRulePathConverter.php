@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace PhpAnonymizer\AnonymizerBundle\Application\LegacyImport;
 
-/**
- * @codeCoverageIgnore Legacy path diagnostics are exercised through command-level integration tests.
- */
 // @internal
 final readonly class LegacyRulePathConverter
 {
@@ -27,11 +24,9 @@ final readonly class LegacyRulePathConverter
         $fields = [];
         $eachFields = [];
         foreach ($parts as $part) {
-            // @codeCoverageIgnoreStart Exception-only diagnostic branch.
             if ($part === '') {
                 throw LegacyImportException::message(sprintf('Invalid legacy path "%s".', $path));
             }
-            // @codeCoverageIgnoreEnd
             if (str_ends_with($part, '[]')) {
                 $eachFields[] = count($fields);
                 $part = mb_substr($part, 0, -2, 'UTF-8');

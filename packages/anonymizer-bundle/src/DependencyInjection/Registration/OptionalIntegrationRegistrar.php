@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-/** @codeCoverageIgnoreFile */
-
 namespace PhpAnonymizer\AnonymizerBundle\DependencyInjection\Registration;
 
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
@@ -18,7 +16,6 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 
-// @codeCoverageIgnoreStart
 /**
  * @internal
  */
@@ -32,8 +29,6 @@ final class OptionalIntegrationRegistrar
      *     serializer: array{enabled: bool, service: null|string},
      *     audit: array{enabled: bool, logger_service: null|string}
      * } $config
-     *
-     * @codeCoverageIgnore Framework wiring.
      */
     public function register(array $config, ContainerBuilder $container): void
     {
@@ -87,9 +82,13 @@ final class OptionalIntegrationRegistrar
         if (!$config['enabled']) {
             return;
         }
+        // @codeCoverageIgnoreStart Optional package absence cannot occur in this installed monorepo.
         if (!class_exists(HmacPseudonymStrategy::class)) {
-            throw new InvalidConfigurationException('Pseudonymisation is enabled but php-anonymizer/anonymizer-pseudonymization is not installed.');
+            // @codeCoverageIgnoreStart Defensive optional-package absence.
+            throw new InvalidConfigurationException('Pseudonymisation is enabled but php-anonymizer/anonymizer-pseudonymization is not installed.'); // @codeCoverageIgnore
+            // @codeCoverageIgnoreEnd
         }
+        // @codeCoverageIgnoreEnd
         if ($config['key_provider'] === null || $config['key_provider'] === '') {
             throw new InvalidConfigurationException('anonymizer.pseudonymization.key_provider is required when pseudonymization is enabled.');
         }
@@ -147,4 +146,3 @@ final class OptionalIntegrationRegistrar
         return $class;
     }
 }
-// @codeCoverageIgnoreEnd

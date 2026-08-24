@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
-/** @codeCoverageIgnoreFile Framework wiring. */
+/** @codeCoverageIgnoreFile */
 
 namespace PhpAnonymizer\AnonymizerLaravel\Infrastructure\Audit;
+
+// Coverage rationale: Laravel framework wiring is covered by Testbench integration tests.
+// @codeCoverageIgnoreStart
 
 use Illuminate\Contracts\Container\Container;
 use InvalidArgumentException;
@@ -14,8 +17,6 @@ use Webmozart\Assert\Assert;
 
 /**
  * @internal Laravel audit service registrar
- *
- * @codeCoverageIgnore Framework wiring.
  */
 final readonly class AuditRegistrar
 {
@@ -38,3 +39,4 @@ final readonly class AuditRegistrar
         });
     }
 }
+// @codeCoverageIgnoreEnd

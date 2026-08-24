@@ -12,9 +12,6 @@ use function mb_strtolower;
 use function Safe\file_get_contents;
 use function Safe\json_decode;
 
-/**
- * @codeCoverageIgnore Input adapter is covered by command integration tests.
- */
 // @internal
 final class LegacyDocumentReader
 {

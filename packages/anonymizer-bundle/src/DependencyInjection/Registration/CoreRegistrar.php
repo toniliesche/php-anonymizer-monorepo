@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-/** @codeCoverageIgnoreFile */
-
 namespace PhpAnonymizer\AnonymizerBundle\DependencyInjection\Registration;
 
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizationLimits;
@@ -17,7 +15,6 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 
-// @codeCoverageIgnoreStart
 /**
  * @internal
  */
@@ -25,8 +22,6 @@ final class CoreRegistrar
 {
     /**
      * @param array{limits: array{max_input_bytes: int, max_depth: int, max_visited_nodes: int, max_collection_entries: int, max_embedded_payload_depth: int}} $config
-     *
-     * @codeCoverageIgnore Framework wiring.
      */
     public function register(array $config, ContainerBuilder $container): void
     {
@@ -53,4 +48,3 @@ final class CoreRegistrar
             ->setFactory([new Reference(AnonymizerBuilder::class), 'build']))->setPublic(true);
     }
 }
-// @codeCoverageIgnoreEnd

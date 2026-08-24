@@ -6,7 +6,9 @@ declare(strict_types=1);
 
 namespace PhpAnonymizer\AnonymizerLaravel;
 
+// Coverage rationale: Laravel service-provider wiring is covered by Testbench integration tests.
 // @codeCoverageIgnoreStart
+
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
@@ -80,9 +82,6 @@ final class AnonymizerServiceProvider extends ServiceProvider
         $this->registerSerializer();
     }
 
-    /**
-     * @codeCoverageIgnoreStart
-     */
     private function registerFaker(): void
     {
         if (!(bool) $this->configuration('anonymizer.faker.enabled', false)) {
@@ -209,7 +208,5 @@ final class AnonymizerServiceProvider extends ServiceProvider
     {
         return isset($limits[$key]) && is_int($limits[$key]) ? $limits[$key] : $default;
     }
-
-    /** @codeCoverageIgnoreEnd */
 }
 // @codeCoverageIgnoreEnd

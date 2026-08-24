@@ -10,8 +10,6 @@ use Webmozart\Assert\Assert;
 
 /**
  * @phpstan-type Rule array<string, mixed>
- *
- * @codeCoverageIgnore Legacy conversion is a compatibility boundary; invalid collaborator diagnostics are not reachable through the public importer.
  */
 // @internal
 final readonly class LegacyRuleConverter
@@ -37,8 +35,10 @@ final readonly class LegacyRuleConverter
         // @codeCoverageIgnoreStart Defensive validation branch requires an invalid converter collaborator.
         try {
             ProfileDefinition::fromArray('legacy', $profile);
-        } catch (InvalidProfileDefinition $exception) {
-            throw LegacyImportException::message('Converted profile is invalid: ' . $exception->getMessage());
+        } catch (InvalidProfileDefinition $exception) { // @codeCoverageIgnore
+            // @codeCoverageIgnoreStart Defensive collaborator contract violation.
+            throw LegacyImportException::message('Converted profile is invalid: ' . $exception->getMessage()); // @codeCoverageIgnore
+            // @codeCoverageIgnoreEnd
         }
         // @codeCoverageIgnoreEnd
         $result = ['anonymizer' => ['profiles' => ['legacy' => $profile]]];
