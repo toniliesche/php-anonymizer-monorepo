@@ -8,6 +8,10 @@
         "php-anonymizer/anonymizer": "^2.0",
         "webmozart/assert": "^2.5"
     },
+    "suggest": {
+        "php-anonymizer/anonymizer-bundle": "Register pseudonymization strategies automatically in Symfony",
+        "php-anonymizer/anonymizer-laravel": "Register pseudonymization strategies automatically in Laravel"
+    },
     "autoload": {
         "psr-4": {
             "PhpAnonymizer\\AnonymizerPseudonymization\\": "src/"

@@ -9,9 +9,8 @@ must not depend on them.
 
 The application-facing contract is one generic `AnonymizerInterface`. It
 handles array and optional object operations, payload/document operations,
-batch and NDJSON processing, audit output, and contextual execution. The
-façade is constructed through the fluent `AnonymizerBuilder` introduced in
-Iteration 19.
+batch and NDJSON processing, audit output, and contextual execution. Construct
+the façade through the fluent `AnonymizerBuilder`.
 
 The builder accepts profiles or profile providers, replacement strategies,
 payload codecs, value transformations, execution limits, extension modules,
@@ -19,10 +18,11 @@ and an optional object adapter. Direct construction of `ArrayAnonymizer` and
 the current `AnonymizerFactory` helpers is not part of the 2.0 contract.
 
 The builder is immutable and reusable. Registration methods return a new
-builder, while `build()` returns an independent façade snapshot. The façade
-keeps named array, payload, document, batch, NDJSON, report, and audit methods;
-contextual execution is an optional `AnonymizationContext` argument. Object
-calls that need adapter-specific options use `ObjectAnonymizationRequest`.
+builder, and `build()` creates a façade from that builder's current
+registrations. The façade keeps named array, payload, document, batch, NDJSON,
+report, and audit methods; contextual execution uses an optional
+`AnonymizationContext` argument. Object calls that need adapter-specific
+options use `ObjectAnonymizationRequest`.
 
 ## Extension ports
 
@@ -35,8 +35,8 @@ The following ports are open for third-party implementations:
 - `DocumentPayloadCodecInterface`
 - `ValueTransformationInterface`
 - `ContextualValueTransformationInterface`
-- `ObjectAnonymizerInterface` (new in Iteration 19)
-- `AnonymizerExtensionInterface` (new in Iteration 19)
+- `ObjectAnonymizerInterface`
+- `AnonymizerExtensionInterface`
 - `PhpAnonymizer\AnonymizerSymfonySerializer\SymfonySerializerExtension` from
   the optional Serializer package
 - `PseudonymKeyProviderInterface` from the optional pseudonymization package
@@ -63,9 +63,9 @@ The supported value and result contracts are:
 - profile, payload, execution-limit, context, unsupported-value, and object
   normalization/denormalization exceptions.
 
-Exact method signatures and return types are fixed by the Iteration 19 refined
-plan. Internal report accumulators, JSON pointers, registries, and traversal
-state are not public values.
+The executable API manifest records and checks the supported signatures.
+Internal report accumulators, JSON pointers, registries, and traversal state
+are not public values.
 
 ## Framework entry points
 
@@ -98,13 +98,10 @@ The following v1 usages are transitional and have planned replacements:
 | Direct registry, traversal, policy, or compiler usage | No public replacement; use the façade or extension ports |
 | Legacy importer collaborators | Legacy importer command only; collaborators are internal |
 
-The complete symbol-by-symbol disposition is maintained in
-`implement/iterations/18-public-surface-inventory.md`.
-
 ## Complete symbol index
 
-The executable contract for these symbols is maintained in
-`tools/public-api-manifest.php`:
+The [executable public API manifest](../tools/public-api-manifest.php) is the
+canonical inventory and signature check for these symbols:
 
 ### Core
 

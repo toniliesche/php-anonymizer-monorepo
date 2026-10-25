@@ -20,9 +20,9 @@ builder if an application needs several independent façade snapshots.
 ## Unified façade
 
 The public `AnonymizerInterface` now owns array, payload, document, batch,
-NDJSON, report, audit, contextual, and optional object operations. Capability
-interfaces and framework aliases that previously exposed separate services are
-not part of the 2.0 boundary.
+NDJSON, report, audit, contextual, and optional object operations. Old
+per-operation framework service aliases are not part of the 2.0 boundary; the
+documented extension ports remain supported.
 
 `ArrayAnonymizer`, registries, traversal services, profile compilers, and
 framework registrars remain Composer-autoloadable implementation details only.
@@ -32,10 +32,12 @@ Applications and extension packages must use the API listed in
 ## Symfony Serializer migration
 
 Replace direct `SymfonyAnonymizer` or `SymfonyObjectAnonymizer` construction
-with the `SymfonySerializerExtension` or a registered
-`SymfonyObjectAnonymizerAdapter` supplied by the application-owned Symfony
-Serializer. The adapter returns a new object and rejects `object_to_populate`.
-The Bundle and Laravel integration expose the same generic façade; Laravel
+with the public `SymfonySerializerExtension` and an application-owned Symfony
+Serializer. The adapter creates a new object by default and passes
+`ObjectAnonymizationRequest::adapterOptions()` to normalization and
+denormalization. Omit `object_to_populate` when source immutability matters.
+Do not construct the internal `SymfonyObjectAnonymizerAdapter` directly. The
+Bundle and Laravel integration expose the same generic façade; Laravel
 Serializer support remains explicitly opt-in.
 
 ## Framework configuration
@@ -48,14 +50,15 @@ priority and Laravel by registration order. Bind the documented
 ## Legacy importer
 
 The Symfony `anonymizer:import-legacy-rules` command remains a one-way migration
-aid in 2.x. Its converters, readers, renderers, and writers are internal, and
-the command is deprecated for removal in 3.0. Review generated configuration
-and manually migrate unsupported object-access or custom-provider constructs.
+aid in 2.x. Its converters, readers, renderers, and writers are internal.
+Review generated configuration and manually migrate unsupported object access
+or custom-provider behavior.
 See [`legacy-rule-import.md`](legacy-rule-import.md) for command details.
 
 ## Composer and rollout
 
-Update all PHP Anonymizer packages to the `^2.0` constraint together. Run the
-consumer tests and inspect reports, audit output, and exception paths for
-source-value disclosure before deployment. Existing profiles do not need a
-schema migration unless they use a removed construction or framework binding.
+Update all PHP Anonymizer packages to the `^2.0` constraint together. Validate
+existing profiles against the current schema and update removed constructions
+or framework bindings. Exercise the consuming application's profiles and
+inspect reports, audit output, and exception paths for source-value disclosure
+before deployment.

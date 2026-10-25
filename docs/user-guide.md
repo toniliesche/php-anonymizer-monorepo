@@ -1,7 +1,8 @@
 # User guide
 
 PHP Anonymizer turns profile definitions into a reusable, immutable façade.
-Start with the core package for arrays, then add only the integrations your
+The core requires PHP 8.5 or newer and `ext-mbstring`; framework integrations
+are optional. Start with arrays, then add only the capabilities your
 application needs.
 
 ## Install and build
@@ -30,7 +31,9 @@ assert($safe === ['email' => '[REDACTED]']);
 
 Builders are immutable. `withProfile()`, `withProfileProvider()`, strategy,
 codec, transformation, limit, object-adapter, and extension methods return a
-new builder; `build()` materializes a reusable façade.
+new builder; `build()` materializes a reusable façade snapshot. Register
+profiles and providers explicitly; the core does not scan a filesystem or
+dependency-injection container.
 
 ## Profiles and traversal
 
@@ -112,13 +115,36 @@ if ($result['customer']['email'] !== '****************' || $result['phone'] !== 
 }
 ```
 
+Use `anonymizeWithReport()` when you need to inspect which selected fields
+were changed or missing. Paths use RFC 6901 JSON Pointer notation; `/` and `~`
+inside a key are escaped as `~1` and `~0`.
+
+<!-- executable -->
+```php
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilder;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
+
+$profile = ProfileDefinition::fromArray('customer', [
+    'mode' => 'redact',
+    'rules' => [['field' => 'email'], ['field' => 'phone']],
+]);
+$anonymizer = AnonymizerBuilder::create()->withProfile($profile)->build();
+$report = $anonymizer->anonymizeWithReport('customer', ['email' => 'ada@example.test']);
+
+if ($report->data() !== ['email' => '[REDACTED]'] || $report->anonymizedPaths() !== ['/email'] || $report->missingPaths() !== ['/phone']) {
+    throw new RuntimeException('The report example did not match its expected result.');
+}
+```
+
 ## Strategies and typed transformations
 
 String leaves can select a registered strategy such as `star_mask`, Faker,
-Personas, or an application strategy. Typed leaves use `transform` instead of
-`strategy`; built-ins include `nullify`, `partial_mask`, `date_generalize`, and
-`numeric_bucket`. Strategies and transformations are mutually exclusive with
-structural traversal and embedded payloads.
+Personas, or an application strategy. The core includes `star_mask`; install
+and register the optional Faker or Personas package to use its strategy IDs.
+Typed leaves use `transform` instead of `strategy`; built-ins include
+`nullify`, `partial_mask`, `date_generalize`, and `numeric_bucket`. Strategies
+and transformations are mutually exclusive with structural traversal and
+embedded payloads.
 
 Extensions implement the public ports documented in the
 [`extension author guide`](extension-author-guide.md). Register related ports
@@ -162,27 +188,36 @@ if ($json !== '{"metadata":"{\\"email\\":\\"[REDACTED]\\"}"}') {
 
 ## Context, pseudonyms, and safety
 
-Install `php-anonymizer/anonymizer-pseudonymization` for keyed HMAC pseudonyms.
-Register an application-owned `PseudonymKeyProviderInterface`, use a non-secret
-`key_id`, and pass an `AnonymizationContext` for tenant or scope attributes.
-Keys never belong in profiles, reports, exceptions, or logs.
+The optional pseudonymization package supplies keyed transformations and
+strategies for framework integrations. Configure an application-owned
+`PseudonymKeyProviderInterface` and use a non-secret `key_id`; keys never
+belong in profiles, reports, exceptions, or logs. The key material stays in
+your application's secret store. See the package guide for supported
+registration paths and required context.
 
-Execution limits are enabled by default. Configure `AnonymizationLimits` with
-`withLimits()` for payload bytes, traversal depth, visited nodes, collection
-entries, and embedded depth. Limit failures identify the profile and JSON
+Execution limits are enabled by default. The defaults are 10 MiB input payloads,
+depth 64, 100,000 visited nodes, 50,000 entries per collection, and embedded
+payload depth 8. Override them with `AnonymizerBuilder::withLimits()` and
+`AnonymizationLimits`. Limit failures identify the profile and current JSON
 Pointer.
 
-Use `anonymizeWithReport()` for paths and actions, or
-`anonymizeWithAudit()` for aggregate safe telemetry. Audit output contains
-profile identity, a behavior fingerprint, paths, handler IDs, and counts—not
-source or replacement values.
+Use `anonymizeWithReport()` for changed and missing paths, or
+`anonymizeWithAudit()` for aggregate safe telemetry and action details. The
+audit result provides transformed `data()` and `entries()`. Each entry includes
+profile identity, a behavior fingerprint, path, action, handler ID, and count.
+It excludes source and replacement values; applications remain responsible for
+protecting the result and any data they log alongside it.
 
 ## Batches and streams
 
-`anonymizeRecords()` accepts an iterable and yields one map at a time. It does
-not retain previous records or reports and fails when the failing record is
-pulled. NDJSON results expose lazy `lines()` and only expose aggregate `audit()`
-after successful exhaustion.
+`anonymizeRecords()` accepts an iterable of associative maps and yields one
+transformed map at a time. It does not retain previous records or reports. A
+bad record or a transformation error is raised when iteration reaches that
+record. `anonymizeNdjson()` accepts logical JSON lines whose roots must be
+objects; the profile must declare `root: list`. Its result exposes lazy
+`lines()`. Consume every line successfully before calling `audit()` to obtain
+the aggregate stream audit. Partial or failed consumption does not produce a
+complete audit.
 
 <!-- executable -->
 ```php
@@ -219,21 +254,24 @@ Install `php-anonymizer/anonymizer-symfony-serializer` and provide the
 application-owned Symfony Serializer to `SymfonySerializerExtension`. Objects
 are normalized, anonymized, and denormalized into a new instance; the source
 object is never populated or mutated. The Symfony Bundle wires this extension
-and the common profile/codec/strategy tags for you.
+and the common profile/codec/strategy tags for you. Without an object adapter,
+object operations raise `ObjectAnonymizationUnavailable`. See the
+[Serializer usage guide](../packages/anonymizer-symfony-serializer/docs/usage.md)
+for adapter setup and object request options.
 
 ## Symfony Bundle and Laravel
 
-The Bundle reads profiles from `anonymizer.profiles`, supports explicit
-extension tags, and orders `anonymizer.extension` modules by descending
-priority. Its YAML codec, optional Faker/Personas/Pseudonymization integrations,
-limits, and audit logger are configured under `anonymizer`.
+Install `php-anonymizer/anonymizer-bundle` with Symfony. The Bundle reads
+profiles from `anonymizer.profiles`, supports explicit extension tags, and
+orders `anonymizer.extension` modules by descending priority. Its YAML codec,
+optional Faker/Personas/Pseudonymization integrations, limits, and audit logger
+are configured under `anonymizer`. See the [Bundle usage guide](../packages/anonymizer-bundle/docs/usage.md).
 
-The Laravel package is auto-discovered. Publish its configuration, provide
-profiles under `anonymizer.profiles`, and register application or package
-extensions with the documented tags. Laravel preserves tag registration order.
-Serializer support is opt-in and always uses an application-owned Serializer;
-the package does not provide facades, Eloquent mapping, middleware, or response
-mutation.
+Install `php-anonymizer/anonymizer-laravel` in Laravel 13. Its service provider
+is auto-discovered; publish its configuration and provide profiles under
+`anonymizer.profiles`. Laravel preserves extension tag registration order.
+Serializer support is opt-in and always uses an application-owned Serializer.
+See the [Laravel usage guide](../packages/anonymizer-laravel/docs/usage.md).
 
 For the clean-break changes from the former API, see
 [`migration-v2.md`](migration-v2.md). Package archives contain focused local

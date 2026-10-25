@@ -1,56 +1,58 @@
-# Quality Exclusion Register
+# Coverage and mutation exclusions
 
-This register documents published-source coverage exclusions retained for
-Iteration 27. Exclusions are limited to framework/container wiring, immutable
-plumbing exercised through public contracts, optional-integration absence
-branches, or defensive paths that cannot be reached through a valid public
-input. Behavior-relevant validation and transformation code must remain
-covered directly.
+This register explains the source annotations that affect coverage or mutation
+analysis. `phpunit.xml` includes every package `src/` directory and enables
+uncovered-file reporting. Framework bootstrapping, behavior-relevant
+validation, and transformations remain covered by focused contract or
+integration tests.
 
-## Framework and container wiring
+## Coverage exclusions
 
-The following files are composition roots or registration helpers. Their
-behavior is verified by Bundle/Laravel container and consumer tests:
+`@codeCoverageIgnoreFile` is used for Laravel container bootstrapping:
 
-- `packages/anonymizer-bundle/src/DependencyInjection/Registration/CoreRegistrar.php`
-- `packages/anonymizer-bundle/src/DependencyInjection/Registration/ProfileRegistrar.php`
-- `packages/anonymizer-bundle/src/DependencyInjection/Registration/OptionalIntegrationRegistrar.php`
-- `packages/anonymizer-bundle/src/DependencyInjection/Registration/LegacyImportRegistrar.php`
 - `packages/anonymizer-laravel/src/AnonymizerServiceProvider.php`
 - `packages/anonymizer-laravel/src/Infrastructure/Registration/CoreRegistrar.php`
 - `packages/anonymizer-laravel/src/Infrastructure/Registration/ProfileRegistrar.php`
 - `packages/anonymizer-laravel/src/Infrastructure/Audit/AuditRegistrar.php`
-- `packages/anonymizer-symfony-serializer/src/SymfonySerializerExtension.php`
 
-## Internal operation and value plumbing
+`@codeCoverageIgnore` class or method annotations cover framework wiring and
+defensive paths whose invariants are established at public boundaries:
 
-These immutable values, dispatchers, builders, parser collaborators, and
-transitional exceptions are covered through their public façade or contract:
+- Serializer wiring and dispatch: `SymfonySerializerExtension` and
+  `SymfonyObjectAnonymizerAdapter`.
+- Optional-package absence: the pseudonymization package-missing branch in
+  `OptionalIntegrationRegistrar`.
+- Core immutable runtime wiring: `AnonymizerRuntime`.
+- Defensive checks for impossible internal states: the non-object adapter
+  result in `AnonymizerFacade`, invalid precompiled nested rules in
+  `RuleDefinition` and `SelectedValueDispatcher`, and an invalid converter
+  collaborator in `LegacyRuleConverter`.
 
-- Core runtime assembly, façade/builder factories, operation services, and
-  traversal execution values under `packages/anonymizer/src/Application/Anonymization/`
-- `ProfileDefinitionParser`, `ProfileMetadataParser`, `ProfileRuleAppender`,
-  `ProfileDefinitionData`, and guarded composition diagnostics under
-  `packages/anonymizer/src/Domain/Profile/`
-- `TransformationDefinition`, `ValueTransformationContext`,
-  `ObjectAnonymizationRequest`, and `ObjectAnonymizationUnavailable`
+Bundle/Laravel container and consumer coverage exercises framework behavior;
+Serializer integration coverage exercises object normalization and
+denormalization. The excluded internal wiring is not a substitute for testing
+those externally visible contracts.
 
-## Optional and defensive paths
+## Mutation exclusions
 
-- `AtomicFileWriter`, `LegacyDocumentReader`, `BundleConfigRenderer`, and
-  legacy conversion diagnostics are protected by command-level integration
-  tests; filesystem and invalid-collaborator branches are defensive only.
-- `SymfonyObjectAnonymizerAdapter` is a framework adapter covered through the
-  Serializer integration contract.
-- `PreserveTraversalPolicy` and `RedactTraversalPolicy` accessor-only plumbing
-  is covered through traversal behavior.
-- Equivalent Infection mutants remain limited to documented
-  `@infection-ignore-next-line` cases with an explanation on the source line.
+`infection.json5` enables the default mutators for all seven package source
+trees. There are no file-level mutation exclusions. Individual equivalent or
+unreachable mutants use `@infection-ignore-next-line` with a reason in source:
+
+- `JsonPointer`: empty segments are skipped after trimming leading slashes.
+- `ArrayAnonymizer`: report collection does not change anonymized output;
+  PHP canonicalizes equivalent numeric-string array keys.
+- `RuntimeAssembler`: registry consumers do not use iterable keys.
+- `RedactUnselectedValues`: a string cannot enter the recursive array branch.
+
+`composer quality:scope` checks that each mutation exclusion includes a reason
+and rejects file-wide Infection suppression. Keep any new exclusion narrow and
+explain why the mutant is equivalent or unreachable from valid public input.
 
 ## Removed exclusions
 
-- Laravel YAML mapping-key validation was removed as unreachable: Symfony's
-  parser rejects or normalizes numeric keys before the codec receives them.
-- Pseudonymization `DateShiftTransformation` is directly tested for valid
-  contextual shifts, date/option failures, scope failures, and key failures;
-  its file-level exclusion was removed.
+Laravel YAML mapping-key validation was removed because Symfony's parser
+rejects or normalizes numeric keys before the codec receives them. The
+pseudonymization `DateShiftTransformation` file-level coverage exclusion was
+also removed; its valid shifts and option, date, scope, and key failures are
+tested directly.
