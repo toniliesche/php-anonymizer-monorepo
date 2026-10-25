@@ -1,6 +1,6 @@
 # PHP Anonymizer
 
-This repository contains the clean v1 rewrite of PHP Anonymizer. Development
+This repository is the PHP Anonymizer 2.x development monorepo. Development
 uses PHP 8.5+, Composer, and the root Composer scripts.
 
 The current work-in-progress release is 2.0.0. Install the packages you need
@@ -106,6 +106,9 @@ through `ProfileProviderInterface`. Register providers explicitly with
 implicitly.
 
 Run `composer qa` for the complete quality gate.
+
+Maintainers can follow the [release and publishing guide](docs/release-and-publishing.md)
+for repository setup, CI credentials, package registration, and release recovery.
 
 For performance checks, run `PHP_VERSION=8.5 composer benchmark`. The isolated
 benchmark uses two warmups, seven samples, and 100 iterations per scenario;

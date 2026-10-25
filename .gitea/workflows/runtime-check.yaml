@@ -1,0 +1,44 @@
+name: PHP runtime check
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  php-runtime:
+    name: Verify PHP 8.5 coverage runtime
+    runs-on: linux-amd64-docker
+    container:
+      image: registry.toniliesche.de/development/php-ci-builder:1.0
+      credentials:
+        username: ${{ secrets.CI_REGISTRY_USERNAME }}
+        password: ${{ secrets.CI_REGISTRY_PASSWORD }}
+    env:
+      CI: 'true'
+      PHP_VERSION: '8.5'
+      XDEBUG_MODE: coverage
+    steps:
+      - name: Check out runtime revision
+        uses: https://github.com/actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install Git subtree support
+        run: sh tools/install-git-subtree.sh
+
+      - name: Check PHP and locked dependency extensions
+        run: php tools/check-gitea-runtime.php
+
+      - name: Install locked dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Run actual Xdebug coverage invocation with PCOV disabled
+        run: composer test:coverage
+
+      - name: Verify generated coverage report
+        run: php tools/verify-coverage-runtime.php

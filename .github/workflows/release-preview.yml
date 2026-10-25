@@ -3,16 +3,54 @@ name: Release preview
 on:
   pull_request:
     branches: [main]
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, edited]
   workflow_dispatch:
+    inputs:
+      release_branch:
+        description: Release branch to preview
+        required: true
+        type: string
+
+permissions:
+  contents: read
 
 jobs:
   preview:
-    if: startsWith(github.head_ref, 'release/') || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.head_ref, 'release/')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      PHP_VERSION: '8.5'
+      RELEASE_BRANCH: ${{ github.event_name == 'workflow_dispatch' && inputs.release_branch || github.head_ref }}
+      RELEASE_MAIN_BRANCH: main
+      CI_EVENT_SHA: ${{ github.event_name == 'workflow_dispatch' && github.sha || github.event.pull_request.head.sha }}
+      CI_MAIN_BASELINE_REF: origin/main
+      CI_DIAGNOSTICS_DIR: var/ci-diagnostics/${{ github.run_id }}-attempt-${{ github.run_attempt }}
     steps:
-      - uses: actions/checkout@v4
-        with: {fetch-depth: 0}
-      - uses: shivammathur/setup-php@v2
-        with: {php-version: '8.5'}
-      - run: composer release:preview
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.release_branch || github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.5'
+      - name: Preview release plan
+        run: composer ci:run-gate release-preview php tools/release-preview.php "$RELEASE_BRANCH" "$RELEASE_MAIN_BRANCH"
+      - name: Record workflow outcome
+        if: always()
+        env:
+          CI_JOB_STATUS: ${{ job.status }}
+        run: |
+          mkdir -p "$CI_DIAGNOSTICS_DIR"
+          printf 'event=%s\nrevision=%s\nrelease_branch=%s\nrun_id=%s\nattempt=%s\noutcome=%s\n' \
+            "$GITHUB_EVENT_NAME" "$CI_EVENT_SHA" "$RELEASE_BRANCH" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$CI_JOB_STATUS" \
+            > "$CI_DIAGNOSTICS_DIR/workflow-metadata.txt"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: release-preview-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.CI_DIAGNOSTICS_DIR }}/
+          if-no-files-found: error

@@ -40,6 +40,30 @@ final class ReleaseTrain
         return self::PACKAGES;
     }
 
+    public function composerNameFor(string $package): string
+    {
+        $this->assertPackage($package);
+
+        return 'php-anonymizer/' . $package;
+    }
+
+    public function repositoryFor(string $package): string
+    {
+        $this->assertPackage($package);
+        $repository = $package === 'anonymizer' ? 'php-anonymizer' : 'php-anonymizer-' . substr($package, strlen('anonymizer-'));
+
+        return 'https://github.com/toniliesche/' . $repository . '.git';
+    }
+
+    public function publicationBranchFor(string $version): string
+    {
+        if (preg_match('/^(0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/', $version, $matches) !== 1) {
+            throw new RuntimeException('Release version must be a stable SemVer version: ' . $version);
+        }
+
+        return $matches[1] . '.x';
+    }
+
     /**
      * @return list<string>
      */
@@ -56,5 +80,12 @@ final class ReleaseTrain
     public function requiredSerializerConstraint(string $package): ?string
     {
         return $package === 'anonymizer-bundle' ? '^2.0' : null;
+    }
+
+    private function assertPackage(string $package): void
+    {
+        if (!in_array($package, self::PACKAGES, true)) {
+            throw new RuntimeException('Unknown package: ' . $package);
+        }
     }
 }

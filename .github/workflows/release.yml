@@ -4,38 +4,100 @@ on:
   pull_request:
     types: [closed]
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: Explicit stable version to publish or resume
+        required: true
+        type: string
+      source_sha:
+        description: Full commit SHA to release
+        required: true
+        type: string
+      release_branch:
+        description: Release branch associated with this release
+        required: true
+        type: string
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
+
+concurrency:
+  group: package-release-${{ github.repository }}
+  cancel-in-progress: false
 
 jobs:
   release:
-    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/')
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/'))
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      PHP_VERSION: '8.5'
+      RELEASE_VERSION: ${{ inputs.release_version }}
+      RELEASE_SOURCE_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.source_sha || github.event.pull_request.merge_commit_sha }}
+      RELEASE_BRANCH: ${{ github.event_name == 'workflow_dispatch' && inputs.release_branch || github.event.pull_request.head.ref }}
+      RELEASE_MAIN_BRANCH: main
+      CI_EVENT_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.source_sha || github.event.pull_request.merge_commit_sha }}
+      CI_MAIN_BASELINE_REF: origin/main
+      CI_DIAGNOSTICS_DIR: var/ci-diagnostics/${{ github.run_id }}-attempt-${{ github.run_attempt }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out the exact release source revision
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.source_sha || github.event.pull_request.merge_commit_sha }}
           fetch-depth: 0
           fetch-tags: true
-      - uses: shivammathur/setup-php@v2
+          persist-credentials: false
+      - name: Install git-subtree
+        run: sh tools/install-git-subtree.sh
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: '8.5'
-          extensions: mbstring, zip
+          extensions: dom, mbstring, xdebug, zip
           coverage: xdebug
-      - run: composer install --no-interaction --prefer-dist
-      - run: composer qa
-      - run: git branch --force main origin/main
-      - run: CI=true GITHUB_HEAD_REF=${{ github.event.pull_request.head.ref }} composer release:verify
-      - run: |
-          version=$(CI=true GITHUB_HEAD_REF=${{ github.event.pull_request.head.ref }} php tools/release-preview.php | awk '/next version:/ {print $3}')
-          git tag -a "$version" -m "Release $version"
-          git push origin "$version"
-          PHP_VERSION=8.5 php tools/build-artifacts.php "$version"
-          gh release create "$version" var/artifacts/"$version"/* --title "$version" --generate-notes
+      - name: Fetch current main and release tags
+        run: |
+          git fetch --force --tags origin
+          git fetch --no-tags origin '+refs/heads/main:refs/remotes/origin/main'
+          git branch --force main origin/main
+      - name: Verify exact checkout, full history, tags, and release ancestry
+        run: |
+          composer ci:verify-checkout
+          git merge-base --is-ancestor "$RELEASE_SOURCE_SHA" origin/main || {
+            echo 'Release source SHA is not reachable from origin/main.' >&2
+            exit 1
+          }
+      - name: Install locked dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Run full QA
+        run: composer ci:run-gate release-qa composer qa
+      - name: Preflight and print release recovery plan
+        run: composer ci:run-gate release-dry-run composer release:publish
+      - name: Publish or resume release
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           GH_TOKEN: ${{ github.token }}
-      - run: gh pr create --base develop --head main --title "Sync main into develop after release" --body "Automated release synchronization."
-        continue-on-error: true
+          PACKAGE_PUBLISH_TOKEN: ${{ secrets.PACKAGE_PUBLISH_TOKEN }}
+          PACKAGIST_USERNAME: ${{ secrets.PACKAGIST_USERNAME }}
+          PACKAGIST_API_TOKEN: ${{ secrets.PACKAGIST_API_TOKEN }}
+        run: |
+          gh auth setup-git
+          composer release:publish -- --execute
+      - name: Record workflow outcome
+        if: always()
         env:
-          GH_TOKEN: ${{ github.token }}
+          CI_JOB_STATUS: ${{ job.status }}
+        run: |
+          mkdir -p "$CI_DIAGNOSTICS_DIR"
+          printf 'event=%s\nrevision=%s\nrelease_branch=%s\nrelease_version=%s\nrun_id=%s\nattempt=%s\noutcome=%s\n' \
+            "$GITHUB_EVENT_NAME" "$RELEASE_SOURCE_SHA" "$RELEASE_BRANCH" "$RELEASE_VERSION" \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$CI_JOB_STATUS" \
+            > "$CI_DIAGNOSTICS_DIR/workflow-metadata.txt"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: release-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.CI_DIAGNOSTICS_DIR }}/
+          if-no-files-found: error

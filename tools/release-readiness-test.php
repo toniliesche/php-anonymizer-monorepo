@@ -71,6 +71,30 @@ try {
     $remove($invalidDocumentation);
 }
 
+$invalidCoreConstraint = $fixture();
+
+try {
+    $manifestPath = $invalidCoreConstraint . '/packages/anonymizer-faker/composer.json';
+    $manifest = json_decode((string) file_get_contents($manifestPath), true, 512, JSON_THROW_ON_ERROR);
+    $manifest['require']['php-anonymizer/anonymizer'] = '^1.0';
+    file_put_contents($manifestPath, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
+    assertErrorContains($readiness->validate('2.0.0', $invalidCoreConstraint), 'must require php-anonymizer/anonymizer ^2.0');
+} finally {
+    $remove($invalidCoreConstraint);
+}
+
+$invalidSerializerConstraint = $fixture();
+
+try {
+    $manifestPath = $invalidSerializerConstraint . '/packages/anonymizer-bundle/composer.json';
+    $manifest = json_decode((string) file_get_contents($manifestPath), true, 512, JSON_THROW_ON_ERROR);
+    $manifest['require']['php-anonymizer/anonymizer-symfony-serializer'] = '^1.0';
+    file_put_contents($manifestPath, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
+    assertErrorContains($readiness->validate('2.0.0', $invalidSerializerConstraint), 'must require the Serializer package ^2.0');
+} finally {
+    $remove($invalidSerializerConstraint);
+}
+
 printf("Release readiness fixtures passed for %d packages (2.0.0).\n", count(new ReleaseTrain()->packages()));
 
 /**
