@@ -40,6 +40,12 @@ jobs:
         run: composer install --no-interaction --prefer-dist --no-progress
       - name: Run full QA
         run: composer ci:run-gate quality composer qa
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          files: var/coverage.xml
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_ORG_TOKEN }}
       - name: Record workflow outcome
         if: always()
         env:

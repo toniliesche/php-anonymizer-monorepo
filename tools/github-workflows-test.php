@@ -41,12 +41,30 @@ foreach ($expected as $filename) {
 }
 
 $quality = $workflows['quality.yml'];
+$qualitySteps = $quality['jobs']['quality']['steps'];
+$coverageUploadIndex = null;
+$fullQaIndex = null;
+foreach ($qualitySteps as $index => $step) {
+    if (($step['name'] ?? null) === 'Run full QA') {
+        $fullQaIndex = $index;
+    }
+    if (($step['name'] ?? null) === 'Upload coverage to Codecov') {
+        $coverageUploadIndex = $index;
+        if (!str_starts_with((string) ($step['uses'] ?? ''), 'codecov/codecov-action@')
+            || ($step['with']['files'] ?? null) !== 'var/coverage.xml'
+            || ($step['env']['CODECOV_TOKEN'] ?? null) !== '${{ secrets.CODECOV_ORG_TOKEN }}'
+        ) {
+            throw new RuntimeException('Quality workflow Codecov upload must use the generated coverage report and CODECOV_ORG_TOKEN secret.');
+        }
+    }
+}
 if (!array_key_exists('pull_request', $quality['on']) || !array_key_exists('push', $quality['on'])
     || !str_contains((string) file_get_contents($directory . '/quality.yml'), 'composer qa')
     || !str_contains((string) file_get_contents($directory . '/quality.yml'), 'fetch-depth: 0')
     || !str_contains((string) file_get_contents($directory . '/quality.yml'), 'contents: read')
+    || $fullQaIndex === null || $coverageUploadIndex === null || $coverageUploadIndex <= $fullQaIndex
 ) {
-    throw new RuntimeException('Quality workflow must run full QA on pull requests and pushes with read-only permissions and full history.');
+    throw new RuntimeException('Quality workflow must run full QA before uploading coverage on pull requests and pushes with read-only permissions and full history.');
 }
 
 $preview = $workflows['release-preview.yml'];
