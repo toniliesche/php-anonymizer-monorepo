@@ -19,6 +19,18 @@ $profile = ProfileDefinition::fromArray('customer', [
 ]);
 ```
 
+Profiles target map documents by default. Set `root: list` explicitly for a
+document whose root is a list of associative records; list roots are never
+inferred from arbitrary arrays:
+
+```php
+$profile = ProfileDefinition::fromArray('records', [
+    'mode' => 'redact',
+    'root' => 'list',
+    'rules' => [['field' => 'email']],
+]);
+```
+
 `redact` applies rules as a selection of string values. `preserve` applies
 rules as an allow-list: selected strings stay unchanged and every other
 string in the input tree becomes `[REDACTED]`. Numbers, booleans, nulls, and
@@ -124,3 +136,16 @@ without reports; iteration stops at the first invalid or failing record.
 `AuditAnonymizerInterface` is array-only. Its aggregate entries identify the
 profile, compiled-profile fingerprint, path, action, handler, and count. Audit
 results never contain input or replacement values.
+
+## Document and NDJSON APIs
+
+`DocumentAnonymizerInterface` accepts codecs implementing
+`DocumentPayloadCodecInterface` and preserves either a map or an explicitly
+declared list root. The core JSON codec and Bundle YAML codec support both
+roots; the existing `anonymizePayload*()` methods remain map-only.
+
+`NdjsonAnonymizerInterface` accepts an iterable of logical JSON lines and
+returns a lazy result. NDJSON profiles must use `root: list`; each line must be
+a JSON object. Consume `lines()` to process records, then call `audit()` for
+the aggregate safe audit. Stream audit paths use a wildcard record prefix such
+as `/*/email` and are unavailable after partial or failed consumption.

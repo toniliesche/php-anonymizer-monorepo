@@ -60,6 +60,17 @@ top-level payload API or by an `embedded: {codec, profile}` rule. Codec errors
 should be reported with the profile, operation, codec ID, and embedded JSON
 Pointer path supplied by the core.
 
+Document-capable codecs may additionally implement
+`DocumentPayloadCodecInterface`:
+
+```php
+public function decodeDocument(string $payload): array;
+public function encodeDocument(array $data): string;
+```
+
+These methods may represent either a map or a list root. They are used only by
+the additive document API; the legacy codec methods remain map-only.
+
 Register extensions through the factory; applications do not need to construct
 the concrete engine or profile provider:
 
