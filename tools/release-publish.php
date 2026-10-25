@@ -32,7 +32,9 @@ require_once __DIR__ . '/Release/ReleaseOrchestrator.php';
 $branch = getenv('RELEASE_BRANCH') ?: getenv('GITHUB_HEAD_REF') ?: trim((string) shell_exec('git branch --show-current'));
 $mainBranch = getenv('RELEASE_MAIN_BRANCH') ?: 'main';
 $sourceSha = getenv('RELEASE_SOURCE_SHA') ?: getenv('GITHUB_SHA') ?: trim((string) shell_exec('git rev-parse HEAD'));
-$version = getenv('RELEASE_VERSION') ?: ($argv[1] ?? '');
+$arguments = array_values(array_filter(array_slice($argv, 1), static fn (string $argument): bool => $argument !== '--'));
+$positionalArguments = array_values(array_filter($arguments, static fn (string $argument): bool => !str_starts_with($argument, '--')));
+$version = getenv('RELEASE_VERSION') ?: ($positionalArguments[0] ?? '');
 $execute = in_array('--execute', $argv, true) || getenv('RELEASE_EXECUTE') === '1';
 
 try {

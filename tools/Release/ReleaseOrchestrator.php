@@ -40,6 +40,14 @@ final readonly class ReleaseOrchestrator
     public function run(string $version, string $branch, string $mainBranch, string $sourceSha, string $root, string $githubToken): void
     {
         $root = realpath($root) ?: throw new InvalidArgumentException('Release repository root does not exist.');
+        if ($githubToken === '') {
+            throw new RuntimeException('GITHUB_TOKEN is required for release publication.');
+        }
+        foreach (['PACKAGE_PUBLISH_TOKEN', 'PACKAGIST_USERNAME', 'PACKAGIST_API_TOKEN'] as $credential) {
+            if ((getenv($credential) ?: '') === '') {
+                throw new RuntimeException($credential . ' is required for release publication.');
+            }
+        }
         $this->readiness->assert($version, $root);
         $sourceSha = $this->resolveSource($sourceSha, $root);
         $client = new GitHubReleaseClient($githubToken);

@@ -83,10 +83,12 @@ tokens → Fine-grained tokens. Select `toniliesche` as the resource owner; an
 organization may require an owner to approve the token. Load tokens into the
 current shell from a local secret manager or a non-echoing prompt. Do not put a
 token in source files, shell command arguments, CI logs, or chat. Run
-`composer release:publish` first to inspect its dry-run; only pass `--execute`
-when you intend to publish or resume the selected release. The automated
-workflow uses its built-in `GITHUB_TOKEN` and the `PACKAGE_PUBLISH_TOKEN`
-repository secret instead of a local personal token.
+`composer release:publish` first to inspect its dry-run; set
+`RELEASE_EXECUTE=1` only when you intend to publish or resume the selected
+release. The automated workflow uses this environment flag with its built-in
+`GITHUB_TOKEN` and the `PACKAGE_PUBLISH_TOKEN` repository secret instead of a
+local personal token. The publishing command checks all required GitHub and
+Packagist credentials before it starts release work.
 
 ## First release setup
 

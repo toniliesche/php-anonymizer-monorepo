@@ -97,7 +97,9 @@ if (!isset($release['on']['workflow_dispatch']['inputs']['release_version'], $re
     || !str_contains($releaseContent, 'fetch-tags: true')
     || !str_contains($releaseContent, 'cancel-in-progress: false')
     || !str_contains($releaseContent, 'composer ci:run-gate release-qa composer qa')
-    || !str_contains($releaseContent, 'composer release:publish -- --execute')
+    || !str_contains($releaseContent, 'RELEASE_EXECUTE: \'1\'')
+    || !str_contains($releaseContent, 'composer release:publish')
+    || str_contains($releaseContent, 'composer release:publish -- --execute')
     || ($releaseJob['permissions']['contents'] ?? null) !== 'write'
     || ($releaseJob['permissions']['pull-requests'] ?? null) !== 'write'
 ) {

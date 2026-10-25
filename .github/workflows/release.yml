@@ -82,9 +82,10 @@ jobs:
           PACKAGE_PUBLISH_TOKEN: ${{ secrets.PACKAGE_PUBLISH_TOKEN }}
           PACKAGIST_USERNAME: ${{ secrets.PACKAGIST_USERNAME }}
           PACKAGIST_API_TOKEN: ${{ secrets.PACKAGIST_API_TOKEN }}
+          RELEASE_EXECUTE: '1'
         run: |
           gh auth setup-git
-          composer release:publish -- --execute
+          composer release:publish
       - name: Record workflow outcome
         if: always()
         env:
