@@ -14,24 +14,42 @@ Install dependencies with `composer install` or `make setup`. The full quality
 gate is `composer qa`; focused commands include:
 
 - `composer test` — run PHPUnit suites.
+- `composer test:coverage` — run the published-package coverage gate; coverage
+  must remain 100% and tests must not be risky, skipped, incomplete, warning,
+  deprecated, or otherwise flagged.
 - `composer lint` / `composer fix` — check or apply PHP-CS-Fixer formatting.
 - `composer static` — run maximum-level PHPStan.
 - `composer refactor:check` — verify Rector changes are clean.
 - `composer check` — run the main checks without the extended QA steps.
+
+Use PHP 8.5 explicitly when invoking project commands so local and CI behavior
+match, for example `PHP_VERSION=8.5 composer test` or
+`PHP_VERSION=8.5 composer qa`. Run focused tests first, then the full QA gate
+for substantial changes. Consumer smoke tests and Graphify refreshes are part
+of release validation when their related code changes.
 
 ## Coding Style & Naming Conventions
 
 Follow `.editorconfig`: four spaces for PHP, two for JSON/YAML, LF endings, and
 final newlines. Use PSR-4 namespaces, PascalCase classes, camelCase
 methods/properties, and `*Test.php` filenames. Keep core components typed and
-framework-independent; preserve package boundaries.
+framework-independent; preserve package boundaries. Prefer immutable/read-only
+value objects where the domain contract permits them, use `#[Override]` on
+interface and parent overrides, and keep public APIs documented with precise
+iterable/value types. Run `PHP_VERSION=8.5 composer lint` after edits; do not
+hand-format around the configured fixer rules.
 
 ## Testing Guidelines
 
 Add or update PHPUnit tests for behavior changes. Coverage metadata is required,
 and skipped, risky, incomplete, warning, or deprecated tests fail. Use unit
 tests for package logic and integration tests for Symfony wiring. Run
-`composer test`, then `composer qa` for substantial changes.
+`PHP_VERSION=8.5 composer test`, then
+`PHP_VERSION=8.5 composer test:coverage` and
+`PHP_VERSION=8.5 composer qa` for substantial changes. Preserve 100% published
+package line and branch coverage; when a test exercises an indirect class,
+declare it with the appropriate PHPUnit `#[UsesClass]`/`#[CoversClass]`
+attribute rather than weakening the coverage configuration.
 
 ## Commit & Pull Request Guidelines
 
@@ -39,6 +57,14 @@ Use concise imperative Conventional Commit subjects such as `feat: ...`,
 `refactor: ...`, or `fix: ...`. Pull requests should explain the change, list
 affected packages, link issues or plans, and include tests and documentation
 updates. Mention release or migration impact; add screenshots for visual docs.
+
+## Release Changelog Hygiene
+
+The repository uses a synchronized release train. The current work-in-progress
+release is `1.7.0`; update the root changelog and only the package
+`CHANGELOG.md` files affected by the change. Add package-specific entries where
+behavior changed; leave unrelated package changelogs untouched. Keep an empty
+`Unreleased` section above the current release for subsequent work.
 
 ## Repository Automation
 

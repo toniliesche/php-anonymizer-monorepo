@@ -4,12 +4,22 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+## 1.7.0
+
+- Added `AnonymizerFactory::fromProfileProviders()` for explicitly registered,
+  reusable profile-provider libraries.
+- Added a generated Composer package-install consumer smoke test and registered
+  it in the QA consumer scripts.
+
+## 1.6.0
+
+- Added governed profile metadata, deterministic local rule fragments,
+  startup composition diagnostics, and safe profile inspection.
+
 ## 1.5.0
 
 - Added comparison-only ASCII key normalization and profile-local global
   scalar rules without changing original dataset keys or report paths.
-- Added governed profile metadata, deterministic local rule fragments,
-  startup composition diagnostics, and safe profile inspection.
 
 ## 1.4.0
 

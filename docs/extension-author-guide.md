@@ -10,6 +10,13 @@ not depend on Symfony or any container.
 names and validates every strategy, codec, and embedded-profile reference.
 Embedded profile references must be acyclic.
 
+Provider libraries should depend only on the core package and applications
+should register providers explicitly, either with
+`AnonymizerFactory::fromProfileProviders()` or the Symfony
+`anonymizer.profile_provider` tag. Prefer dotted, package-qualified names such
+as `vendor.package.profile`. Providers must not expose raw source data,
+secrets, or replacement values, and profiles are never inherited or overridden.
+
 ## Replacement strategies
 
 Implement `ReplacementStrategyInterface`:

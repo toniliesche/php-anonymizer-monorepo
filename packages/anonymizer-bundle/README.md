@@ -50,7 +50,8 @@ App\Anonymizer\CsvCodec:
     - { name: anonymizer.payload_codec, id: csv }
 ```
 
-Profile providers use `anonymizer.profile_provider`. Strategy and codec IDs
+Profile providers use `anonymizer.profile_provider`; configured profiles are
+consumed first, followed by tagged providers in tag order. Strategy and codec IDs
 must be unique and must not replace built-in IDs. YAML payloads are available
 as `yaml` automatically. Faker strategies are optional:
 
