@@ -26,6 +26,7 @@
         "phpstan/phpstan-phpunit": "^2.0.18",
         "phpstan/phpstan-strict-rules": "^2.0.12",
         "phpunit/phpunit": "^13.3.1",
+        "psr/log": "^3.0",
         "rector/rector": "^2.6.2",
         "shipmonk/composer-dependency-analyser": "^1.8.4",
         "shipmonk/name-collision-detector": "^2.1.1",

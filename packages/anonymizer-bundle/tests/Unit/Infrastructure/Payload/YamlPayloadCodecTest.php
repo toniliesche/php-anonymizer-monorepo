@@ -22,8 +22,19 @@ final class YamlPayloadCodecTest extends TestCase
 
     public function testRejectsNonMappingRoots(): void
     {
-        $this->expectException(ParseException::class);
+        $this->expectExceptionObject(new ParseException('YAML payload root must be a mapping.'));
         new YamlPayloadCodec()->decode('- value');
+    }
+
+    public function testAcceptsEmptyMappingAndPreservesConfiguredIndentation(): void
+    {
+        $codec = new YamlPayloadCodec();
+        self::assertSame([], $codec->decode('{}'));
+        self::assertStringContainsString("nested:\n  value: true", $codec->encode(['nested' => ['value' => true]]));
+        self::assertSame("nested:\n  value: true\n", $codec->encode(['nested' => ['value' => true]]));
+        self::assertSame("one:\n  two:\n    three:\n      four: { leaf: value }\n", $codec->encode([
+            'one' => ['two' => ['three' => ['four' => ['leaf' => 'value']]]],
+        ]));
     }
 
     public function testRejectsScalarAndMalformedRoots(): void
@@ -32,7 +43,8 @@ final class YamlPayloadCodecTest extends TestCase
         try {
             $codec->decode('value');
             self::fail('A scalar root must be rejected.');
-        } catch (ParseException) {
+        } catch (ParseException $exception) {
+            self::assertSame('YAML payload root must be a mapping.', $exception->getMessage());
         }
 
         $this->expectException(ParseException::class);

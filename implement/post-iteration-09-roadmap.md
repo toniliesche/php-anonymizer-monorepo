@@ -1,44 +1,69 @@
 # Post-Iteration-9 Roadmap
 
-This roadmap covers the first post-1.0 enhancements. It preserves v1 source
-compatibility and prioritizes production safety before new anonymization
-capabilities.
+This roadmap covers the first enhancements after the 1.0.0 release of the
+Iteration 9.1 refactor. Iterations 10 onward are additive within the 1.x API
+and prioritize production safety before new anonymization capabilities.
 
-## Iteration 10 — Performance, Execution Safety, and Safe Auditability
+## Release Baseline
+
+- Publish the completed Iteration 9.1 refactor as `1.0.0`; update package
+  constraints and release documentation accordingly.
+- Publish the first Iteration 10 slice as `1.1.0` and the second as `1.2.0`.
+- Preserve the existing `AnonymizerInterface`; all new capabilities use
+  narrowly typed additive interfaces.
+
+## Iteration 10.0 / 1.1 — Performance and Execution Limits
 
 Performance acceptance is defined primarily around batch exports. Benchmarks
 use synthetic, non-sensitive fixtures and measure median runtime, throughput,
 and peak memory for 10,000 records across flat redaction, nested/conditional
 rules, preserve mode, embedded JSON, and Serializer adaptation.
 
-- Run a dedicated non-blocking benchmark job on a pinned CI runner and compare
-  each result with the latest `main` baseline. Flag median-runtime regressions
-  above 15% and peak-memory regressions above 10%; keep the normal PR quality
-  gate deterministic.
 - Make `anonymize()` use a no-report traversal path; it must not collect
   anonymized or missing paths when callers request only transformed data.
 - Preserve condition semantics while replacing full-map condition snapshots
   with memoized snapshots of only the condition paths required at that map
   level. Evaluate each condition once per rule/map pair.
 - Eliminate the JSON codec's second full decode while retaining object-root
-  rejection and existing error semantics.
-- Add additive `BatchAnonymizerInterface::anonymizeRecords(string $profile,
-  iterable $records): iterable`. Process map records one at a time, validate
-  before each yielded result, retain no prior records, and intentionally omit
-  per-record reports to guarantee bounded memory.
+  rejection and existing error semantics. Detect the JSON root before the
+  single associative decode so `{}` and `[]` remain distinguishable.
+- Add immutable `AnonymizationLimits` with core defaults of 10 MiB payload input,
+  traversal depth 64, 100,000 visited nodes, 50,000 entries per collection,
+  and embedded-payload depth 8.
+- Apply byte limits to encoded-payload entry points and structural limits to
+  arrays. Share one budget across embedded payload traversal and include the
+  profile, limit/value, JSON Pointer, and codec where applicable in failures.
+- Expose the limits through optional Bundle configuration under
+  `anonymizer.limits`; application configuration overrides core defaults.
+- Run a dedicated non-blocking benchmark job on a pinned CI runner and compare
+  each result with the latest `main` baseline. Flag median-runtime regressions
+  above 15% and peak-memory regressions above 10%; keep the normal PR quality
+  gate deterministic.
 
-- Add immutable `AnonymizationLimits` for input bytes, traversal depth, visited
-  nodes, collection entries, and embedded-payload depth.
-- Enforce limits for arrays and payload codecs with path-aware failures.
-- Expose limits through optional Bundle configuration with conservative defaults
-  and application overrides.
-- Add a separate array-focused audit interface/result. Audit entries contain
-  profile identity/version, path, action, strategy/codec ID, and aggregate
-  counts, never source or replacement values.
-- Add an optional PSR-3-compatible audit/metrics adapter in the Bundle; keep the
-  core free of logging dependencies.
-- Test boundaries, malformed/untrusted input, embedded payloads, deterministic
-  audit ordering, and the absence of payload values in audit output.
+## Iteration 10.1 / 1.2 — Batch Processing and Safe Auditability
+
+- Add additive `BatchAnonymizerInterface::anonymizeRecords(string $profile,
+  iterable $records): iterable`. Process map records lazily one at a time,
+  reset execution limits per record, retain no prior records or reports, and
+  fail when the failing record is pulled. Preserve the underlying exception
+  category and include the zero-based record ordinal.
+- Add an array-only `AuditAnonymizerInterface` with
+  `anonymizeWithAudit()` returning transformed data plus immutable aggregate
+  audit data.
+- Aggregate audit entries by profile name, deterministic canonical SHA-256
+  profile fingerprint, JSON Pointer, action, and nullable strategy/codec ID.
+  Order entries deterministically and include counts only; never include source
+  values, replacements, raw payloads, or raw profile definitions.
+- Keep batch operations output-only in this release. Defer batch audit to the
+  document-streaming iteration.
+- Add optional Bundle audit wiring, disabled by default. When enabled, publish
+  aggregate audit data as one PSR-3 `info` record through the configured logger
+  service and expose the audit interface alias only while enabled. Keep PSR
+  logging out of the core package.
+- Test lazy iteration, map validation, fail-fast behavior, bounded memory,
+  deterministic audit ordering, fingerprint stability, strategy/codec
+  attribution, and the absence of source or replacement values in serialized
+  audit/log contexts.
 
 ## Iteration 11 — Keyed Deterministic Pseudonymisation
 
@@ -98,8 +123,9 @@ rules, preserve mode, embedded JSON, and Serializer adaptation.
 
 ## Compatibility and API Policy
 
-- Keep v1 source-compatible: do not add methods to `AnonymizerInterface`,
-  change return types, or change existing profile output.
+- Keep the 1.0 source contract stable: do not add methods to
+  `AnonymizerInterface`, change return types, or change existing profile
+  output.
 - Expose new behavior through narrowly typed interfaces and optional packages.
 - Bundle aliases should expose those interfaces only when the capability is
   enabled.
@@ -114,8 +140,8 @@ rules, preserve mode, embedded JSON, and Serializer adaptation.
 
 - Every iteration updates the profile schema, extension-author guide,
   changelog, package-install smoke tests, and consumer examples.
-- Run the established quality gate plus contract suites for limits, audit
-  redaction, contextual strategies, typed transformations, and streaming
-  codecs.
+- Run the established quality gate plus contract suites for limits, batch
+  processing, audit redaction, contextual strategies, typed transformations,
+  and streaming codecs.
 - For iterations 10–12, review error messages, logs, audit artifacts, and
   secret handling as explicit security acceptance criteria.

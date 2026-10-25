@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2cae95676b11f4b7a87feb629d5a9c6a",
+    "content-hash": "8cb73dda558f059259ada8823e55328a",
     "packages": [
         {
             "name": "thecodingmachine/safe",
@@ -2600,13 +2600,15 @@
             "dist": {
                 "type": "path",
                 "url": "packages/anonymizer-bundle",
-                "reference": "4d6e8bfb304ef52aa6c8c4a848a0da3a3afcf966"
+                "reference": "32f2abc7448169b19e5c2aff255c0f3aee179ad9"
             },
             "require": {
                 "php": "^8.5",
                 "php-anonymizer/anonymizer": "^1.0",
                 "php-anonymizer/anonymizer-symfony-serializer": "^1.0",
+                "psr/log": "^3.0",
                 "symfony/config": "^8.1.4",
+                "symfony/console": "^8.1.4",
                 "symfony/dependency-injection": "^8.1.4",
                 "symfony/http-kernel": "^8.1.4",
                 "symfony/serializer": "^8.1.4",

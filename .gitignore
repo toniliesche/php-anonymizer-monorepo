@@ -45,3 +45,6 @@ Thumbs.db
 
 # Release/build output. Keep build scripts and checked-in manifests trackable.
 /dist/
+
+# Local Graphify knowledge graph.
+graphify-out/

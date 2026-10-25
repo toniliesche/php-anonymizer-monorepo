@@ -51,6 +51,25 @@ $json = $anonymizer->anonymizePayload('payload', 'json', '{"email":"Ada"}');
 Custom strategies and codecs implement the framework-free interfaces described
 in [`docs/extension-author-guide.md`](docs/extension-author-guide.md).
 
+Array consumers can process records lazily without retaining prior records or
+reports:
+
+```php
+foreach ($anonymizer->anonymizeRecords('customer', $records) as $safe) {
+    export($safe);
+}
+```
+
+Execution limits are enabled by default. `AnonymizationLimits` can be passed to
+`AnonymizerFactory::fromArrays()` as its final argument. Encoded payloads are
+limited to 10 MiB by default, with additional bounds for traversal depth,
+visited nodes, collection entries, and embedded payload depth.
+
+Array-only callers that need safe operational telemetry can use the optional
+`AuditAnonymizerInterface`. Audit entries contain profile identity, a compiled
+profile fingerprint, paths, actions, handler IDs, and counts—never source or
+replacement values.
+
 Symfony applications can install `php-anonymizer/anonymizer-bundle` and
 configure the same profiles under `anonymizer.profiles`. The Bundle exposes an
 autowireable `AnonymizerInterface` and discovers custom providers, strategies,

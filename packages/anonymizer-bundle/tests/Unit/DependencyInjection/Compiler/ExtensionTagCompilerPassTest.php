@@ -66,4 +66,24 @@ final class ExtensionTagCompilerPassTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         new ExtensionTagCompilerPass()->process($container);
     }
+
+    public function testContinuesAfterBuiltInTagsAndRejectsLaterInvalidTag(): void
+    {
+        $container = new ContainerBuilder();
+        $container->register('mixed')->addTag('anonymizer.payload_codec', [
+            'id' => 'json', 'builtin' => true,
+        ])->addTag('anonymizer.payload_codec', ['id' => 'not valid']);
+
+        $this->expectException(InvalidArgumentException::class);
+        new ExtensionTagCompilerPass()->process($container);
+    }
+
+    public function testRejectsIdentifierWithTrailingNewline(): void
+    {
+        $container = new ContainerBuilder();
+        $container->register('extension')->addTag('anonymizer.replacement_strategy', ['id' => "valid\n"]);
+
+        $this->expectException(InvalidArgumentException::class);
+        new ExtensionTagCompilerPass()->process($container);
+    }
 }

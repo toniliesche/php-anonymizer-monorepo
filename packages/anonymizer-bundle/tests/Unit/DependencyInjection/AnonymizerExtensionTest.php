@@ -4,23 +4,40 @@ declare(strict_types=1);
 
 namespace PhpAnonymizer\AnonymizerBundle\Tests\Unit\DependencyInjection;
 
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizationLimits;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\ArrayAnonymizer;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AuditAnonymizerInterface;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\BatchAnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Domain\Exception\InvalidProfileDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\RuleOptionsCompiler;
 use PhpAnonymizer\Anonymizer\Domain\Rule\RuleDefinition;
 use PhpAnonymizer\AnonymizerBundle\AnonymizerBundle;
+use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleCollectionConverter;
+use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleConverter;
+use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleMerger;
+use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleNodeConverter;
+use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRulePathConverter;
+use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleValueConverter;
+use PhpAnonymizer\AnonymizerBundle\Command\ImportLegacyRulesCommand;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\AnonymizerConfiguration;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\AnonymizerExtension;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Compiler\ExtensionTagCompilerPass;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Compiler\SerializerServiceCompilerPass;
+use PhpAnonymizer\AnonymizerBundle\Infrastructure\Audit\AuditLoggerAdapter;
+use PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport\AtomicFileWriter;
+use PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport\BundleConfigRenderer;
+use PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport\LegacyDocumentReader;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\ConfiguredProfileProvider;
 use PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement\FakerReplacementStrategyFactory;
+use PhpAnonymizer\AnonymizerPersonas\Infrastructure\Replacement\PersonaReplacementStrategyFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Reference;
 
 #[CoversClass(AnonymizerExtension::class)]
 #[CoversClass(AnonymizerBundle::class)]
@@ -57,6 +74,54 @@ final class AnonymizerExtensionTest extends TestCase
         self::assertTrue($container->hasDefinition(ConfiguredProfileProvider::class . '.customer'));
     }
 
+    public function testRegistersConfiguredLimitsExactly(): void
+    {
+        $container = new ContainerBuilder();
+        new AnonymizerExtension()->load([['limits' => [
+            'max_input_bytes' => 123,
+            'max_depth' => 7,
+            'max_visited_nodes' => 8,
+            'max_collection_entries' => 9,
+            'max_embedded_payload_depth' => 10,
+        ]]], $container);
+
+        self::assertSame([123, 7, 8, 9, 10], $container->getDefinition(AnonymizationLimits::class)->getArguments());
+    }
+
+    public function testRejectsZeroLimits(): void
+    {
+        foreach (['max_input_bytes', 'max_depth', 'max_visited_nodes', 'max_collection_entries', 'max_embedded_payload_depth'] as $name) {
+            try {
+                new AnonymizerExtension()->load([['limits' => [$name => 0]]], new ContainerBuilder());
+                self::fail(sprintf('Expected %s to reject zero.', $name));
+            } catch (InvalidConfigurationException $exception) {
+                self::assertSame(InvalidConfigurationException::class, $exception::class);
+            }
+        }
+    }
+
+    public function testUsesDocumentedLimitDefaults(): void
+    {
+        $container = new ContainerBuilder();
+        new AnonymizerExtension()->load([[]], $container);
+
+        self::assertSame([10_485_760, 64, 100_000, 50_000, 8], $container->getDefinition(AnonymizationLimits::class)->getArguments());
+    }
+
+    public function testAcceptsOneAsTheMinimumForEveryLimit(): void
+    {
+        $container = new ContainerBuilder();
+        new AnonymizerExtension()->load([['limits' => [
+            'max_input_bytes' => 1,
+            'max_depth' => 1,
+            'max_visited_nodes' => 1,
+            'max_collection_entries' => 1,
+            'max_embedded_payload_depth' => 1,
+        ]]], $container);
+
+        self::assertSame([1, 1, 1, 1, 1], $container->getDefinition(AnonymizationLimits::class)->getArguments());
+    }
+
     public function testRegistersFakerAndPersonaFactoriesWithCompleteDefinitions(): void
     {
         $container = new ContainerBuilder();
@@ -75,7 +140,103 @@ final class AnonymizerExtensionTest extends TestCase
         $tags = $faker->getTag('anonymizer.replacement_strategy');
         self::assertSame('faker.name', $tags[0]['id']);
         $persona = $container->getDefinition('anonymizer.personas.persona_name');
+        self::assertSame([PersonaReplacementStrategyFactory::class, 'createStrategy'], $persona->getFactory());
         self::assertSame(['de', 'persona.name'], $persona->getArguments());
+    }
+
+    public function testAuditRequiresLoggerWhenEnabled(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        new AnonymizerExtension()->load([['audit' => ['enabled' => true]]], new ContainerBuilder());
+    }
+
+    public function testRegistersConfiguredAuditLogger(): void
+    {
+        $container = new ContainerBuilder();
+        new AnonymizerExtension()->load([['audit' => ['enabled' => true, 'logger_service' => 'logger']]], $container);
+
+        self::assertTrue($container->hasDefinition(AuditLoggerAdapter::class));
+        $audit = $container->getDefinition(AuditLoggerAdapter::class)->getArguments();
+        self::assertSame([ArrayAnonymizer::class, 'logger'], $this->referenceIds($audit));
+        self::assertTrue($container->hasAlias(AuditAnonymizerInterface::class));
+        self::assertTrue($container->getAlias(AuditAnonymizerInterface::class)->isPublic());
+    }
+
+    public function testReportsMissingFakerIntegrationsPrecisely(): void
+    {
+        $method = new ReflectionMethod(AnonymizerExtension::class, 'requireFakerFactory');
+        $extension = new AnonymizerExtension();
+        foreach ([
+            ['personas', 'Personas integration is enabled but php-anonymizer/anonymizer-personas is not installed.'],
+            ['faker', 'Faker integration is enabled but php-anonymizer/anonymizer-faker is not installed.'],
+        ] as [$integration, $prefix]) {
+            try {
+                $method->invoke($extension, 'Missing\\Integration\\Factory', $integration);
+                self::fail('Expected missing integration exception.');
+            } catch (InvalidConfigurationException $exception) {
+                self::assertStringStartsWith($prefix, $exception->getMessage());
+            }
+        }
+    }
+
+    public function testRegistersLegacyImportDependencyGraph(): void
+    {
+        $container = new ContainerBuilder();
+        new AnonymizerExtension()->load([[]], $container);
+
+        foreach ([
+            LegacyRuleMerger::class,
+            LegacyRuleValueConverter::class,
+            LegacyRulePathConverter::class,
+            LegacyRuleNodeConverter::class,
+            LegacyRuleCollectionConverter::class,
+            LegacyRuleConverter::class,
+            LegacyDocumentReader::class,
+            BundleConfigRenderer::class,
+            AtomicFileWriter::class,
+        ] as $service) {
+            self::assertTrue($container->hasDefinition($service), $service);
+        }
+
+        $path = $container->getDefinition(LegacyRulePathConverter::class)->getArguments();
+        self::assertSame([LegacyRuleValueConverter::class], $this->referenceIds($path));
+
+        $node = $container->getDefinition(LegacyRuleNodeConverter::class)->getArguments();
+        self::assertSame([
+            LegacyRuleValueConverter::class,
+            LegacyRulePathConverter::class,
+        ], $this->referenceIds($node));
+
+        $collection = $container->getDefinition(LegacyRuleCollectionConverter::class)->getArguments();
+        self::assertSame([LegacyRuleNodeConverter::class], $this->referenceIds($collection));
+
+        $command = $container->getDefinition(ImportLegacyRulesCommand::class)->getArguments();
+        self::assertSame([
+            LegacyDocumentReader::class,
+            LegacyRuleConverter::class,
+            BundleConfigRenderer::class,
+            AtomicFileWriter::class,
+        ], $this->referenceIds($command));
+        $converter = $container->getDefinition(LegacyRuleConverter::class)->getArguments();
+        self::assertSame([
+            LegacyRuleCollectionConverter::class,
+            LegacyRuleMerger::class,
+        ], $this->referenceIds($converter));
+        self::assertTrue($container->getAlias(BatchAnonymizerInterface::class)->isPublic());
+    }
+
+    /** @param array<int|string, mixed> $arguments
+     *  @return list<string>
+     */
+    private function referenceIds(array $arguments): array
+    {
+        $ids = [];
+        foreach ($arguments as $argument) {
+            self::assertInstanceOf(Reference::class, $argument);
+            $ids[] = $argument->__toString();
+        }
+
+        return $ids;
     }
 
     public function testBundleRegistersBothCompilerPasses(): void
