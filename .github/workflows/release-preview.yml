@@ -37,6 +37,10 @@ jobs:
       - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: '8.5'
+      - name: Prepare local main ref for version calculation
+        run: |
+          git fetch --no-tags origin '+refs/heads/main:refs/remotes/origin/main'
+          git branch --force main origin/main
       - name: Preview release plan
         run: composer ci:run-gate release-preview php tools/release-preview.php "$RELEASE_BRANCH" "$RELEASE_MAIN_BRANCH"
       - name: Record workflow outcome

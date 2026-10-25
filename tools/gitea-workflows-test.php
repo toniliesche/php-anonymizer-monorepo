@@ -53,6 +53,25 @@ $preview = Yaml::parseFile($directory . '/release-preview.yaml');
 if (!isset($preview['on']['workflow_dispatch']['inputs']['release_branch']) || !isset($preview['on']['pull_request']['branches'])) {
     throw new RuntimeException('Release preview must support release-to-main PRs and an explicit manual branch.');
 }
+$previewSteps = $preview['jobs']['preview']['steps'];
+$mainSetupStep = null;
+$previewRunStep = null;
+foreach ($previewSteps as $index => $step) {
+    if (($step['name'] ?? null) === 'Prepare local main ref for version calculation') {
+        $mainSetupStep = $index;
+        if (!str_contains((string) ($step['run'] ?? ''), 'git fetch --no-tags origin')
+            || !str_contains((string) ($step['run'] ?? ''), 'git branch --force main origin/main')
+        ) {
+            throw new RuntimeException('Gitea release preview must prepare local main from origin/main.');
+        }
+    }
+    if (($step['name'] ?? null) === 'Run release preview without publication credentials') {
+        $previewRunStep = $index;
+    }
+}
+if ($mainSetupStep === null || $previewRunStep === null || $mainSetupStep >= $previewRunStep) {
+    throw new RuntimeException('Gitea release preview must prepare local main before calculating the release version.');
+}
 $benchmark = Yaml::parseFile($directory . '/benchmark.yaml');
 if (($benchmark['on']['schedule'][0]['cron'] ?? null) !== '17 3 * * 1'
     || !array_key_exists('workflow_dispatch', $benchmark['on'])
