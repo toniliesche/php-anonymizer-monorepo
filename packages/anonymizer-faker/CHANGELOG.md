@@ -2,13 +2,12 @@
 
 ## Unreleased
 
+## 2.0.0
+
 - Iteration 29: asserted the deterministic seed unpacking invariant at runtime.
 - Added a stable strategy ID catalog for framework composition roots.
 - Added a replacement-port factory method while retaining the concrete factory
   method as a transitional compatibility API.
-
-## 2.0.0
-
 - Added focused package documentation for Faker strategy installation and
   registration.
 - Added an executable seeded Faker strategy example.

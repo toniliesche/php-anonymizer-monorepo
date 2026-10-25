@@ -5743,13 +5743,13 @@
             "dist": {
                 "type": "path",
                 "url": "packages/anonymizer",
-                "reference": "668b6d1a9204d819343b9176e4038618b797aee0"
+                "reference": "9941a02de411a73e58e40abfa47b19ee5a4c17f4"
             },
             "require": {
                 "ext-mbstring": "*",
                 "php": "^8.5",
                 "thecodingmachine/safe": "^3.4",
-                "webmozart/assert": "^2.4"
+                "webmozart/assert": "^2.5"
             },
             "type": "library",
             "extra": {
@@ -5782,19 +5782,19 @@
             "dist": {
                 "type": "path",
                 "url": "packages/anonymizer-bundle",
-                "reference": "b05d08417fc5eb2b6c76f7e497f243f6f2506d90"
+                "reference": "de1bbae3864006ec732b9c23553f2a1639380571"
             },
             "require": {
                 "php": "^8.5",
                 "php-anonymizer/anonymizer": "^2.0",
                 "php-anonymizer/anonymizer-symfony-serializer": "^2.0",
-                "psr/log": "^3.0",
-                "symfony/config": "^8.1.4",
-                "symfony/console": "^8.1.4",
-                "symfony/dependency-injection": "^8.1.4",
-                "symfony/http-kernel": "^8.1.4",
-                "symfony/serializer": "^8.1.4",
-                "symfony/yaml": "^8.1.2",
+                "psr/log": "^3.0.2",
+                "symfony/config": "^8.1.5",
+                "symfony/console": "^8.1.9",
+                "symfony/dependency-injection": "^8.1.9",
+                "symfony/http-kernel": "^8.1.9",
+                "symfony/serializer": "^8.1.9",
+                "symfony/yaml": "^8.1.9",
                 "thecodingmachine/safe": "^3.4"
             },
             "suggest": {
@@ -5836,13 +5836,13 @@
             "dist": {
                 "type": "path",
                 "url": "packages/anonymizer-faker",
-                "reference": "1331aedc3e6159e25f8073536d8a2a4957b4379c"
+                "reference": "84280bafd436f712b993a5069b86c61b40556271"
             },
             "require": {
-                "fakerphp/faker": "^1.24",
+                "fakerphp/faker": "^1.24.1",
                 "php": "^8.5",
                 "php-anonymizer/anonymizer": "^2.0",
-                "webmozart/assert": "^2.4"
+                "webmozart/assert": "^2.5"
             },
             "type": "library",
             "extra": {
@@ -5870,19 +5870,19 @@
             "dist": {
                 "type": "path",
                 "url": "packages/anonymizer-laravel",
-                "reference": "a65b619f02669059710b2eae13c942f0c2799b2f"
+                "reference": "38a037e8014313bee6c4dd5c5fc4f709ef2ffb7c"
             },
             "require": {
                 "illuminate/support": "^13.0",
                 "php": "^8.5",
                 "php-anonymizer/anonymizer": "^2.0",
-                "psr/log": "^3.0",
-                "symfony/yaml": "^7.4 || ^8.0",
-                "webmozart/assert": "^2.4"
+                "psr/log": "^3.0.2",
+                "symfony/yaml": "^7.4 || ^8.1.9",
+                "webmozart/assert": "^2.5"
             },
             "require-dev": {
-                "laravel/framework": "^13.0",
-                "orchestra/testbench-core": "^11.0"
+                "laravel/framework": "^13.38",
+                "orchestra/testbench-core": "^11.6"
             },
             "suggest": {
                 "php-anonymizer/anonymizer-faker": "Enable Faker replacement strategies",
@@ -5958,12 +5958,12 @@
             "dist": {
                 "type": "path",
                 "url": "packages/anonymizer-pseudonymization",
-                "reference": "ff83b8b37b013411e7dbf590d38813a6800f5223"
+                "reference": "a67553ce2a8c982827936fa083efd7f6e3f26845"
             },
             "require": {
                 "php": "^8.5",
                 "php-anonymizer/anonymizer": "^2.0",
-                "webmozart/assert": "^2.4"
+                "webmozart/assert": "^2.5"
             },
             "type": "library",
             "extra": {
@@ -5996,12 +5996,12 @@
             "dist": {
                 "type": "path",
                 "url": "packages/anonymizer-symfony-serializer",
-                "reference": "93aad749011bc8e5c185172377464cebcf3235ac"
+                "reference": "65959b7a066c9090134747172b5a7b24c42db9d4"
             },
             "require": {
                 "php": "^8.5",
                 "php-anonymizer/anonymizer": "^2.0",
-                "symfony/serializer": "^8.1.4"
+                "symfony/serializer": "^8.1.9"
             },
             "type": "library",
             "extra": {

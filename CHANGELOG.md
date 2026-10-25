@@ -4,6 +4,8 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+## 2.0.0
+
 - Iteration 29: replaced unsafe extension and framework-boundary type claims
   with Webmozart Assert runtime checks, added PHPStan assertion support, and
   preserved domain-specific validation contracts.
@@ -35,9 +37,6 @@ All notable changes to this project will be documented here.
   internal runtime graph without changing façade behavior.
 - Added executable public API manifest/signature checks and transitional
   string-path and provider-free NDJSON construction contracts.
-
-## 2.0.0
-
 - Iteration 22: enforced PSR-4 declaration paths, extracted traversal and
   deferred NDJSON collaborators, replaced anonymous test implementations with
   reusable package-local fixtures, and added structural regression checks.

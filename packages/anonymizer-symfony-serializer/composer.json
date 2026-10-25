@@ -6,7 +6,7 @@
     "require": {
         "php": "^8.5",
         "php-anonymizer/anonymizer": "^2.0",
-        "symfony/serializer": "^8.1.4"
+        "symfony/serializer": "^8.1.9"
     },
     "autoload": {
         "psr-4": {

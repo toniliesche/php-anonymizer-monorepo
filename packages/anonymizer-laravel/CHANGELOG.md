@@ -2,12 +2,12 @@
 
 ## Unreleased
 
+## 2.0.0
+
 - Iteration 29: validated framework-resolved services, tagged extensions, and
   configured profile maps with runtime assertions.
 - Centralized profile and core service registration in internal composition
   collaborators and consumed the canonical Faker strategy catalog.
-## 2.0.0
-
 - Prepared service registration for the 2.0 unified façade and builder-based
   extension modules.
 - Added `anonymizer.extension` module discovery in Laravel tag order.
