@@ -4,8 +4,11 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
-## 1.7.0
+## 1.7.0 (WIP)
 
+- Iteration 18: added `php-anonymizer/anonymizer-laravel` with Laravel 13 service-provider
+  discovery, ordered tagged extension composition, published configuration,
+  eager validation, optional integrations, and standalone Serializer support.
 - Added `AnonymizerFactory::fromProfileProviders()` for explicitly registered,
   reusable profile-provider libraries.
 - Added a generated Composer package-install consumer smoke test and registered

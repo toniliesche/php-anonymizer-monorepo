@@ -1,0 +1,40 @@
+{
+    "name": "php-anonymizer/anonymizer-laravel",
+    "description": "Laravel integration for PHP Anonymizer",
+    "license": "MIT",
+    "type": "library",
+    "require": {
+        "php": "^8.5",
+        "illuminate/support": "^13.0",
+        "php-anonymizer/anonymizer": "^1.2",
+        "psr/log": "^3.0",
+        "symfony/yaml": "^7.4 || ^8.0"
+    },
+    "require-dev": {
+        "laravel/framework": "^13.0",
+        "orchestra/testbench-core": "^11.0"
+    },
+    "suggest": {
+        "php-anonymizer/anonymizer-faker": "Enable Faker replacement strategies",
+        "php-anonymizer/anonymizer-personas": "Enable fixed European persona strategies",
+        "php-anonymizer/anonymizer-pseudonymization": "Enable keyed deterministic pseudonymisation",
+        "php-anonymizer/anonymizer-symfony-serializer": "Enable object anonymization through an application-owned Symfony Serializer"
+    },
+    "autoload": {
+        "psr-4": {
+            "PhpAnonymizer\\AnonymizerLaravel\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PhpAnonymizer\\AnonymizerLaravel\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "PhpAnonymizer\\AnonymizerLaravel\\AnonymizerServiceProvider"
+            ]
+        }
+    }
+}
