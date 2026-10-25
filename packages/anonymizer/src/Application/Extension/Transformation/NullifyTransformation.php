@@ -7,9 +7,7 @@ namespace PhpAnonymizer\Anonymizer\Application\Extension\Transformation;
 use InvalidArgumentException;
 use Override;
 
-/**
- * @codeCoverageIgnore
- */
+// @internal
 final class NullifyTransformation implements ValueTransformationInterface
 {
     #[Override]

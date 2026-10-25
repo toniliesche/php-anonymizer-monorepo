@@ -20,7 +20,10 @@ The root Composer project exposes:
 - `mutation`
 - `validate` and `audit`
 - `qa`
-- `release:preview`, `release:verify`, and CI-only `release:publish`
+- `release:preview`, `release:verify`, `release:publish`, and
+  `release:packagist`
+- `ci:helpers:test`, `gitea:workflows:test`, `github:workflows:test`, and the
+  release fixture commands used by the QA gate
 
 `make help` documents shortcuts for every command, including `setup`, `qa`,
 and the release preview/verification commands.
@@ -32,7 +35,7 @@ and the release preview/verification commands.
 - `composer qa` is the local and CI quality gate. It runs validation, formatting
   checks, static analysis, tests, and applicable dependency/mutation checks.
 - `composer fix` is the only formatting command that mutates tracked sources.
-- Developers need PHP 8.5 and Composer. v1 deliberately has no Docker
+- Developers need PHP 8.5 and Composer. The library deliberately has no Docker
   development environment and no Taskfile requirement.
 - Do not install dependencies automatically from Git hooks or checkout/merge
   events. This avoids surprising network and filesystem side effects.

@@ -15,3 +15,5 @@ non-deliverable `example.invalid` domain. The base personas are respectively
 British, German, Spanish, French, Italian, Dutch, and Portuguese; the
 regional personas represent Ireland, Austria, Switzerland, and Belgian Dutch.
 Conflicting regional locales such as `en_US` and `pt_BR` are rejected.
+
+See the package-local [usage guide](docs/usage.md).

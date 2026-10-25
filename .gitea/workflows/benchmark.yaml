@@ -1,0 +1,96 @@
+name: Performance benchmark
+
+on:
+  pull_request:
+    paths:
+      - 'packages/**/src/**'
+      - 'tools/benchmark.php'
+      - 'tools/Benchmark/**'
+      - 'tools/check-benchmark.php'
+      - 'tools/fixtures/**'
+      - 'composer.json'
+      - 'composer.lock'
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: Compare PHP 8.5 benchmark baseline
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: linux-amd64-docker
+    container:
+      image: registry.toniliesche.de/development/php-ci-builder:1.0
+      credentials:
+        username: ${{ secrets.CI_REGISTRY_USERNAME }}
+        password: ${{ secrets.CI_REGISTRY_PASSWORD }}
+    env:
+      CI: 'true'
+      PHP_VERSION: '8.5'
+      XDEBUG_MODE: coverage
+      CI_EVENT_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      CI_MAIN_BASELINE_REF: origin/${{ github.base_ref || 'main' }}
+      CI_DIAGNOSTICS_DIR: var/ci-diagnostics/${{ github.run_id }}-attempt-${{ github.run_attempt }}
+    steps:
+      - name: Check out the exact event revision
+        uses: https://github.com/actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install Git subtree support
+        run: sh tools/install-git-subtree.sh
+
+      - name: Verify checkout and PHP runtime
+        run: |
+          composer ci:verify-checkout
+          composer ci:runtime:check
+
+      - name: Install locked dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Run benchmark and compare baseline
+        run: |
+          composer ci:run-gate benchmark composer benchmark
+          cp "$CI_DIAGNOSTICS_DIR/benchmark.log" "$CI_DIAGNOSTICS_DIR/benchmark.json"
+          composer ci:run-gate benchmark-check php tools/check-benchmark.php tools/fixtures/benchmark-baseline-php85.json "$CI_DIAGNOSTICS_DIR/benchmark.json"
+
+      - name: Record workflow outcome
+        if: always()
+        env:
+          CI_JOB_STATUS: ${{ job.status }}
+        run: |
+          mkdir -p "$CI_DIAGNOSTICS_DIR"
+          printf 'event=%s\nrevision=%s\nrun_id=%s\nattempt=%s\noutcome=%s\n' \
+            "$GITHUB_EVENT_NAME" "$CI_EVENT_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$CI_JOB_STATUS" \
+            > "$CI_DIAGNOSTICS_DIR/workflow-metadata.txt"
+
+      - name: Upload Gitea benchmark diagnostics
+        if: always()
+        uses: https://github.com/ChristopherHX/gitea-upload-artifact@81f940d004763f986ba3582c007fd842dd5cb0d7
+        with:
+          name: benchmark-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.CI_DIAGNOSTICS_DIR }}/
+          if-no-files-found: error
+
+      - name: Download Gitea benchmark diagnostics
+        if: always()
+        uses: https://github.com/ChristopherHX/gitea-download-artifact@75635f32b4c1c41c4b3d64e8f85210112ed4c9c7
+        with:
+          name: benchmark-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.CI_DIAGNOSTICS_DIR }}/roundtrip
+
+      - name: Verify diagnostics artifact round trip
+        if: always()
+        env:
+          CI_JOB_STATUS: ${{ job.status }}
+        run: |
+          test -s "$CI_DIAGNOSTICS_DIR/roundtrip/workflow-metadata.txt"
+          if [[ "$CI_JOB_STATUS" == 'success' ]]; then
+            test -s "$CI_DIAGNOSTICS_DIR/roundtrip/benchmark.json"
+          fi

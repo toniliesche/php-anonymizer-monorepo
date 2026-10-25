@@ -8,7 +8,9 @@ use Override;
 use PhpAnonymizer\Anonymizer\Application\Extension\Payload\DocumentPayloadCodecInterface;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
+use Webmozart\Assert\Assert;
 
+// @internal
 final class YamlPayloadCodec implements DocumentPayloadCodecInterface
 {
     #[Override]
@@ -27,13 +29,9 @@ final class YamlPayloadCodec implements DocumentPayloadCodecInterface
         if (!is_array($decoded) || ($decoded !== [] && array_is_list($decoded))) {
             throw new ParseException('YAML payload root must be a mapping.');
         }
-        foreach (array_keys($decoded) as $key) {
-            if (!is_string($key)) {
-                throw new ParseException('YAML payload mapping keys must be strings.'); // @codeCoverageIgnore
-            }
-        }
 
-        /** @var array<string, mixed> $decoded */
+        Assert::isMap($decoded);
+
         return $decoded;
     }
 

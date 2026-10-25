@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace PhpAnonymizer\Anonymizer\Domain\Rule;
 
 use PhpAnonymizer\Anonymizer\Domain\Exception\InvalidProfileDefinition;
+use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\EmbeddedPayloadDefinitionParser;
 use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\RuleOptionsCompiler;
 use PhpAnonymizer\Anonymizer\Domain\Rule\Condition\ConditionDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Rule\Payload\EmbeddedPayloadDefinition;
+use Webmozart\Assert\Assert;
 
 final readonly class RuleDefinition
 {
@@ -117,9 +119,6 @@ final readonly class RuleDefinition
         return $this->embedded;
     }
 
-    /**
-     * @codeCoverageIgnore
-     */
     public function transformation(): ?TransformationDefinition
     {
         return $this->transformation;
@@ -130,14 +129,14 @@ final readonly class RuleDefinition
      */
     private static function withTraversal(array $definition): self
     {
-        /** @var string $field */
         $field = $definition['field'];
+        Assert::string($field);
         $hasChildren = array_key_exists('children', $definition);
         $hasEach = array_key_exists('each', $definition);
         $hasStrategy = array_key_exists('strategy', $definition);
         $hasEmbedded = array_key_exists('embedded', $definition);
         $hasTransform = array_key_exists('transform', $definition);
-        self::assertTraversalCombination($hasChildren, $hasEach, $hasStrategy, $hasEmbedded, $hasTransform);
+        RuleTraversalCombinationValidator::assert($hasChildren, $hasEach, $hasStrategy, $hasEmbedded, $hasTransform);
 
         if ($hasChildren) {
             self::assertRuleList($definition['children'], 'children must be a non-empty list of rules');
@@ -159,26 +158,7 @@ final readonly class RuleDefinition
             throw new InvalidProfileDefinition('on_scalar requires children or each');
         }
 
-        return new self($field, [], null, false, RuleOptionsCompiler::condition($definition), null, RuleOptionsCompiler::strategy($definition), RuleOptionsCompiler::keyId($definition), RuleOptionsCompiler::embedded($definition), RuleOptionsCompiler::transformation($definition));
-    }
-
-    /**
-     * @codeCoverageIgnore
-     */
-    private static function assertTraversalCombination(bool $hasChildren, bool $hasEach, bool $hasStrategy, bool $hasEmbedded, bool $hasTransform): void
-    {
-        if ($hasChildren && $hasEach) {
-            throw new InvalidProfileDefinition('a rule cannot contain both children and each');
-        }
-        if (($hasChildren || $hasEach) && ($hasStrategy || $hasEmbedded || $hasTransform)) {
-            throw new InvalidProfileDefinition('strategy, transform, and embedded require a leaf rule');
-        }
-        if ($hasStrategy && $hasEmbedded) {
-            throw new InvalidProfileDefinition('a rule cannot contain both strategy and embedded');
-        }
-        if (($hasStrategy && $hasTransform) || ($hasEmbedded && $hasTransform)) {
-            throw new InvalidProfileDefinition('a rule cannot contain more than one of strategy, transform, or embedded');
-        }
+        return new self($field, [], null, false, RuleOptionsCompiler::condition($definition), null, RuleOptionsCompiler::strategy($definition), RuleOptionsCompiler::keyId($definition), EmbeddedPayloadDefinitionParser::parse($definition), RuleOptionsCompiler::transformation($definition));
     }
 
     /**
@@ -195,19 +175,21 @@ final readonly class RuleDefinition
      * @param list<mixed> $definitions
      *
      * @return list<self>
-     *
-     * @codeCoverageIgnore
      */
     private static function compileChildren(array $definitions): array
     {
         $rules = [];
         $fields = [];
         foreach ($definitions as $index => $definition) {
+            // @codeCoverageIgnoreStart Nested rule lists are validated before compilation.
             if (!is_array($definition)) {
-                throw new InvalidProfileDefinition(sprintf('nested rule %s must be a map', $index));
+                // @codeCoverageIgnoreStart Defensive prevalidated list violation.
+                throw new InvalidProfileDefinition(sprintf('nested rule %s must be a map', $index)); // @codeCoverageIgnore
+                // @codeCoverageIgnoreEnd
             }
+            // @codeCoverageIgnoreEnd
 
-            /** @var array<string, mixed> $definition */
+            Assert::isMap($definition);
             $rule = self::fromArray($definition);
             if (isset($fields[$rule->field()])) {
                 throw new InvalidProfileDefinition(sprintf('nested rule %s duplicates field "%s"', $index, $rule->field()));

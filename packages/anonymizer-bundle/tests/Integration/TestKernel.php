@@ -6,6 +6,9 @@ namespace PhpAnonymizer\AnonymizerBundle\Tests\Integration;
 
 use Override;
 use PhpAnonymizer\AnonymizerBundle\AnonymizerBundle;
+use PhpAnonymizer\AnonymizerBundle\Tests\Support\Extension\TestPayloadCodec;
+use PhpAnonymizer\AnonymizerBundle\Tests\Support\Extension\TestProfileProvider;
+use PhpAnonymizer\AnonymizerBundle\Tests\Support\Extension\TestReplacementStrategy;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\Config\Loader\LoaderInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;

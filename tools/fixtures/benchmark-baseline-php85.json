@@ -1,0 +1,27 @@
+{
+    "php": "8.5.9",
+    "iterations": 100,
+    "samples": 7,
+    "scenarios": {
+        "wide-map": {
+            "median_ms": 13.627075,
+            "peak_memory_bytes": 10485760,
+            "output_sha256": "d326d57eb690c57b2cef9827a5ddff0efd1350811a90f50aac977847d527a644"
+        },
+        "normalized-keys": {
+            "median_ms": 14.78165,
+            "peak_memory_bytes": 10485760,
+            "output_sha256": "0b59921a9f2c38002bed48da06f763aa2731a45a21888f1dcf73a36180736887"
+        },
+        "nested-map": {
+            "median_ms": 6.554714,
+            "peak_memory_bytes": 10485760,
+            "output_sha256": "69328d67023fcfda0325581b0556a4fd4f237bab6b19705f755e23eeb22cf0f4"
+        },
+        "report": {
+            "median_ms": 0.499751,
+            "peak_memory_bytes": 10485760,
+            "output_sha256": "ba12f6088cb23e4e983d2ea4eea2d5c4e8e248f54b67dd06c357f3c14b5b44e7"
+        }
+    }
+}

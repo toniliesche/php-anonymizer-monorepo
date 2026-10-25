@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+## 2.0.0
+
+- Split framework registration into internal composition collaborators and made
+  Symfony serializer integration explicitly opt-in.
+- Prepared the integration for the 2.0 unified façade and builder-based
+  extension registration.
+- Added `anonymizer.extension` module discovery with contract validation and
+  priority-aware Symfony tagged iteration.
+- Added focused package documentation for configuration, extensions, and
+  legacy-rule migration.
+- Added a complete Bundle YAML configuration example covering profiles,
+  limits, Faker, and audit wiring.
+
 ## 1.7.0
 
 - Documented explicit `anonymizer.profile_provider` consumption order for

@@ -5,22 +5,29 @@ declare(strict_types=1);
 namespace PhpAnonymizer\AnonymizerLaravel\Tests\Unit;
 
 use InvalidArgumentException;
-use Override;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\AuditAnonymizerInterface;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Result\AuditAnonymizationResult;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Result\AuditEntry;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileCollection;
-use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileProviderInterface;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileCompositionCompiler;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinitionData;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinitionParser;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileGlobalRuleParser;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileMetadataParser;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileRuleAppender;
+use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\EmbeddedPayloadDefinitionParser;
 use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\RuleOptionsCompiler;
 use PhpAnonymizer\Anonymizer\Domain\Rule\RuleDefinition;
+use PhpAnonymizer\Anonymizer\Domain\Rule\RuleTraversalCombinationValidator;
 use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Audit\AuditLoggerAdapter;
 use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Payload\YamlPayloadCodec;
 use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Profile\ProfileComposer;
+use PhpAnonymizer\AnonymizerLaravel\Tests\Support\Profile\TestProfileProvider;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\NullLogger;
+use Psr\Log\LoggerInterface;
 use stdClass;
 use Symfony\Component\Yaml\Exception\ParseException;
 
@@ -33,17 +40,19 @@ use Symfony\Component\Yaml\Exception\ParseException;
 #[UsesClass(AuditEntry::class)]
 #[UsesClass(RuleOptionsCompiler::class)]
 #[UsesClass(RuleDefinition::class)]
+#[UsesClass(ProfileDefinitionParser::class)]
+#[UsesClass(ProfileMetadataParser::class)]
+#[UsesClass(ProfileCompositionCompiler::class)]
+#[UsesClass(ProfileDefinitionData::class)]
+#[UsesClass(ProfileRuleAppender::class)]
+#[UsesClass(ProfileGlobalRuleParser::class)]
+#[UsesClass(EmbeddedPayloadDefinitionParser::class)]
+#[UsesClass(RuleTraversalCombinationValidator::class)]
 final class InfrastructureTest extends TestCase
 {
     public function testProfileComposerCombinesConfiguredAndTaggedDefinitions(): void
     {
-        $provider = new class () implements ProfileProviderInterface {
-            #[Override]
-            public function profiles(): iterable
-            {
-                yield ProfileDefinition::fromArray('tagged', ['mode' => 'redact', 'rules' => [['field' => 'email']]]);
-            }
-        };
+        $provider = new TestProfileProvider();
 
         $collection = new ProfileComposer()->compose([
             'configured' => ['mode' => 'redact', 'rules' => [['field' => 'email']]],
@@ -57,10 +66,23 @@ final class InfrastructureTest extends TestCase
         $codec = new YamlPayloadCodec();
 
         self::assertSame(['email' => 'secret'], $codec->decode("email: secret\n"));
+        self::assertSame(['first' => 'one', 'second' => 'two'], $codec->decode("first: one\nsecond: two\n"));
         self::assertSame(['email' => 'secret'], $codec->decodeDocument("email: secret\n"));
+        self::assertSame(['one', 'two'], $codec->decodeDocument("- one\n- two\n"));
         self::assertSame("email: secret\n", $codec->encode(['email' => 'secret']));
         self::assertSame("- secret\n", $codec->encodeDocument(['secret']));
         self::assertSame('yaml', $codec->id());
+        self::assertSame("root:\n  nested:\n    - one\n", $codec->encode(['root' => ['nested' => ['one']]]));
+        self::assertSame("-\n  root:\n    nested:\n      - one\n", $codec->encodeDocument([['root' => ['nested' => ['one']]]]));
+    }
+
+    public function testYamlCodecPreservesDepthFourForMappingAndSequenceDocuments(): void
+    {
+        $codec = new YamlPayloadCodec();
+        $mapping = ['one' => ['two' => ['three' => ['four' => ['five' => 'value']]]]];
+
+        self::assertSame("one:\n  two:\n    three:\n      four: { five: value }\n", $codec->encode($mapping));
+        self::assertSame("-\n  one:\n    two:\n      three: { four: { five: value } }\n", $codec->encodeDocument([$mapping]));
     }
 
     public function testYamlCodecRejectsInvalidRootsAndKeys(): void
@@ -77,19 +99,24 @@ final class InfrastructureTest extends TestCase
         new YamlPayloadCodec()->decodeDocument("secret\n");
     }
 
-    public function testYamlCodecRejectsNonStringMappingKeys(): void
-    {
-        $this->expectException(ParseException::class);
-        new YamlPayloadCodec()->decode("!!int 0: secret\n");
-    }
-
     public function testAuditAdapterLogsEntries(): void
     {
-        $anonymizer = $this->createMock(AuditAnonymizerInterface::class);
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())->method('info')->with('Anonymization audit', [
+            'profile' => 'p',
+            'entries' => [[
+                'fingerprint' => 'fingerprint',
+                'path' => '/email',
+                'action' => 'redact',
+                'handler' => null,
+                'count' => 1,
+            ]],
+        ]);
+        $anonymizer = $this->createMock(AnonymizerInterface::class);
         $result = new AuditAnonymizationResult(['email' => '[REDACTED]'], [new AuditEntry('p', 'fingerprint', '/email', 'redact', null, 1)]);
         $anonymizer->expects($this->once())->method('anonymizeWithAudit')->willReturn($result);
 
-        self::assertSame($result, new AuditLoggerAdapter($anonymizer, new NullLogger())->anonymizeWithAudit('p', ['email' => 'secret']));
+        self::assertSame($result, new AuditLoggerAdapter($anonymizer, $logger)->anonymizeWithAudit('p', ['email' => 'secret']));
     }
 
     public function testProfileComposerRejectsInvalidConfiguredProfiles(): void

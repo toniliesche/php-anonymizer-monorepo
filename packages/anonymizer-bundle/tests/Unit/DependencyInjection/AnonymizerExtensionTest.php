@@ -5,16 +5,21 @@ declare(strict_types=1);
 namespace PhpAnonymizer\AnonymizerBundle\Tests\Unit\DependencyInjection;
 
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizationLimits;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\ArrayAnonymizer;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\AuditAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\BatchAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\ContextualAnonymizerInterface;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspector;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspectorInterface;
 use PhpAnonymizer\Anonymizer\Domain\Exception\InvalidProfileDefinition;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileCompositionCompiler;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinitionData;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinitionParser;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileGlobalRuleParser;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileMetadataParser;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileRuleAppender;
+use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\EmbeddedPayloadDefinitionParser;
 use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\RuleOptionsCompiler;
 use PhpAnonymizer\Anonymizer\Domain\Rule\RuleDefinition;
+use PhpAnonymizer\Anonymizer\Domain\Rule\RuleTraversalCombinationValidator;
 use PhpAnonymizer\AnonymizerBundle\AnonymizerBundle;
 use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleCollectionConverter;
 use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleConverter;
@@ -27,17 +32,24 @@ use PhpAnonymizer\AnonymizerBundle\DependencyInjection\AnonymizerConfiguration;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\AnonymizerExtension;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Compiler\ExtensionTagCompilerPass;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Compiler\SerializerServiceCompilerPass;
+use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Registration\CoreRegistrar;
+use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Registration\LegacyImportRegistrar;
+use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Registration\OptionalIntegrationRegistrar;
+use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Registration\ProfileRegistrar;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Audit\AuditLoggerAdapter;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport\AtomicFileWriter;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport\BundleConfigRenderer;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport\LegacyDocumentReader;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\ConfiguredProfileProvider;
+use PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement\FakerFormatter;
 use PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement\FakerReplacementStrategyFactory;
 use PhpAnonymizer\AnonymizerPersonas\Infrastructure\Replacement\PersonaReplacementStrategyFactory;
 use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Replacement\HmacPseudonymStrategy;
 use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Transformation\DateShiftTransformation;
+use PhpAnonymizer\AnonymizerSymfonySerializer\SymfonySerializerExtension;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
@@ -51,6 +63,21 @@ use Symfony\Component\DependencyInjection\Reference;
 #[CoversClass(ProfileDefinition::class)]
 #[CoversClass(RuleOptionsCompiler::class)]
 #[CoversClass(RuleDefinition::class)]
+#[CoversClass(FakerReplacementStrategyFactory::class)]
+#[CoversClass(PersonaReplacementStrategyFactory::class)]
+#[CoversClass(FakerFormatter::class)]
+#[CoversClass(OptionalIntegrationRegistrar::class)]
+#[CoversClass(ProfileRegistrar::class)]
+#[CoversClass(CoreRegistrar::class)]
+#[CoversClass(LegacyImportRegistrar::class)]
+#[CoversClass(ProfileDefinitionParser::class)]
+#[CoversClass(ProfileMetadataParser::class)]
+#[CoversClass(ProfileCompositionCompiler::class)]
+#[CoversClass(ProfileDefinitionData::class)]
+#[CoversClass(ProfileRuleAppender::class)]
+#[UsesClass(ProfileGlobalRuleParser::class)]
+#[UsesClass(EmbeddedPayloadDefinitionParser::class)]
+#[UsesClass(RuleTraversalCombinationValidator::class)]
 final class AnonymizerExtensionTest extends TestCase
 {
     #[DataProvider('invalidProfilesProvider')]
@@ -75,7 +102,7 @@ final class AnonymizerExtensionTest extends TestCase
         ]], $container);
 
         self::assertSame('anonymizer', $extension->getAlias());
-        self::assertTrue($container->hasDefinition(ArrayAnonymizer::class));
+        self::assertTrue($container->hasDefinition(AnonymizerInterface::class));
         self::assertTrue($container->hasDefinition(ConfiguredProfileProvider::class . '.customer'));
         self::assertSame(ProfileInspector::class, (string) $container->getAlias(ProfileInspectorInterface::class));
     }
@@ -164,9 +191,7 @@ final class AnonymizerExtensionTest extends TestCase
 
         self::assertTrue($container->hasDefinition(AuditLoggerAdapter::class));
         $audit = $container->getDefinition(AuditLoggerAdapter::class)->getArguments();
-        self::assertSame([ArrayAnonymizer::class, 'logger'], $this->referenceIds($audit));
-        self::assertTrue($container->hasAlias(AuditAnonymizerInterface::class));
-        self::assertTrue($container->getAlias(AuditAnonymizerInterface::class)->isPublic());
+        self::assertSame([AnonymizerInterface::class, 'logger'], $this->referenceIds($audit));
     }
 
     public function testRegistersConfiguredPseudonymization(): void
@@ -181,7 +206,26 @@ final class AnonymizerExtensionTest extends TestCase
         self::assertSame([['id' => 'pseudonymize', 'builtin' => true]], $tags);
         self::assertSame(['keys'], $this->referenceIds($container->getDefinition(DateShiftTransformation::class)->getArguments()));
         self::assertSame([['id' => 'date_shift', 'builtin' => true]], $container->getDefinition(DateShiftTransformation::class)->getTag('anonymizer.value_transformation'));
-        self::assertTrue($container->getAlias(ContextualAnonymizerInterface::class)->isPublic());
+    }
+
+    public function testRegistersSerializerExtensionWithConfiguredOrDefaultService(): void
+    {
+        $configured = new ContainerBuilder();
+        new AnonymizerExtension()->load([['serializer' => ['enabled' => true, 'service' => 'custom_serializer']]], $configured);
+        $configuredReference = $configured->getDefinition(SymfonySerializerExtension::class)->getArguments()[0];
+        self::assertInstanceOf(Reference::class, $configuredReference);
+        self::assertSame('custom_serializer', (string) $configuredReference);
+        self::assertSame([['priority' => 0]], $configured->getDefinition(SymfonySerializerExtension::class)->getTag('anonymizer.extension'));
+
+        $default = new ContainerBuilder();
+        new AnonymizerExtension()->load([['serializer' => ['enabled' => true, 'service' => null]]], $default);
+        $defaultReference = $default->getDefinition(SymfonySerializerExtension::class)->getArguments()[0];
+        self::assertInstanceOf(Reference::class, $defaultReference);
+        self::assertSame('serializer', (string) $defaultReference);
+
+        $disabled = new ContainerBuilder();
+        new AnonymizerExtension()->load([['serializer' => ['enabled' => false, 'service' => null]]], $disabled);
+        self::assertFalse($disabled->hasDefinition(SymfonySerializerExtension::class));
     }
 
     public function testPseudonymizationRequiresKeyProvider(): void
@@ -192,8 +236,8 @@ final class AnonymizerExtensionTest extends TestCase
 
     public function testReportsMissingFakerIntegrationsPrecisely(): void
     {
-        $method = new ReflectionMethod(AnonymizerExtension::class, 'requireFakerFactory');
-        $extension = new AnonymizerExtension();
+        $method = new ReflectionMethod(OptionalIntegrationRegistrar::class, 'factory');
+        $extension = new OptionalIntegrationRegistrar();
         foreach ([
             ['personas', 'Personas integration is enabled but php-anonymizer/anonymizer-personas is not installed.'],
             ['faker', 'Faker integration is enabled but php-anonymizer/anonymizer-faker is not installed.'],
@@ -250,7 +294,6 @@ final class AnonymizerExtensionTest extends TestCase
             LegacyRuleCollectionConverter::class,
             LegacyRuleMerger::class,
         ], $this->referenceIds($converter));
-        self::assertTrue($container->getAlias(BatchAnonymizerInterface::class)->isPublic());
     }
 
     public function testBundleRegistersBothCompilerPasses(): void

@@ -4,11 +4,8 @@ declare(strict_types=1);
 
 namespace PhpAnonymizer\Anonymizer\Domain\Rule\Condition;
 
-use PhpAnonymizer\Anonymizer\Domain\Exception\InvalidProfileDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Profile\KeyNormalizer;
-use function Safe\preg_match;
 
-// @phpstan-ignore complexity.classLike (condition parsing and matching are explicit)
 final readonly class ConditionDefinition
 {
     /**
@@ -27,95 +24,22 @@ final readonly class ConditionDefinition
      */
     public static function fromArray(array $definition): self
     {
-        if (!array_key_exists('path', $definition) || !is_string($definition['path'])) {
-            throw new InvalidProfileDefinition('condition path must be a non-empty relative path');
-        }
+        $parsed = ConditionDefinitionParser::parse($definition);
 
-        $path = self::parsePath($definition['path']);
-        $operators = array_values(array_intersect(['equals', 'in'], array_keys($definition)));
-        if (count($operators) !== 1 || array_diff(array_keys($definition), ['path', ...$operators]) !== []) {
-            throw new InvalidProfileDefinition('condition must contain path and exactly one of equals or in');
-        }
-
-        $operator = $operators[0];
-        $value = $definition[$operator];
-        if ($operator === 'equals') {
-            if (!self::isScalarValue($value)) {
-                throw new InvalidProfileDefinition('condition equals value must be scalar or null');
-            }
-
-            /** @var list<string> $path */
-            /** @var null|bool|float|int|string $value */
-            /** @var list<null|bool|float|int|string> $expected */
-            $expected = [$value];
-
-            return new self($path, $operator, $expected);
-        }
-
-        if (!is_array($value) || !array_is_list($value) || $value === []) {
-            throw new InvalidProfileDefinition('condition in value must be a non-empty list');
-        }
-
-        /** @var list<null|bool|float|int|string> $expected */
-        $expected = [];
-        foreach ($value as $item) {
-            if (!self::isScalarValue($item)) {
-                throw new InvalidProfileDefinition('condition in values must be scalar or null');
-            }
-
-            /** @var null|bool|float|int|string $item */
-            $expected[] = $item;
-        }
-
-        /** @var list<string> $path */
-        return new self($path, $operator, $expected);
+        return new self($parsed['path'], $parsed['operator'], $parsed['expected']);
     }
 
     /**
      * @param array<mixed, mixed> $context
      */
-    // @phpstan-ignore complexity.functionLike (normalised condition lookup is intentionally explicit)
     public function matches(array $context, bool $normalizeKeys = false): bool
     {
-        $value = $context;
-        foreach ($this->path as $segment) {
-            if (!is_array($value) || (array_is_list($value) && $value !== [])) {
-                return false;
-            }
-
-            if (array_key_exists($segment, $value)) {
-                $value = $value[$segment];
-
-                continue;
-            }
-            if (!$normalizeKeys) {
-                return false;
-            }
-
-            $normalized = KeyNormalizer::normalize($segment);
-            $found = false;
-            foreach ($value as $key => $candidate) {
-                if (KeyNormalizer::normalize((string) $key) === $normalized) {
-                    $value = $candidate;
-                    $found = true;
-
-                    break;
-                }
-            }
-            if (!$found) {
-                return false;
-            }
-        }
-
-        if (!self::isScalarValue($value)) {
+        [$found, $value] = $this->lookup($context, $normalizeKeys);
+        if (!$found || !ConditionDefinitionParser::isScalarValue($value)) {
             return false;
         }
 
-        if ($this->operator === 'equals') {
-            return $value === $this->expected[0];
-        }
-
-        return array_any($this->expected, fn (bool|float|int|string|null $expected): bool => $value === $expected);
+        return $this->operator === 'equals' ? $value === $this->expected[0] : array_any($this->expected, static fn (bool|float|int|string|null $expected): bool => $value === $expected);
     }
 
     /**
@@ -127,28 +51,44 @@ final readonly class ConditionDefinition
     }
 
     /**
-     * @return list<string>
+     * @param array<mixed, mixed> $context
+     *
+     * @return array{0: bool, 1: mixed}
      */
-    private static function parsePath(string $path): array
+    private function lookup(array $context, bool $normalizeKeys): array
     {
-        if ($path === '' || str_starts_with($path, '/') || str_ends_with($path, '/')) {
-            throw new InvalidProfileDefinition('condition path must be a non-empty relative path');
-        }
-
-        $segments = explode('/', $path);
-        foreach ($segments as $index => $segment) {
-            if ($segment === '' || preg_match('/~(?![01])/', $segment) === 1) {
-                throw new InvalidProfileDefinition(sprintf('condition path segment %s is invalid', $index));
+        $value = $context;
+        foreach ($this->path as $segment) {
+            [$found, $value] = $this->segment($value, $segment, $normalizeKeys);
+            if (!$found) {
+                return [false, null];
             }
-
-            $segments[$index] = str_replace(['~1', '~0'], ['/', '~'], $segment);
         }
 
-        return $segments;
+        return [true, $value];
     }
 
-    private static function isScalarValue(mixed $value): bool
+    /**
+     * @return array{0: bool, 1: mixed}
+     */
+    private function segment(mixed $value, string $segment, bool $normalizeKeys): array
     {
-        return $value === null || is_bool($value) || is_float($value) || is_int($value) || is_string($value);
+        if (!is_array($value) || (array_is_list($value) && $value !== [])) {
+            return [false, null];
+        }
+        if (array_key_exists($segment, $value)) {
+            return [true, $value[$segment]];
+        }
+        if (!$normalizeKeys) {
+            return [false, null];
+        }
+        $normalized = KeyNormalizer::normalize($segment);
+        foreach ($value as $key => $candidate) {
+            if (KeyNormalizer::normalize((string) $key) === $normalized) {
+                return [true, $candidate];
+            }
+        }
+
+        return [false, null];
     }
 }

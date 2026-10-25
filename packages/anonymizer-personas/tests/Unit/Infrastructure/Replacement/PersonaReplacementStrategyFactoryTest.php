@@ -22,6 +22,11 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(PersonaReplacementStrategyFactory::class)]
 final class PersonaReplacementStrategyFactoryTest extends TestCase
 {
+    public function testExposesCanonicalStrategyIds(): void
+    {
+        self::assertSame(PersonaReplacementStrategyFactory::IDS, PersonaReplacementStrategyFactory::ids());
+    }
+
     public function testCreatesStableEuropeanPersonaValues(): void
     {
         $strategies = PersonaReplacementStrategyFactory::create('pt_PT');
@@ -75,5 +80,12 @@ final class PersonaReplacementStrategyFactoryTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         PersonaReplacementStrategyFactory::createStrategy('en', 'persona.unknown');
+    }
+
+    public function testCreatesOneStrategyThroughTheStableReplacementPort(): void
+    {
+        $strategy = PersonaReplacementStrategyFactory::createReplacementStrategy('en', 'persona.name');
+
+        self::assertSame('persona.name', $strategy->id());
     }
 }

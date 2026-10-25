@@ -6,9 +6,7 @@ namespace PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport;
 
 use Symfony\Component\Yaml\Yaml;
 
-/**
- * @codeCoverageIgnore Rendering adapter is covered by command integration tests.
- */
+// @internal
 final class BundleConfigRenderer
 {
     /**

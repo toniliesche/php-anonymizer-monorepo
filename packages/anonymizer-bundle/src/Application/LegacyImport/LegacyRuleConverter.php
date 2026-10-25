@@ -6,12 +6,12 @@ namespace PhpAnonymizer\AnonymizerBundle\Application\LegacyImport;
 
 use PhpAnonymizer\Anonymizer\Domain\Exception\InvalidProfileDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
+use Webmozart\Assert\Assert;
 
 /**
  * @phpstan-type Rule array<string, mixed>
- *
- * @codeCoverageIgnore Legacy conversion is a compatibility boundary; invalid collaborator diagnostics are not reachable through the public importer.
  */
+// @internal
 final readonly class LegacyRuleConverter
 {
     public function __construct(private LegacyRuleCollectionConverter $collections, private LegacyRuleMerger $merger)
@@ -29,13 +29,16 @@ final readonly class LegacyRuleConverter
         $converted = $this->collections->convert($rules);
 
         /** @var list<array<string, mixed>> $converted */
+        Assert::isList($converted);
         $profile = ['mode' => 'redact', 'rules' => $this->merger->merge($converted)];
 
         // @codeCoverageIgnoreStart Defensive validation branch requires an invalid converter collaborator.
         try {
             ProfileDefinition::fromArray('legacy', $profile);
-        } catch (InvalidProfileDefinition $exception) {
-            throw LegacyImportException::message('Converted profile is invalid: ' . $exception->getMessage());
+        } catch (InvalidProfileDefinition $exception) { // @codeCoverageIgnore
+            // @codeCoverageIgnoreStart Defensive collaborator contract violation.
+            throw LegacyImportException::message('Converted profile is invalid: ' . $exception->getMessage()); // @codeCoverageIgnore
+            // @codeCoverageIgnoreEnd
         }
         // @codeCoverageIgnoreEnd
         $result = ['anonymizer' => ['profiles' => ['legacy' => $profile]]];
@@ -56,8 +59,8 @@ final readonly class LegacyRuleConverter
         }
         $locale = $faker['locale'] ?? 'en_US';
 
-        /** @var array<string, mixed> $anonymizer */
         $anonymizer = $result['anonymizer'];
+        Assert::isMap($anonymizer);
         $anonymizer['faker'] = ['enabled' => true, 'locale' => is_string($locale) ? $locale : 'en_US', 'seed' => $faker['seed'] ?? null];
         $result['anonymizer'] = $anonymizer;
     }

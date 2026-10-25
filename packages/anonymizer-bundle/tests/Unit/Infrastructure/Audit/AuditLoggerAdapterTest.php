@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PhpAnonymizer\AnonymizerBundle\Tests\Unit\Infrastructure\Audit;
 
-use PhpAnonymizer\Anonymizer\Application\Anonymization\AuditAnonymizerInterface;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Result\AuditAnonymizationResult;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Result\AuditEntry;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Audit\AuditLoggerAdapter;
@@ -30,7 +30,7 @@ final class AuditLoggerAdapterTest extends TestCase
                 'count' => 1,
             ]],
         ]);
-        $anonymizer = $this->createMock(AuditAnonymizerInterface::class);
+        $anonymizer = $this->createMock(AnonymizerInterface::class);
         $anonymizer->expects($this->once())->method('anonymizeWithAudit')->with('customer', ['email' => 'secret'])->willReturn(new AuditAnonymizationResult(
             ['email' => '[REDACTED]'],
             [new AuditEntry('customer', 'fingerprint', '/email', 'replace', 'redact', 1)],

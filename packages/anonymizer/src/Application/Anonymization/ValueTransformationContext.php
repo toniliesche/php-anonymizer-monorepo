@@ -6,9 +6,6 @@ namespace PhpAnonymizer\Anonymizer\Application\Anonymization;
 
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Path\JsonPointer;
 
-/**
- * @codeCoverageIgnore
- */
 final readonly class ValueTransformationContext
 {
     public function __construct(private string $profile, private JsonPointer $path, private ?string $keyId, private AnonymizationContext $anonymizationContext)
@@ -23,6 +20,11 @@ final readonly class ValueTransformationContext
     public function path(): JsonPointer
     {
         return $this->path;
+    }
+
+    public function pathString(): string
+    {
+        return (string) $this->path;
     }
 
     public function keyId(): ?string

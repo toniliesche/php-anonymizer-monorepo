@@ -5,15 +5,15 @@
     "type": "symfony-bundle",
     "require": {
         "php": "^8.5",
-        "php-anonymizer/anonymizer": "^1.2",
-        "php-anonymizer/anonymizer-symfony-serializer": "^1.0",
-        "psr/log": "^3.0",
-        "symfony/config": "^8.1.4",
-        "symfony/console": "^8.1.4",
-        "symfony/dependency-injection": "^8.1.4",
-        "symfony/http-kernel": "^8.1.4",
-        "symfony/serializer": "^8.1.4",
-        "symfony/yaml": "^8.1.2",
+        "php-anonymizer/anonymizer": "^2.0",
+        "php-anonymizer/anonymizer-symfony-serializer": "^2.0",
+        "psr/log": "^3.0.2",
+        "symfony/config": "^8.1.5",
+        "symfony/console": "^8.1.9",
+        "symfony/dependency-injection": "^8.1.9",
+        "symfony/http-kernel": "^8.1.9",
+        "symfony/serializer": "^8.1.9",
+        "symfony/yaml": "^8.1.9",
         "thecodingmachine/safe": "^3.4"
     },
     "suggest": {
@@ -32,6 +32,9 @@
         }
     },
     "extra": {
+        "branch-alias": {
+            "dev-develop": "2.0.x-dev"
+        },
         "symfony": {
             "extension-class": "PhpAnonymizer\\AnonymizerBundle\\DependencyInjection\\AnonymizerExtension"
         }

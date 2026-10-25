@@ -50,9 +50,9 @@ try {
         <?php
         declare(strict_types=1);
         require __DIR__ . '/vendor/autoload.php';
-        use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerFactory;
+        use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilder;
         use ProviderFixture\FixtureProvider;
-        $result = AnonymizerFactory::fromProfileProviders([new FixtureProvider()])->anonymize('fixture.profile', ['email' => 'secret']);
+        $result = AnonymizerBuilder::create()->withProfileProvider(new FixtureProvider())->build()->anonymize('fixture.profile', ['email' => 'secret']);
         if ($result !== ['email' => '[REDACTED]']) { exit(1); }
         PHP);
 

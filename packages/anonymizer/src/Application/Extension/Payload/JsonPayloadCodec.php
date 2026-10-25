@@ -6,9 +6,11 @@ namespace PhpAnonymizer\Anonymizer\Application\Extension\Payload;
 
 use JsonException;
 use Override;
+use Webmozart\Assert\Assert;
 use function Safe\json_decode;
 use function Safe\json_encode;
 
+// @internal
 final class JsonPayloadCodec implements DocumentPayloadCodecInterface
 {
     #[Override]
@@ -20,9 +22,6 @@ final class JsonPayloadCodec implements DocumentPayloadCodecInterface
     /**
      * @return array<string, mixed>
      */
-    /**
-     * @codeCoverageIgnore
-     */
     #[Override]
     public function decode(string $payload): array
     {
@@ -31,15 +30,14 @@ final class JsonPayloadCodec implements DocumentPayloadCodecInterface
             throw new JsonException('JSON payload root must be an object.');
         }
 
-        // @codeCoverageIgnoreStart Defensive root-shape guard.
         $decoded = json_decode($payload, true, flags: JSON_THROW_ON_ERROR);
         if (!is_array($decoded) || array_is_list($decoded)) {
             throw new JsonException('JSON payload root must be an object.');
         }
 
-        /** @var non-empty-array<string, mixed> $decoded */
+        Assert::isNonEmptyMap($decoded);
+
         return $decoded;
-        // @codeCoverageIgnoreEnd
     }
 
     /**

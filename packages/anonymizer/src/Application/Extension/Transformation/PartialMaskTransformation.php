@@ -7,9 +7,7 @@ namespace PhpAnonymizer\Anonymizer\Application\Extension\Transformation;
 use InvalidArgumentException;
 use Override;
 
-/**
- * @codeCoverageIgnore
- */
+// @internal
 final class PartialMaskTransformation implements ValueTransformationInterface
 {
     #[Override]
@@ -60,6 +58,6 @@ final class PartialMaskTransformation implements ValueTransformationInterface
             return $value;
         }
 
-return mb_substr($value, 0, $prefix, 'UTF-8') . str_repeat($character, $length - $visible) . ($suffix > 0 ? mb_substr($value, -$suffix, null, 'UTF-8') : '');
+        return mb_substr($value, 0, $prefix, 'UTF-8') . str_repeat($character, $length - $visible) . ($suffix > 0 ? mb_substr($value, -$suffix, null, 'UTF-8') : '');
     }
 }

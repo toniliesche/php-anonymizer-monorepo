@@ -1,0 +1,64 @@
+name: Performance benchmark
+
+on:
+  pull_request:
+    paths:
+      - 'packages/**/src/**'
+      - 'tools/benchmark.php'
+      - 'tools/Benchmark/**'
+      - 'tools/check-benchmark.php'
+      - 'tools/fixtures/**'
+      - 'composer.json'
+      - 'composer.lock'
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      PHP_VERSION: '8.5'
+      CI_EVENT_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      CI_MAIN_BASELINE_REF: origin/${{ github.base_ref || 'main' }}
+      CI_DIAGNOSTICS_DIR: var/ci-diagnostics/${{ github.run_id }}-attempt-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.5'
+          extensions: mbstring
+      - name: Install locked dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Run benchmark
+        run: |
+          composer ci:run-gate benchmark composer benchmark
+          cp "$CI_DIAGNOSTICS_DIR/benchmark.log" benchmark.json
+          cp benchmark.json "$CI_DIAGNOSTICS_DIR/benchmark.json"
+      - name: Check benchmark baseline
+        run: composer ci:run-gate benchmark-check php tools/check-benchmark.php tools/fixtures/benchmark-baseline-php85.json benchmark.json
+      - name: Record workflow outcome
+        if: always()
+        env:
+          CI_JOB_STATUS: ${{ job.status }}
+        run: |
+          mkdir -p "$CI_DIAGNOSTICS_DIR"
+          printf 'event=%s\nrevision=%s\nrun_id=%s\nattempt=%s\noutcome=%s\n' \
+            "$GITHUB_EVENT_NAME" "$CI_EVENT_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$CI_JOB_STATUS" \
+            > "$CI_DIAGNOSTICS_DIR/workflow-metadata.txt"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: anonymizer-benchmark-${{ github.sha }}
+          path: ${{ env.CI_DIAGNOSTICS_DIR }}/
+          if-no-files-found: warn

@@ -5,225 +5,30 @@ declare(strict_types=1);
 namespace PhpAnonymizer\AnonymizerBundle\DependencyInjection;
 
 use Override;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizationLimits;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\ArrayAnonymizer;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\AuditAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\BatchAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\ContextualAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\ContextualDocumentAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\ContextualNdjsonAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\DocumentAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Anonymization\NdjsonAnonymizerInterface;
-use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspector;
-use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspectorInterface;
-use PhpAnonymizer\Anonymizer\Domain\Exception\InvalidProfileDefinition;
-use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
-use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleCollectionConverter;
-use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleConverter;
-use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleMerger;
-use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleNodeConverter;
-use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRulePathConverter;
-use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleValueConverter;
-use PhpAnonymizer\AnonymizerBundle\Command\ImportLegacyRulesCommand;
-use PhpAnonymizer\AnonymizerBundle\Infrastructure\Audit\AuditLoggerAdapter;
-use PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport\AtomicFileWriter;
-use PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport\BundleConfigRenderer;
-use PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport\LegacyDocumentReader;
-use PhpAnonymizer\AnonymizerBundle\Infrastructure\Payload\YamlPayloadCodec;
-use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\CompositeProfileProvider;
-use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\ConfiguredProfileProvider;
-use PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement\FakerReplacementStrategyFactory;
-use PhpAnonymizer\AnonymizerPersonas\Infrastructure\Replacement\PersonaReplacementStrategyFactory;
-use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Replacement\HmacPseudonymStrategy;
-use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Transformation\DateShiftTransformation;
-use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyAnonymizer;
-use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyObjectAnonymizer;
-use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
-use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
+use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Registration\CoreRegistrar;
+use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Registration\LegacyImportRegistrar;
+use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Registration\OptionalIntegrationRegistrar;
+use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Registration\ProfileRegistrar;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Extension\Extension;
-use Symfony\Component\DependencyInjection\Reference;
 
 final class AnonymizerExtension extends Extension
 {
-    private const array PERSONA_IDS = ['persona.name', 'persona.first_name', 'persona.last_name', 'persona.email', 'persona.username', 'persona.company', 'persona.phone', 'persona.street', 'persona.street_number', 'persona.city', 'persona.postcode', 'persona.country'];
-
-    private const array FAKER_IDS = ['faker.building_number', 'faker.city', 'faker.company', 'faker.country', 'faker.email', 'faker.first_name', 'faker.house_number', 'faker.last_name', 'faker.name', 'faker.password', 'faker.postcode', 'faker.street', 'faker.street_number', 'faker.username', 'faker.zip'];
-
     #[Override]
     public function load(array $configs, ContainerBuilder $container): void
     {
-        $container->setDefinition(LegacyRuleMerger::class, new Definition(LegacyRuleMerger::class));
-        $container->setDefinition(LegacyRuleValueConverter::class, new Definition(LegacyRuleValueConverter::class));
-        $container->setDefinition(LegacyRulePathConverter::class, new Definition(LegacyRulePathConverter::class, [new Reference(LegacyRuleValueConverter::class)]));
-        $container->setDefinition(LegacyRuleNodeConverter::class, new Definition(LegacyRuleNodeConverter::class, [new Reference(LegacyRuleValueConverter::class), new Reference(LegacyRulePathConverter::class)]));
-        $container->setDefinition(LegacyRuleCollectionConverter::class, new Definition(LegacyRuleCollectionConverter::class, [new Reference(LegacyRuleNodeConverter::class)]));
-        $container->setDefinition(LegacyRuleConverter::class, new Definition(LegacyRuleConverter::class, [new Reference(LegacyRuleCollectionConverter::class), new Reference(LegacyRuleMerger::class)]));
-        $container->setDefinition(LegacyDocumentReader::class, new Definition(LegacyDocumentReader::class));
-        $container->setDefinition(BundleConfigRenderer::class, new Definition(BundleConfigRenderer::class));
-        $container->setDefinition(AtomicFileWriter::class, new Definition(AtomicFileWriter::class));
-        $container->setDefinition(ImportLegacyRulesCommand::class, new Definition(ImportLegacyRulesCommand::class, [
-            new Reference(LegacyDocumentReader::class), new Reference(LegacyRuleConverter::class),
-            new Reference(BundleConfigRenderer::class), new Reference(AtomicFileWriter::class),
-        ]))->addTag('console.command');
-
-        /** @var array{profiles: array<string, mixed>, faker: array{enabled: bool, locale: string, seed: null|int|string}, personas: array{enabled: bool, locale: string}, limits: array{max_input_bytes: int, max_depth: int, max_visited_nodes: int, max_collection_entries: int, max_embedded_payload_depth: int}, audit: array{enabled: bool, logger_service: null|string}, pseudonymization: array{enabled: bool, key_provider: null|string}} $config */
+        /** @var array{profiles: array<string, mixed>, faker: array{enabled: bool, locale: string, seed: null|int|string}, personas: array{enabled: bool, locale: string}, limits: array{max_input_bytes: int, max_depth: int, max_visited_nodes: int, max_collection_entries: int, max_embedded_payload_depth: int}, audit: array{enabled: bool, logger_service: null|string}, pseudonymization: array{enabled: bool, key_provider: null|string}, serializer: array{enabled: bool, service: null|string}} $config */
         $config = $this->processConfiguration(new AnonymizerConfiguration(), $configs);
-        $profiles = $this->createProfiles($config['profiles']);
-        $container->setDefinition(AnonymizationLimits::class, new Definition(AnonymizationLimits::class, [
-            $config['limits']['max_input_bytes'],
-            $config['limits']['max_depth'],
-            $config['limits']['max_visited_nodes'],
-            $config['limits']['max_collection_entries'],
-            $config['limits']['max_embedded_payload_depth'],
-        ]));
-        $container->setDefinition(YamlPayloadCodec::class, new Definition(YamlPayloadCodec::class))
-            ->addTag('anonymizer.payload_codec', ['id' => 'yaml', 'builtin' => true]);
 
-        if ($config['faker']['enabled']) {
-            $fakerFactory = $this->requireFakerFactory(FakerReplacementStrategyFactory::class);
-            $container->register('anonymizer.faker.generator')
-                ->setFactory([$fakerFactory, 'createGenerator'])
-                ->setArguments([$config['faker']['locale'], $config['faker']['seed']]);
-            foreach (self::FAKER_IDS as $id) {
-                $container->register('anonymizer.faker.' . str_replace('.', '_', $id))
-                    ->setFactory([$fakerFactory, 'createStrategy'])
-                    ->setArguments([new Reference('anonymizer.faker.generator'), $id])
-                    ->addTag('anonymizer.replacement_strategy', ['id' => $id, 'builtin' => true]);
-            }
-        }
-        if ($config['personas']['enabled']) {
-            $personaFactory = $this->requireFakerFactory(PersonaReplacementStrategyFactory::class, 'personas');
-            foreach (self::PERSONA_IDS as $id) {
-                $container->register('anonymizer.personas.' . str_replace('.', '_', $id))
-                    ->setFactory([$personaFactory, 'createStrategy'])
-                    ->setArguments([$config['personas']['locale'], $id])
-                    ->addTag('anonymizer.replacement_strategy', ['id' => $id, 'builtin' => true]);
-            }
-        }
-        $this->configurePseudonymization($config['pseudonymization'], $container);
-        $profileReferences = [];
-        foreach ($profiles as $name => $definition) {
-            $profileServiceId = ConfiguredProfileProvider::class . '.' . $name;
-            $container->setDefinition(
-                $profileServiceId,
-                new Definition(ProfileDefinition::class)
-                    ->setFactory([ProfileDefinition::class, 'fromArray'])
-                    ->setArguments([$name, $definition]),
-            );
-            $profileReferences[] = new Reference($profileServiceId);
-        }
-
-        $container->setDefinition(
-            ConfiguredProfileProvider::class,
-            new Definition(ConfiguredProfileProvider::class, [$profileReferences]),
-        );
-        $container->setDefinition(
-            CompositeProfileProvider::class,
-            new Definition(CompositeProfileProvider::class, [
-                new Reference(ConfiguredProfileProvider::class),
-                new TaggedIteratorArgument('anonymizer.profile_provider'),
-            ]),
-        );
-        $container->setDefinition(ProfileInspector::class, new Definition(ProfileInspector::class, [new Reference(CompositeProfileProvider::class)]));
-        $container->setAlias(ProfileInspectorInterface::class, ProfileInspector::class)->setPublic(true);
-
-        $anonymizer = new Definition(ArrayAnonymizer::class, [
-            new Reference(CompositeProfileProvider::class),
-            new TaggedIteratorArgument('anonymizer.replacement_strategy'),
-            new TaggedIteratorArgument('anonymizer.payload_codec'),
-            new Reference(AnonymizationLimits::class),
-            new TaggedIteratorArgument('anonymizer.value_transformation'),
-        ]);
-        $container->setDefinition(ArrayAnonymizer::class, $anonymizer);
-        $container->setDefinition(SymfonyObjectAnonymizer::class, new Definition(SymfonyObjectAnonymizer::class, [
-            new Reference(ArrayAnonymizer::class),
-            new Reference('serializer'),
-        ]));
-        $container->setDefinition(SymfonyAnonymizer::class, new Definition(SymfonyAnonymizer::class, [
-            new Reference(ArrayAnonymizer::class),
-            new Reference(SymfonyObjectAnonymizer::class),
-        ]));
-        $container->setAlias(AnonymizerInterface::class, SymfonyAnonymizer::class)->setPublic(true);
-        $container->setAlias(BatchAnonymizerInterface::class, ArrayAnonymizer::class)->setPublic(true);
-        $container->setAlias(DocumentAnonymizerInterface::class, ArrayAnonymizer::class)->setPublic(true);
-        $container->setAlias(NdjsonAnonymizerInterface::class, ArrayAnonymizer::class)->setPublic(true);
-        if ($config['audit']['enabled']) {
-            if ($config['audit']['logger_service'] === null || $config['audit']['logger_service'] === '') {
-                throw new InvalidConfigurationException('anonymizer.audit.logger_service is required when anonymizer.audit.enabled is true.');
-            }
-            $container->setDefinition(AuditLoggerAdapter::class, new Definition(AuditLoggerAdapter::class, [
-                new Reference(ArrayAnonymizer::class),
-                new Reference($config['audit']['logger_service']),
-            ]));
-            $container->setAlias(AuditAnonymizerInterface::class, AuditLoggerAdapter::class)->setPublic(true);
-        }
+        new LegacyImportRegistrar()->register($container);
+        new ProfileRegistrar()->register($config['profiles'], $container);
+        new OptionalIntegrationRegistrar()->register($config, $container);
+        new CoreRegistrar()->register($config, $container);
     }
 
     #[Override]
     public function getAlias(): string
     {
         return 'anonymizer';
-    }
-
-    private function requireFakerFactory(string $class, string $integration = 'faker'): string
-    {
-        if (!class_exists($class)) {
-            $package = $integration === 'personas' ? 'php-anonymizer/anonymizer-personas' : 'php-anonymizer/anonymizer-faker';
-
-            throw new InvalidConfigurationException(sprintf('%s integration is enabled but %s is not installed. Install it with composer require %s.', ucfirst($integration), $package, $package));
-        }
-
-        return $class;
-    }
-
-    /**
-     * @param array{enabled: bool, key_provider: null|string} $config
-     */
-    private function configurePseudonymization(array $config, ContainerBuilder $container): void
-    {
-        if (!$config['enabled']) {
-            return;
-        }
-        // @codeCoverageIgnoreStart
-        if (!class_exists(HmacPseudonymStrategy::class)) {
-            throw new InvalidConfigurationException('Pseudonymisation is enabled but php-anonymizer/anonymizer-pseudonymization is not installed.');
-        }
-        // @codeCoverageIgnoreEnd
-        if ($config['key_provider'] === null || $config['key_provider'] === '') {
-            throw new InvalidConfigurationException('anonymizer.pseudonymization.key_provider is required when pseudonymization is enabled.');
-        }
-        $container->setDefinition(HmacPseudonymStrategy::class, new Definition(HmacPseudonymStrategy::class, [new Reference($config['key_provider'])]))
-            ->addTag('anonymizer.replacement_strategy', ['id' => 'pseudonymize', 'builtin' => true]);
-        $container->setDefinition(DateShiftTransformation::class, new Definition(DateShiftTransformation::class, [new Reference($config['key_provider'])]))
-            ->addTag('anonymizer.value_transformation', ['id' => 'date_shift', 'builtin' => true]);
-        $container->setAlias(ContextualAnonymizerInterface::class, ArrayAnonymizer::class)->setPublic(true);
-        $container->setAlias(ContextualDocumentAnonymizerInterface::class, ArrayAnonymizer::class)->setPublic(true);
-        $container->setAlias(ContextualNdjsonAnonymizerInterface::class, ArrayAnonymizer::class)->setPublic(true);
-    }
-
-    /** @param array<string, mixed> $definitions
-     * @return array<string, array<string, mixed>>
-     */
-    private function createProfiles(array $definitions): array
-    {
-        $profiles = [];
-        foreach ($definitions as $name => $definition) {
-            if (!is_array($definition)) {
-                throw new InvalidConfigurationException(sprintf('The profile at "anonymizer.profiles.%s" must be a map.', $name));
-            }
-
-            /** @var array<string, mixed> $definition */
-            try {
-                ProfileDefinition::fromArray($name, $definition);
-                $profiles[$name] = $definition;
-            } catch (InvalidProfileDefinition $exception) {
-                throw new InvalidConfigurationException(sprintf('Invalid configuration at "anonymizer.profiles.%s": %s', $name, $exception->getMessage()), $exception->getCode(), previous: $exception);
-            }
-        }
-
-        return $profiles;
     }
 }

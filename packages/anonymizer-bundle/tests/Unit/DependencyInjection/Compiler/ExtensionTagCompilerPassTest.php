@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace PhpAnonymizer\AnonymizerBundle\Tests\Unit\DependencyInjection\Compiler;
 
 use InvalidArgumentException;
+use Override;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilder;
+use PhpAnonymizer\Anonymizer\Application\Extension\AnonymizerExtensionInterface;
 use PhpAnonymizer\AnonymizerBundle\DependencyInjection\Compiler\ExtensionTagCompilerPass;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 #[CoversClass(ExtensionTagCompilerPass::class)]
@@ -55,12 +59,6 @@ final class ExtensionTagCompilerPassTest extends TestCase
             ['id' => 'not valid'],
             'Service "extension" uses tag "anonymizer.payload_codec" without a valid id.',
         ];
-
-        yield 'built-in ID' => [
-            'anonymizer.payload_codec',
-            ['id' => 'json'],
-            'Extension ID "json" is registered more than once for tag "anonymizer.payload_codec".',
-        ];
     }
 
     public function testRejectsDuplicateIDs(): void
@@ -88,6 +86,16 @@ final class ExtensionTagCompilerPassTest extends TestCase
         new ExtensionTagCompilerPass()->process($container);
     }
 
+    public function testRejectsAnExtensionThatCollidesWithADiscoveredBuiltIn(): void
+    {
+        $container = new ContainerBuilder();
+        $container->register('builtin')->addTag('anonymizer.payload_codec', ['id' => 'json', 'builtin' => true]);
+        $container->register('extension')->addTag('anonymizer.payload_codec', ['id' => 'json']);
+
+        $this->expectExceptionObject(new InvalidArgumentException('Extension ID "json" is registered more than once for tag "anonymizer.payload_codec".'));
+        new ExtensionTagCompilerPass()->process($container);
+    }
+
     public function testRejectsIdentifierWithTrailingNewline(): void
     {
         $container = new ContainerBuilder();
@@ -95,5 +103,32 @@ final class ExtensionTagCompilerPassTest extends TestCase
 
         $this->expectException(InvalidArgumentException::class);
         new ExtensionTagCompilerPass()->process($container);
+    }
+
+    public function testRejectsAnExtensionTagWithoutTheModuleContract(): void
+    {
+        $container = new ContainerBuilder();
+        $container->register('invalid')->setClass(stdClass::class)->addTag('anonymizer.extension');
+
+        $this->expectExceptionMessageMatches('/anonymizer\.extension.*AnonymizerExtensionInterface/');
+        new ExtensionTagCompilerPass()->process($container);
+    }
+
+    public function testAcceptsAnExtensionThatImplementsTheModuleContract(): void
+    {
+        $container = new ContainerBuilder();
+        $container->register('valid')->setClass(ValidExtension::class)->addTag('anonymizer.extension');
+
+        new ExtensionTagCompilerPass()->process($container);
+        self::assertCount(1, $container->findTaggedServiceIds('anonymizer.extension'));
+    }
+}
+
+final class ValidExtension implements AnonymizerExtensionInterface
+{
+    #[Override]
+    public function configure(AnonymizerBuilder $builder): AnonymizerBuilder
+    {
+        return $builder;
     }
 }

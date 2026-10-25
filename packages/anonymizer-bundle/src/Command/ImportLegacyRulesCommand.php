@@ -16,11 +16,9 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
+use Webmozart\Assert\Assert;
 use function Safe\file_get_contents;
 
-/**
- * @codeCoverageIgnore CLI adapter is covered by command integration tests.
- */
 #[AsCommand(name: 'anonymizer:import-legacy-rules', description: 'Convert legacy PHP Anonymizer rules into Bundle configuration.')]
 final class ImportLegacyRulesCommand extends Command
 {
@@ -49,8 +47,8 @@ final class ImportLegacyRulesCommand extends Command
                 return Command::INVALID;
             }
 
-            /** @var array<string, mixed> $configuration */
             $configuration = $this->converter->convert($this->reader->read($inputPath));
+            Assert::isMap($configuration);
             $rendered = $this->renderer->render($configuration);
             if ($check) {
                 if (!is_file($outputPath)) {

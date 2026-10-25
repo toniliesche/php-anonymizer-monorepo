@@ -4,7 +4,68 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
-## 1.7.0 (WIP)
+- Added Gitea validation and GitHub release workflow documentation, including
+  package repository provisioning, CI credentials, Packagist registration,
+  and release recovery. Registered the Packagist verification command in
+  Composer.
+
+## 2.0.0
+
+- Iteration 29: replaced unsafe extension and framework-boundary type claims
+  with Webmozart Assert runtime checks, added PHPStan assertion support, and
+  preserved domain-specific validation contracts.
+- Added isolated `composer benchmark` scenarios with median wall-time,
+  peak-memory, and output-digest reporting, plus scheduled benchmark artifact
+  collection and explicit batch/NDJSON laziness regressions.
+- Coverage subprocesses now disable CLI OPcache/JIT instrumentation to isolate
+  Xdebug path coverage from JIT-related engine crashes.
+- Deferred branch/path coverage enforcement and switched the coverage gate to
+  strict positive 100% line coverage until a compatible Xdebug runtime is
+  available.
+- Iteration 28: added synchronized 2.0 release-readiness fixtures and a
+  warning-only PHP 8.5 benchmark baseline for relevant pull requests.
+- Iteration 27: expanded Infection mutation scope to all seven published
+  packages, added configuration-drift quality-scope validation, and removed
+  justified Laravel YAML and pseudonymization date-shift coverage exclusions.
+- Switched the coverage report contract to Cobertura with positive line totals;
+  branch/path execution remains dependent on a compatible PHP 8.5/Xdebug
+  runtime.
+- Iteration 26: compiled immutable traversal rule indexes and snapshot-scoped
+  selection to reduce repeated per-field scans while preserving traversal,
+  reporting, and budget semantics; global rule conditions now follow the
+  documented conditional fallback behavior.
+- Added a fixed local traversal benchmark command for wide-map and normalized
+  key-selection comparisons.
+- Refactored Symfony and Laravel framework composition roots, added canonical
+  optional-integration catalogs, and made Symfony serializer wiring opt-in.
+- Centralized builder and direct-constructor runtime assembly in one validated
+  internal runtime graph without changing façade behavior.
+- Added executable public API manifest/signature checks and transitional
+  string-path and provider-free NDJSON construction contracts.
+- Iteration 22: enforced PSR-4 declaration paths, extracted traversal and
+  deferred NDJSON collaborators, replaced anonymous test implementations with
+  reusable package-local fixtures, and added structural regression checks.
+- Iteration 21: selectively removed coverage suppressions from JSON payload
+  validation and transformation registration/option compilation, resolved the
+  corresponding PHPStan ignore, and retained justified equivalent mutation and
+  integration-boundary suppressions; added framework extension-module discovery
+  and removed the legacy factory and Serializer dispatchers.
+- Iteration 20: split traversal, payload, and NDJSON execution into internal
+  services; removed legacy capability interfaces; unified framework wiring on
+  `AnonymizerInterface`; and removed all cognitive-complexity suppressions.
+- Iteration 18: documented the 2.0 public API inventory, semver boundary,
+  internalization policy, and refined cleanup plan.
+- Iteration 19: added the immutable builder, unified façade operations, and
+  object/extension module contracts for the 2.0 construction path.
+- Iteration 23: added the application user guide, 2.0 migration guide,
+  package-local documentation, executable examples, and release-train checks.
+- Expanded the profile schema and user guide with runnable ruleset, payload,
+  document, batch, audit, and NDJSON configuration examples.
+- Expanded the profile reference into a complete syntax guide for nested
+  traversal, list rules, fragments, conditions, transformations, and
+  validation precedence.
+
+## 1.7.0
 
 - Iteration 18: added `php-anonymizer/anonymizer-laravel` with Laravel 13 service-provider
   discovery, ordered tagged extension composition, published configuration,

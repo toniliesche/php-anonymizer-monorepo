@@ -12,12 +12,11 @@ use PhpAnonymizer\Anonymizer\Application\Anonymization\ValueTransformationContex
 use PhpAnonymizer\Anonymizer\Application\Extension\Transformation\ContextualValueTransformationInterface;
 use PhpAnonymizer\AnonymizerPseudonymization\Application\PseudonymKeyProviderInterface;
 use Throwable;
+use Webmozart\Assert\Assert;
 use function Safe\preg_match;
 use function Safe\unpack;
 
-/**
- * @codeCoverageIgnore
- */
+// @internal
 final readonly class DateShiftTransformation implements ContextualValueTransformationInterface
 {
     public function __construct(private PseudonymKeyProviderInterface $keys)
@@ -66,31 +65,60 @@ final readonly class DateShiftTransformation implements ContextualValueTransform
     /**
      * @param array<string,mixed> $options
      */
-    // @phpstan-ignore complexity.functionLike (bounded validation flow)
     #[Override]
     public function transformWithContext(mixed $value, array $options, ValueTransformationContext $context): mixed
     {
         $this->validateOptions($options);
         $isString = is_string($value);
+        $date = $this->date($value, $isString);
+
+        $scopeData = $this->scope($options, $context);
+        [$scopeAttribute, $maxDays, $scope] = $scopeData;
+        $offset = $this->offset($context, $scopeAttribute, $scope, $maxDays);
+        $shifted = $date->modify(sprintf('%+d days', $offset));
+
+        return $isString ? $shifted->format(DateTimeInterface::RFC3339_EXTENDED) : $shifted;
+    }
+
+    private function date(mixed $value, bool $isString): DateTimeImmutable
+    {
+        $stringValue = is_string($value) ? $value : null;
 
         try {
             // @phpstan-ignore theCodingMachineSafe.class (guarded date conversion)
-            $date = $isString ? new DateTimeImmutable($value) : ($value instanceof DateTimeInterface ? DateTimeImmutable::createFromInterface($value) : null);
+            $date = $isString ? new DateTimeImmutable($stringValue ?? '') : ($value instanceof DateTimeInterface ? DateTimeImmutable::createFromInterface($value) : null);
         } catch (Throwable) {
             throw new InvalidArgumentException('date_shift requires a valid date.');
         }
-        if (!$date instanceof DateTimeImmutable || ($isString && preg_match('/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)$/D', $value) !== 1)) {
+        if (!$date instanceof DateTimeImmutable || ($isString && preg_match('/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)$/D', $stringValue ?? '') !== 1)) {
             throw new InvalidArgumentException('date_shift requires a valid RFC 3339 date or DateTimeInterface.');
         }
-        $scopeAttribute = $options['scope_attribute'];
-        $maxDays = $options['max_days'];
-        if (!is_string($scopeAttribute) || !is_int($maxDays)) {
-            throw new InvalidArgumentException('date_shift options are invalid.');
-        } $scope = $context->attributes()[$scopeAttribute] ?? null;
-        if ($scope === null) {
+
+        return $date;
+    }
+
+    /**
+     * @param array<string, mixed> $options
+     *
+     * @return array{0: string, 1: int, 2: string}
+     */
+    private function scope(array $options, ValueTransformationContext $context): array
+    {
+        $scopeAttribute = $options['scope_attribute'] ?? null;
+        $maxDays = $options['max_days'] ?? null;
+
+        Assert::string($scopeAttribute);
+        Assert::integer($maxDays);
+        $scope = $context->attributes()[$scopeAttribute] ?? null;
+        if (!is_string($scope)) {
             throw new InvalidArgumentException('date_shift scope attribute is missing from context.');
         }
 
+        return [$scopeAttribute, $maxDays, $scope];
+    }
+
+    private function offset(ValueTransformationContext $context, string $scopeAttribute, string $scope, int $maxDays): int
+    {
         try {
             $key = $this->keys->keyFor($context->keyId() ?? '');
         } catch (Throwable) {
@@ -105,12 +133,10 @@ final readonly class DateShiftTransformation implements ContextualValueTransform
             $message .= pack('N', mb_strlen($part, 'UTF-8')) . $part;
         }
 
-        /** @var array{1:int} $unpacked */
         $unpacked = unpack('N', hash_hmac('sha256', $message, $key, true));
-        $number = $unpacked[1];
-        $offset = ($number % (2 * $maxDays + 1)) - $maxDays;
-        $shifted = $date->modify(sprintf('%+d days', $offset));
+        Assert::keyExists($unpacked, 1);
+        Assert::integer($unpacked[1]);
 
-        return $isString ? $shifted->format(DateTimeInterface::RFC3339_EXTENDED) : $shifted;
+        return ($unpacked[1] % (2 * $maxDays + 1)) - $maxDays;
     }
 }

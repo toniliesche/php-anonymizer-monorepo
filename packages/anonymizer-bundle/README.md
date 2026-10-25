@@ -84,3 +84,9 @@ anonymizer:
     enabled: true
     logger_service: monolog.logger.anonymizer
 ```
+
+Object anonymization is opt-in. Enable `anonymizer.serializer.enabled` and
+provide the application-owned Symfony Serializer service through
+`anonymizer.serializer.service`, or use the conventional `serializer` service.
+
+See the package-local [usage guide](docs/usage.md).

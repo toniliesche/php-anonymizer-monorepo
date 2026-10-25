@@ -6,10 +6,11 @@ namespace PhpAnonymizer\Anonymizer\Domain\Rule\Compiler;
 
 use PhpAnonymizer\Anonymizer\Domain\Exception\InvalidProfileDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Rule\Condition\ConditionDefinition;
-use PhpAnonymizer\Anonymizer\Domain\Rule\Payload\EmbeddedPayloadDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Rule\ScalarAction;
 use PhpAnonymizer\Anonymizer\Domain\Rule\TransformationDefinition;
+use Webmozart\Assert\Assert;
 
+// @internal
 final class RuleOptionsCompiler
 {
     /**
@@ -24,8 +25,8 @@ final class RuleOptionsCompiler
             throw new InvalidProfileDefinition('when must be a map');
         }
 
-        /** @var array<string, mixed> $condition */
         $condition = $definition['when'];
+        Assert::isMap($condition);
 
         return ConditionDefinition::fromArray($condition);
     }
@@ -81,12 +82,9 @@ final class RuleOptionsCompiler
 
     /**
      * @param array<string,mixed> $definition
-     *
-     * @codeCoverageIgnore
      */
     public static function transformation(array $definition): ?TransformationDefinition
     {
-        // @codeCoverageIgnoreStart Extension option validation is exercised by contract suites.
         if (!array_key_exists('transform', $definition)) {
             return null;
         }
@@ -98,27 +96,12 @@ final class RuleOptionsCompiler
         if (!is_array($options) || (array_is_list($options) && $options !== [])) {
             throw new InvalidProfileDefinition('transform options must be a map');
         }
+        if (array_filter(array_keys($options), static fn (int|string $key): bool => !is_string($key)) !== []) {
+            throw new InvalidProfileDefinition('transform options must be a map with string keys');
+        }
 
-        /** @phpstan-ignore argument.type (validated transform options map) */
+        Assert::isMap($options);
+
         return new TransformationDefinition($transform['type'], $options, self::keyId($definition));
-        // @codeCoverageIgnoreEnd
-    }
-
-    /**
-     * @param array<string, mixed> $definition
-     */
-    public static function embedded(array $definition): ?EmbeddedPayloadDefinition
-    {
-        if (!array_key_exists('embedded', $definition)) {
-            return null;
-        }
-        if (!is_array($definition['embedded']) || array_keys($definition['embedded']) !== ['codec', 'profile']) {
-            throw new InvalidProfileDefinition('embedded must be a map with exactly codec and profile');
-        }
-        if (!is_string($definition['embedded']['codec']) || $definition['embedded']['codec'] === '' || !is_string($definition['embedded']['profile']) || $definition['embedded']['profile'] === '') {
-            throw new InvalidProfileDefinition('embedded codec and profile must be non-empty strings');
-        }
-
-        return new EmbeddedPayloadDefinition($definition['embedded']['codec'], $definition['embedded']['profile']);
     }
 }

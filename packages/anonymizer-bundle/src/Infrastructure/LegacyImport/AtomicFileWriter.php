@@ -12,9 +12,7 @@ use function Safe\rename;
 use function Safe\tempnam;
 use function Safe\unlink;
 
-/**
- * @codeCoverageIgnore Filesystem failure paths are covered by integration tests.
- */
+// @internal
 final class AtomicFileWriter
 {
     public function write(string $path, string $contents): void

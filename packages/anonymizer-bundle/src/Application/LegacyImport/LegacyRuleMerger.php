@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace PhpAnonymizer\AnonymizerBundle\Application\LegacyImport;
 
+use Webmozart\Assert\Assert;
+
 /**
  * @phpstan-type Rule array<string, mixed>
+ *
+ * @internal
  */
 final class LegacyRuleMerger
 {
@@ -25,9 +29,14 @@ final class LegacyRuleMerger
                 continue;
             }
             if (isset($merged[$index]['children'], $rule['children'])) {
-                /** @var list<Rule> $left */ $left = $merged[$index]['children'];
+                $left = $merged[$index]['children'];
+                Assert::isList($left);
+                Assert::allIsMap($left);
 
-                /** @var list<Rule> $right */ $right = $rule['children'];
+                $right = $rule['children'];
+                Assert::isList($right);
+                Assert::allIsMap($right);
+
                 $merged[$index]['children'] = $this->merge([...$left, ...$right]);
 
                 continue;

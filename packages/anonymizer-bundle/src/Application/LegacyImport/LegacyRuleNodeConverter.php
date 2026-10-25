@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace PhpAnonymizer\AnonymizerBundle\Application\LegacyImport;
 
+use Webmozart\Assert\Assert;
+
 /**
  * @phpstan-type Rule array<string, mixed>
  *
- * @codeCoverageIgnore Legacy conversion diagnostics are exercised through command-level integration tests.
+ * @internal
  */
 final readonly class LegacyRuleNodeConverter
 {
@@ -26,11 +28,9 @@ final readonly class LegacyRuleNodeConverter
         if (!is_string($name) || $name === '') {
             throw LegacyImportException::message('Legacy rule nodes require a non-empty name.');
         }
-        // @codeCoverageIgnoreStart Exception-only diagnostic branch.
         if (($node['data_access'] ?? 'array') !== 'array') {
             throw LegacyImportException::message(sprintf('Rule "%s" uses unsupported object access.', $name));
         }
-        // @codeCoverageIgnoreEnd
         if (isset($node['children'])) {
             if (!is_array($node['children']) || !array_is_list($node['children'])) {
                 throw LegacyImportException::message(sprintf('Children for "%s" must be a list.', $name));
@@ -48,7 +48,7 @@ final readonly class LegacyRuleNodeConverter
     }
 
     /**
-     * @return Rule
+     * @return array<string, mixed>
      */
     public function convertPath(string $path, mixed $definition): array
     {
@@ -68,7 +68,7 @@ final readonly class LegacyRuleNodeConverter
                 throw LegacyImportException::message(sprintf('Child nodes for "%s" must be maps.', $name));
             }
 
-            /** @var array<string, mixed> $child */
+            Assert::isMap($child);
             $converted[] = $this->convertNode($child);
         }
 

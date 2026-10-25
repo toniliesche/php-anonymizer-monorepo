@@ -1,25 +1,27 @@
 # PHP Anonymizer
 
-This repository contains the clean v1 rewrite of PHP Anonymizer. Development
+This repository is the PHP Anonymizer 2.x development monorepo. Development
 uses PHP 8.5+, Composer, and the root Composer scripts.
 
-The current work-in-progress release is 1.7.0. Install the packages you need
+The current work-in-progress release is 2.0.0. Install the packages you need
 with Composer; the Laravel integration is available for Laravel 13:
 
 ```sh
 composer require php-anonymizer/anonymizer php-anonymizer/anonymizer-laravel
 ```
 
-The first core API is intentionally small and array-only:
+The core API is built around one façade and an immutable builder:
 
 ```php
-use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerFactory;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilder;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
 
-$anonymizer = AnonymizerFactory::fromArrays(['customer' => [
-    'mode' => 'redact',
-    'rules' => [['field' => 'email']],
-]]);
+$anonymizer = AnonymizerBuilder::create()
+    ->withProfile(ProfileDefinition::fromArray('customer', [
+        'mode' => 'redact',
+        'rules' => [['field' => 'email']],
+    ]))
+    ->build();
 $safe = $anonymizer->anonymize('customer', ['email' => 'user@example.com']);
 // ['email' => '[REDACTED]']
 ```
@@ -42,6 +44,10 @@ $safe = $anonymizer->anonymize('customer-safe', [
 
 The profile schema, conditions, and scalar fallbacks are documented in
 [`docs/profile-schema.md`](docs/profile-schema.md).
+
+See the complete [user guide](docs/user-guide.md) and
+[2.0 migration guide](docs/migration-v2.md) for application setup and upgrade
+instructions.
 
 The core also supports named string strategies and encoded payloads:
 
@@ -69,18 +75,18 @@ foreach ($anonymizer->anonymizeRecords('customer', $records) as $safe) {
 
 The optional `php-anonymizer/anonymizer-pseudonymization` package provides
 keyed deterministic pseudonyms. Register an application key provider, use a
-leaf rule with `strategy: pseudonymize` and a non-secret `key_id`, then call
-the contextual anonymizer with per-request scope attributes.
+leaf rule with `strategy: pseudonymize` and a non-secret `key_id`, then pass an
+`AnonymizationContext` with per-request scope attributes to the façade call.
 
-Execution limits are enabled by default. `AnonymizationLimits` can be passed to
-`AnonymizerFactory::fromArrays()` as its final argument. Encoded payloads are
+Execution limits are enabled by default. Configure `AnonymizationLimits` with
+`AnonymizerBuilder::withLimits()`. Encoded payloads are
 limited to 10 MiB by default, with additional bounds for traversal depth,
 visited nodes, collection entries, and embedded payload depth.
 
-Array-only callers that need safe operational telemetry can use the optional
-`AuditAnonymizerInterface`. Audit entries contain profile identity, a compiled
-profile fingerprint, paths, actions, handler IDs, and counts—never source or
-replacement values.
+Callers that need safe operational telemetry can use the façade's
+`anonymizeWithAudit()` method. Audit entries contain profile identity, a
+compiled profile fingerprint, paths, actions, handler IDs, and counts—never
+source or replacement values.
 
 Symfony applications can install `php-anonymizer/anonymizer-bundle` and
 configure the same profiles under `anonymizer.profiles`. The Bundle exposes an
@@ -95,8 +101,18 @@ when explicitly enabled with an application-owned Serializer service.
 
 Reusable profile libraries can expose immutable `ProfileDefinition` objects
 through `ProfileProviderInterface`. Register providers explicitly with
-`AnonymizerFactory::fromProfileProviders()` (or Laravel's
+`AnonymizerBuilder::withProfileProviders()` (or Laravel's
 `anonymizer.profile_provider` tag); providers are never scanned or discovered
 implicitly.
 
 Run `composer qa` for the complete quality gate.
+
+Maintainers can follow the [release and publishing guide](docs/release-and-publishing.md)
+for repository setup, CI credentials, package registration, and release recovery.
+
+For performance checks, run `PHP_VERSION=8.5 composer benchmark`. The isolated
+benchmark uses two warmups, seven samples, and 100 iterations per scenario;
+`BENCHMARK_WARMUPS`, `BENCHMARK_SAMPLES`, and `BENCHMARK_ITERATIONS` can tune
+local runs. CI compares the semantic output digest strictly and reports
+warnings above 10% median time or 15% peak memory; these warnings are
+non-blocking because shared runners are noisy.

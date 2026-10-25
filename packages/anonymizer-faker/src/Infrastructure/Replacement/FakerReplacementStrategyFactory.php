@@ -6,10 +6,20 @@ namespace PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement;
 
 use Faker\Factory;
 use Faker\Generator;
+use PhpAnonymizer\Anonymizer\Application\Extension\Replacement\ReplacementStrategyInterface;
+use Webmozart\Assert\Assert;
 use function Safe\unpack;
 
 final class FakerReplacementStrategyFactory
 {
+    /**
+     * @return list<string>
+     */
+    public static function ids(): array
+    {
+        return array_map(static fn (FakerFormatter $formatter): string => $formatter->id(), FakerFormatter::cases());
+    }
+
     /**
      * @return list<FakerReplacementStrategy>
      */
@@ -26,6 +36,11 @@ final class FakerReplacementStrategyFactory
     public static function createStrategy(Generator $faker, string $id): FakerReplacementStrategy
     {
         return new FakerReplacementStrategy($faker, FakerFormatter::from($id));
+    }
+
+    public static function createReplacementStrategy(Generator $faker, string $id): ReplacementStrategyInterface
+    {
+        return self::createStrategy($faker, $id);
     }
 
     public static function createGenerator(string $locale = 'en_US', int|string|null $seed = null): Generator
@@ -46,8 +61,9 @@ final class FakerReplacementStrategyFactory
 
         $bytes = hash('sha256', $seed, true);
 
-        /** @var array{seed: int} $parts */
         $parts = unpack('Nseed', $bytes);
+        Assert::keyExists($parts, 'seed');
+        Assert::integer($parts['seed']);
 
         return $parts['seed'];
     }

@@ -6,7 +6,8 @@
     "require": {
         "php": "^8.5",
         "ext-mbstring": "*",
-        "thecodingmachine/safe": "^3.4"
+        "thecodingmachine/safe": "^3.4",
+        "webmozart/assert": "^2.5"
     },
     "autoload": {
         "psr-4": {
@@ -20,7 +21,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-develop": "1.2.x-dev"
+            "dev-develop": "2.0.x-dev"
         }
     }
 }

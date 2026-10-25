@@ -8,6 +8,7 @@ use Faker\Generator;
 use Override;
 use PhpAnonymizer\Anonymizer\Application\Extension\Replacement\ReplacementStrategyInterface;
 
+// @internal
 final readonly class FakerReplacementStrategy implements ReplacementStrategyInterface
 {
     public function __construct(

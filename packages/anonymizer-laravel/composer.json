@@ -6,13 +6,14 @@
     "require": {
         "php": "^8.5",
         "illuminate/support": "^13.0",
-        "php-anonymizer/anonymizer": "^1.2",
-        "psr/log": "^3.0",
-        "symfony/yaml": "^7.4 || ^8.0"
+        "php-anonymizer/anonymizer": "^2.0",
+        "psr/log": "^3.0.2",
+        "symfony/yaml": "^7.4 || ^8.1.9",
+        "webmozart/assert": "^2.5"
     },
     "require-dev": {
-        "laravel/framework": "^13.0",
-        "orchestra/testbench-core": "^11.0"
+        "laravel/framework": "^13.38",
+        "orchestra/testbench-core": "^11.6"
     },
     "suggest": {
         "php-anonymizer/anonymizer-faker": "Enable Faker replacement strategies",
@@ -31,6 +32,9 @@
         }
     },
     "extra": {
+        "branch-alias": {
+            "dev-develop": "2.0.x-dev"
+        },
         "laravel": {
             "providers": [
                 "PhpAnonymizer\\AnonymizerLaravel\\AnonymizerServiceProvider"

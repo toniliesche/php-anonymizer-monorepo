@@ -4,9 +4,19 @@ declare(strict_types=1);
 
 namespace PhpAnonymizer\AnonymizerBundle\Tests\Unit\Application\LegacyImport;
 
+use ArrayObject;
+use InvalidArgumentException;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileCompositionCompiler;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinitionData;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinitionParser;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileGlobalRuleParser;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileMetadataParser;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileRuleAppender;
+use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\EmbeddedPayloadDefinitionParser;
 use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\RuleOptionsCompiler;
 use PhpAnonymizer\Anonymizer\Domain\Rule\RuleDefinition;
+use PhpAnonymizer\Anonymizer\Domain\Rule\RuleTraversalCombinationValidator;
 use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyImportException;
 use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleCollectionConverter;
 use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleConverter;
@@ -15,6 +25,7 @@ use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleNodeConver
 use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRulePathConverter;
 use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleValueConverter;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(LegacyRuleConverter::class)]
@@ -27,6 +38,14 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(ProfileDefinition::class)]
 #[CoversClass(RuleOptionsCompiler::class)]
 #[CoversClass(RuleDefinition::class)]
+#[UsesClass(ProfileDefinitionParser::class)]
+#[UsesClass(ProfileMetadataParser::class)]
+#[UsesClass(ProfileCompositionCompiler::class)]
+#[UsesClass(ProfileDefinitionData::class)]
+#[UsesClass(ProfileRuleAppender::class)]
+#[UsesClass(ProfileGlobalRuleParser::class)]
+#[UsesClass(EmbeddedPayloadDefinitionParser::class)]
+#[UsesClass(RuleTraversalCombinationValidator::class)]
 final class LegacyRuleConverterTest extends TestCase
 {
     public function testConvertsNestedListsAndFakerFields(): void
@@ -45,6 +64,25 @@ final class LegacyRuleConverterTest extends TestCase
         self::assertSame('customers', $customers['field']);
         self::assertNotNull($customers['each'][0]['strategy']);
         self::assertSame('faker.first_name', $name['strategy']);
+    }
+
+    public function testConvertsTrimmedNestedArrayPathsAndTerminalArrays(): void
+    {
+        $values = new LegacyRuleValueConverter();
+        $nodes = new LegacyRuleNodeConverter($values, new LegacyRulePathConverter($values));
+
+        self::assertSame([
+            'field' => 'customers',
+            'each' => [[
+                'field' => 'addresses',
+                'each' => [['field' => 'email', 'strategy' => 'faker.email']],
+            ]],
+        ], $nodes->convertPath('.customers[].addresses[].email.', 'email'));
+        self::assertSame([
+            'field' => 'tags',
+            'each' => true,
+            'on_scalar' => 'redact',
+        ], $nodes->convertPath('tags[]', 'unknown'));
     }
 
     public function testRejectsObjectAccessAndMissingRules(): void
@@ -89,6 +127,51 @@ final class LegacyRuleConverterTest extends TestCase
         self::assertSame(['enabled' => true, 'locale' => 'de_DE', 'seed' => 42], $result['anonymizer']['faker']);
     }
 
+    public function testRootRulesTakePrecedenceAndFakerConfigurationIsOptional(): void
+    {
+        $converter = new LegacyRuleConverter(new LegacyRuleCollectionConverter(new LegacyRuleNodeConverter(new LegacyRuleValueConverter(), new LegacyRulePathConverter(new LegacyRuleValueConverter()))), new LegacyRuleMerger());
+
+        $withoutFaker = $converter->convert(['anonymizer' => ['rules' => ['nested' => 'email']]]);
+
+        /** @var array{anonymizer: array{profiles: array{legacy: array{rules: list<array{strategy: string}>}}}} $withoutFaker */
+        self::assertArrayNotHasKey('faker', $withoutFaker['anonymizer']);
+        self::assertSame('faker.email', $withoutFaker['anonymizer']['profiles']['legacy']['rules'][0]['strategy']);
+
+        $rootWins = $converter->convert([
+            'rules' => ['root' => 'email'],
+            'anonymizer' => ['rules' => ['nested' => 'email']],
+            'faker' => ['enabled' => false, 'locale' => 'de_DE'],
+        ]);
+
+        /** @var array{anonymizer: array{profiles: array{legacy: array{rules: list<array{field: string}>}}}} $rootWins */
+        self::assertSame('root', $rootWins['anonymizer']['profiles']['legacy']['rules'][0]['field']);
+        self::assertArrayNotHasKey('faker', $rootWins['anonymizer']);
+
+        $fallbackLocale = $converter->convert([
+            'rules' => ['root' => 'email'],
+            'faker' => ['enabled' => true, 'locale' => 123],
+        ]);
+
+        /** @var array{anonymizer: array{faker: array{enabled: bool, locale: string, seed: mixed}}} $fallbackLocale */
+        self::assertSame(['enabled' => true, 'locale' => 'en_US', 'seed' => null], $fallbackLocale['anonymizer']['faker']);
+
+        $disabledByDefault = $converter->convert([
+            'rules' => ['root' => 'email'],
+            'faker' => ['locale' => 'de_DE'],
+        ]);
+        self::assertIsArray($disabledByDefault['anonymizer']);
+        self::assertArrayNotHasKey('faker', $disabledByDefault['anonymizer']);
+    }
+
+    public function testDoesNotReadRulesFromArrayAccessAnonymizerValues(): void
+    {
+        $converter = new LegacyRuleConverter(new LegacyRuleCollectionConverter(new LegacyRuleNodeConverter(new LegacyRuleValueConverter(), new LegacyRulePathConverter(new LegacyRuleValueConverter()))), new LegacyRuleMerger());
+
+        $this->expectException(LegacyImportException::class);
+        $this->expectExceptionMessageIsOrContains('The legacy document must contain a non-empty rules map.');
+        $converter->convert(['anonymizer' => new ArrayObject(['rules' => ['email' => 'email']])]);
+    }
+
     public function testMergesNestedRulesAndRejectsConflicts(): void
     {
         $merger = new LegacyRuleMerger();
@@ -126,6 +209,44 @@ final class LegacyRuleConverterTest extends TestCase
         ], $result);
     }
 
+    public function testRejectsMalformedChildCollectionsBeforeMergingThem(): void
+    {
+        foreach ([
+            [
+                ['field' => 'user', 'children' => ['named' => ['field' => 'name']]],
+                ['field' => 'user', 'children' => [['field' => 'email']]],
+            ],
+            [
+                ['field' => 'user', 'children' => [['field' => 'name']]],
+                ['field' => 'user', 'children' => ['named' => ['field' => 'email']]],
+            ],
+            [
+                ['field' => 'user', 'children' => [['field' => 'name'], null]],
+                ['field' => 'user', 'children' => [['field' => 'email']]],
+            ],
+            [
+                ['field' => 'user', 'children' => [['field' => 'name']]],
+                ['field' => 'user', 'children' => [['field' => 'email'], null]],
+            ],
+        ] as $rules) {
+            try {
+                new LegacyRuleMerger()->merge($rules);
+                self::fail('Malformed child rule collections must be rejected.');
+            } catch (InvalidArgumentException $exception) {
+                self::assertNotSame('', $exception->getMessage());
+            }
+        }
+    }
+
+    public function testPathLeafPrefersValueTypeAndIgnoresNonStringDefinitionsSafely(): void
+    {
+        $values = new LegacyRuleValueConverter();
+        $paths = new LegacyRulePathConverter($values);
+
+        self::assertSame(['field' => 'email', 'strategy' => 'faker.email'], $paths->convert('email', ['name' => 'email', 'value_type' => 'email', 'fallback' => ['value_type' => 'firstName']]));
+        self::assertSame(['field' => 'email', 'strategy' => 'redact'], $paths->convert('email', ['unexpected' => true]));
+    }
+
     public function testConflictWithNonStringFieldUsesUnknownLabel(): void
     {
         $this->expectExceptionMessageMatches('/unknown/');
@@ -149,11 +270,31 @@ final class LegacyRuleConverterTest extends TestCase
         }
 
         self::assertSame(['field' => 'tags', 'each' => true, 'on_scalar' => 'redact'], $nodes->convertNode(['name' => 'tags', 'is_array' => true, 'fallback' => ['value_type' => 'email']]));
+        self::assertSame([
+            'field' => 'users',
+            'each' => [['field' => 'email', 'strategy' => 'faker.email']],
+            'on_scalar' => 'redact',
+        ], $nodes->convertNode(['name' => 'users', 'is_array' => true, 'children' => [['name' => 'email', 'value_type' => 'email']]]));
         self::assertSame('redact', $values->strategy('unknown'));
         self::assertSame('email', $values->fallback(['value_type' => 'email']));
 
         $this->expectException(LegacyImportException::class);
         $nodes->convertPath('users.[].email', 'email');
+    }
+
+    public function testPreservesMultipleLegacyNodeDefinitions(): void
+    {
+        $values = new LegacyRuleValueConverter();
+        $nodes = new LegacyRuleNodeConverter($values, new LegacyRulePathConverter($values));
+        $collections = new LegacyRuleCollectionConverter($nodes);
+
+        self::assertSame([
+            ['field' => 'email', 'strategy' => 'faker.email'],
+            ['field' => 'name', 'strategy' => 'faker.first_name'],
+        ], $collections->convert([
+            ['name' => 'email', 'value_type' => 'email'],
+            ['name' => 'name', 'value_type' => 'firstName'],
+        ]));
     }
 
     public function testRejectsEmptyLegacyPaths(): void
@@ -163,6 +304,22 @@ final class LegacyRuleConverterTest extends TestCase
 
         $this->expectException(LegacyImportException::class);
         $nodes->convertPath('', 'email');
+    }
+
+    public function testRejectsDotOnlyAndInteriorEmptyLegacyPaths(): void
+    {
+        $values = new LegacyRuleValueConverter();
+        $nodes = new LegacyRuleNodeConverter($values, new LegacyRulePathConverter($values));
+
+        try {
+            $nodes->convertPath('.', 'email');
+            self::fail('Dot-only paths should be rejected.');
+        } catch (LegacyImportException $exception) {
+            self::assertSame('A legacy rule path cannot be empty.', $exception->getMessage());
+        }
+
+        $this->expectExceptionMessageMatches('/Invalid legacy path/');
+        $nodes->convertPath('users..email', 'email');
     }
 
     public function testRejectsNonMapNodesAndNonStringPaths(): void
@@ -180,7 +337,6 @@ final class LegacyRuleConverterTest extends TestCase
 
         $this->expectException(LegacyImportException::class);
 
-        /** @var array<int, mixed> $invalidPaths */
         $invalidPaths = [1 => 'email'];
         $collections->convert($invalidPaths);
     }
@@ -198,6 +354,13 @@ final class LegacyRuleConverterTest extends TestCase
         }
 
         try {
+            $nodes->convertNode(['name' => 'user', 'children' => ['city' => ['name' => 'city']]]);
+            self::fail('Associative children should be rejected.');
+        } catch (LegacyImportException $exception) {
+            self::assertStringContainsString('must be a list', $exception->getMessage());
+        }
+
+        try {
             $nodes->convertNode(['name' => 'user', 'data_access' => 'property']);
             self::fail('Object access should be rejected.');
         } catch (LegacyImportException $exception) {
@@ -205,6 +368,13 @@ final class LegacyRuleConverterTest extends TestCase
         }
 
         self::assertSame(['field' => 'user', 'children' => [['field' => 'email', 'strategy' => 'faker.email']]], $nodes->convertPath('user.email', ['name' => 'email', 'value_type' => 'email']));
+
+        try {
+            $nodes->convertPath('user..email', 'email');
+            self::fail('Interior-empty paths should be rejected.');
+        } catch (LegacyImportException $exception) {
+            self::assertStringContainsString('Invalid legacy path', $exception->getMessage());
+        }
 
         $this->expectException(LegacyImportException::class);
         $nodes->convertNode([]);

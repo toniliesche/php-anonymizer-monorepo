@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace PhpAnonymizer\AnonymizerBundle\Application\LegacyImport;
 
-/**
- * @codeCoverageIgnore Legacy path diagnostics are exercised through command-level integration tests.
- */
+// @internal
 final readonly class LegacyRulePathConverter
 {
     public function __construct(private LegacyRuleValueConverter $values)
@@ -26,11 +24,6 @@ final readonly class LegacyRulePathConverter
         $fields = [];
         $eachFields = [];
         foreach ($parts as $part) {
-            // @codeCoverageIgnoreStart Exception-only diagnostic branch.
-            if ($part === '') {
-                throw LegacyImportException::message(sprintf('Invalid legacy path "%s".', $path));
-            }
-            // @codeCoverageIgnoreEnd
             if (str_ends_with($part, '[]')) {
                 $eachFields[] = count($fields);
                 $part = mb_substr($part, 0, -2, 'UTF-8');
@@ -50,16 +43,23 @@ final readonly class LegacyRulePathConverter
      *
      * @return array<string, mixed>
      */
-    private function build(array $fields, array $eachFields, mixed $definition, int $index = 0): array
+    private function build(array $fields, array $eachFields, mixed $definition): array
     {
-        $field = $fields[$index];
-        $rule = $index === count($fields) - 1
-            ? $this->leaf($field, $definition)
-            : ['field' => $field, 'children' => [$this->build($fields, $eachFields, $definition, $index + 1)]];
+        $lastIndex = count($fields) - 1;
+        $rule = $this->leaf($fields[$lastIndex], $definition);
+        if (in_array($lastIndex, $eachFields, true)) {
+            $rule = ['field' => $fields[$lastIndex], 'each' => true, 'on_scalar' => 'redact'];
+        }
 
-        return in_array($index, $eachFields, true)
-            ? (isset($rule['children']) ? ['field' => $field, 'each' => $rule['children']] : ['field' => $field, 'each' => true, 'on_scalar' => 'redact'])
-            : $rule;
+        foreach (array_reverse(array_slice($fields, 0, -1), true) as $index => $field) {
+            $children = [$rule];
+            $rule = ['field' => $field, 'children' => $children];
+            if (in_array($index, $eachFields, true)) {
+                $rule = ['field' => $field, 'each' => $children];
+            }
+        }
+
+        return $rule;
     }
 
     /**

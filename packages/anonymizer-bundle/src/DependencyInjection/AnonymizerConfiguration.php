@@ -60,6 +60,13 @@ final class AnonymizerConfiguration implements ConfigurationInterface
             ->scalarNode('key_provider')->defaultNull()->end()
             ->end()
             ->end()
+            ->arrayNode('serializer')
+            ->addDefaultsIfNotSet()
+            ->children()
+            ->booleanNode('enabled')->defaultFalse()->end()
+            ->scalarNode('service')->defaultNull()->end()
+            ->end()
+            ->end()
             ->end();
 
         return $treeBuilder;

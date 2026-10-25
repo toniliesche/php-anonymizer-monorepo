@@ -1,0 +1,94 @@
+name: Release preview
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited]
+  workflow_dispatch:
+    inputs:
+      release_branch:
+        description: Release branch to preview (for example release/2.0.x)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    name: Validate release readiness
+    if: github.event_name == 'workflow_dispatch' || (startsWith(github.head_ref, 'release/') && github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: linux-amd64-docker
+    container:
+      image: registry.toniliesche.de/development/php-ci-builder:1.0
+      credentials:
+        username: ${{ secrets.CI_REGISTRY_USERNAME }}
+        password: ${{ secrets.CI_REGISTRY_PASSWORD }}
+    env:
+      CI: 'true'
+      PHP_VERSION: '8.5'
+      XDEBUG_MODE: coverage
+      RELEASE_BRANCH: ${{ github.event_name == 'workflow_dispatch' && inputs.release_branch || github.head_ref }}
+      CI_MAIN_BASELINE_REF: origin/main
+      CI_DIAGNOSTICS_DIR: var/ci-diagnostics/${{ github.run_id }}-attempt-${{ github.run_attempt }}
+    steps:
+      - name: Check out release revision
+        uses: https://github.com/actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.release_branch || github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Resolve expected event revision
+        env:
+          CI_PULL_REQUEST_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == 'workflow_dispatch' ]]; then
+            expected_revision="$(git rev-parse HEAD)"
+          else
+            expected_revision="$CI_PULL_REQUEST_SHA"
+          fi
+          printf 'CI_EVENT_SHA=%s\n' "$expected_revision" >> "$GITHUB_ENV"
+
+      - name: Install Git subtree support
+        run: sh tools/install-git-subtree.sh
+
+      - name: Verify checkout and PHP runtime
+        run: |
+          composer ci:verify-checkout
+          composer ci:runtime:check
+
+      - name: Run release preview without publication credentials
+        env:
+          GITHUB_HEAD_REF: ${{ github.event_name == 'workflow_dispatch' && inputs.release_branch || github.head_ref }}
+        run: composer ci:run-gate release-preview composer release:preview
+
+      - name: Record workflow outcome
+        if: always()
+        env:
+          CI_JOB_STATUS: ${{ job.status }}
+        run: |
+          mkdir -p "$CI_DIAGNOSTICS_DIR"
+          printf 'event=%s\nrevision=%s\nrelease_branch=%s\nrun_id=%s\nattempt=%s\noutcome=%s\n' \
+            "$GITHUB_EVENT_NAME" "$CI_EVENT_SHA" "$RELEASE_BRANCH" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$CI_JOB_STATUS" \
+            > "$CI_DIAGNOSTICS_DIR/workflow-metadata.txt"
+
+      - name: Upload Gitea release preview diagnostics
+        if: always()
+        uses: https://github.com/ChristopherHX/gitea-upload-artifact@81f940d004763f986ba3582c007fd842dd5cb0d7
+        with:
+          name: release-preview-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.CI_DIAGNOSTICS_DIR }}/
+          if-no-files-found: error
+
+      - name: Download Gitea release preview diagnostics
+        if: always()
+        uses: https://github.com/ChristopherHX/gitea-download-artifact@75635f32b4c1c41c4b3d64e8f85210112ed4c9c7
+        with:
+          name: release-preview-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.CI_DIAGNOSTICS_DIR }}/roundtrip
+
+      - name: Verify diagnostics artifact round trip
+        if: always()
+        run: test -s "$CI_DIAGNOSTICS_DIR/roundtrip/workflow-metadata.txt"

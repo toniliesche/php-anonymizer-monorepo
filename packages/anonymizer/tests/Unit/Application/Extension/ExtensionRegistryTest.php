@@ -6,7 +6,6 @@ namespace PhpAnonymizer\Anonymizer\Tests\Unit\Application\Extension;
 
 use InvalidArgumentException;
 use JsonException;
-use Override;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Result\AnonymizationResult;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\Result\PayloadAnonymizationResult;
 use PhpAnonymizer\Anonymizer\Application\Extension\Payload\JsonPayloadCodec;
@@ -16,22 +15,35 @@ use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileRegistry;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\Validation\EmbeddedProfileReferenceGraph;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\Validation\ProfileReferenceValidator;
 use PhpAnonymizer\Anonymizer\Application\Extension\Replacement\DefaultRedactionStrategy;
-use PhpAnonymizer\Anonymizer\Application\Extension\Replacement\ReplacementStrategyInterface;
 use PhpAnonymizer\Anonymizer\Application\Extension\Replacement\ReplacementStrategyRegistry;
 use PhpAnonymizer\Anonymizer\Application\Extension\Replacement\StarMaskStrategy;
+use PhpAnonymizer\Anonymizer\Application\Extension\Transformation\TransformationRegistry;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileCompositionCompiler;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinitionData;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinitionParser;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileGlobalRuleParser;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileMetadataParser;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileRuleAppender;
+use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\EmbeddedPayloadDefinitionParser;
 use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\RuleOptionsCompiler;
 use PhpAnonymizer\Anonymizer\Domain\Rule\Payload\EmbeddedPayloadDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Rule\RuleDefinition;
+use PhpAnonymizer\Anonymizer\Domain\Rule\RuleTraversalCombinationValidator;
+use PhpAnonymizer\Anonymizer\Tests\Support\Extension\StaticPayloadCodec;
+use PhpAnonymizer\Anonymizer\Tests\Support\Extension\StaticReplacementStrategy;
+use PhpAnonymizer\Anonymizer\Tests\Support\Extension\StaticValueTransformation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 
 #[CoversClass(DefaultRedactionStrategy::class)]
 #[CoversClass(StarMaskStrategy::class)]
 #[CoversClass(JsonPayloadCodec::class)]
 #[CoversClass(ReplacementStrategyRegistry::class)]
 #[CoversClass(PayloadCodecRegistry::class)]
+#[CoversClass(TransformationRegistry::class)]
 #[CoversClass(ProfileRegistry::class)]
 #[CoversClass(ProfileReferenceValidator::class)]
 #[CoversClass(EmbeddedProfileReferenceGraph::class)]
@@ -41,6 +53,14 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(RuleDefinition::class)]
 #[UsesClass(RuleOptionsCompiler::class)]
 #[UsesClass(AnonymizationResult::class)]
+#[UsesClass(ProfileDefinitionParser::class)]
+#[UsesClass(ProfileMetadataParser::class)]
+#[UsesClass(ProfileCompositionCompiler::class)]
+#[UsesClass(ProfileDefinitionData::class)]
+#[UsesClass(ProfileRuleAppender::class)]
+#[UsesClass(ProfileGlobalRuleParser::class)]
+#[UsesClass(EmbeddedPayloadDefinitionParser::class)]
+#[UsesClass(RuleTraversalCombinationValidator::class)]
 final class ExtensionRegistryTest extends TestCase
 {
     public function testBuiltInStrategiesAndCodecWork(): void
@@ -75,44 +95,33 @@ final class ExtensionRegistryTest extends TestCase
         $codec->decode('[]');
     }
 
+    public function testJsonCodecAcceptsWhitespaceBeforeAnObjectRoot(): void
+    {
+        self::assertSame(['email' => 'secret'], new JsonPayloadCodec()->decode(" \n\t{\"email\":\"secret\"}"));
+    }
+
+    public function testJsonCodecRejectsScalarRoots(): void
+    {
+        $this->expectExceptionMessageMatches('/JSON payload root must be an object/');
+
+        new JsonPayloadCodec()->decode('null');
+    }
+
+    public function testJsonCodecRejectsEmptyObjectRoots(): void
+    {
+        $this->expectExceptionMessageMatches('/JSON payload root must be an object/');
+
+        new JsonPayloadCodec()->decode('{}');
+    }
+
     public function testRegistriesExposeValuesAndRejectInvalidDuplicates(): void
     {
-        $strategy = new class () implements ReplacementStrategyInterface {
-            #[Override]
-            public function id(): string
-            {
-                return 'custom';
-            }
-
-            #[Override]
-            public function replace(string $value): string
-            {
-                return $value . '!';
-            }
-        };
+        $strategy = new StaticReplacementStrategy('custom', suffix: '!');
         $strategies = new ReplacementStrategyRegistry([$strategy]);
         self::assertSame($strategy, $strategies->get('custom'));
         self::assertSame([$strategy], $strategies->all());
 
-        $codec = new class () implements PayloadCodecInterface {
-            #[Override]
-            public function id(): string
-            {
-                return 'custom';
-            }
-
-            #[Override]
-            public function decode(string $payload): array
-            {
-                return ['payload' => $payload];
-            }
-
-            #[Override]
-            public function encode(array $data): string
-            {
-                return is_string($data['payload'] ?? null) ? $data['payload'] : '';
-            }
-        };
+        $codec = new StaticPayloadCodec('custom');
         $codecs = new PayloadCodecRegistry([$codec]);
         self::assertSame($codec, $codecs->get('custom'));
         self::assertNotInstanceOf(PayloadCodecInterface::class, $codecs->get('missing'));
@@ -124,63 +133,66 @@ final class ExtensionRegistryTest extends TestCase
 
     public function testRegistriesRejectInvalidIds(): void
     {
-        $strategy = new class () implements ReplacementStrategyInterface {
-            #[Override]
-            public function id(): string
-            {
-                return 'not valid';
-            }
-
-            #[Override]
-            public function replace(string $value): string
-            {
-                return $value;
-            }
-        };
+        $strategy = new StaticReplacementStrategy('not valid');
         $this->expectExceptionMessageMatches('/ID .* invalid/');
         new ReplacementStrategyRegistry([$strategy]);
     }
 
+    public function testRegistriesRejectValuesOutsideTheirExtensionContracts(): void
+    {
+        $this->expectExceptionMessageMatches('/Profile registry entries must implement/');
+        new ProfileRegistry([new stdClass()]);
+    }
+
+    public function testReplacementRegistryRejectsValuesOutsideItsExtensionContract(): void
+    {
+        $this->expectExceptionMessageMatches('/Replacement strategy registry entries must implement/');
+        new ReplacementStrategyRegistry([new stdClass()]);
+    }
+
+    public function testCodecRegistryRejectsValuesOutsideItsExtensionContract(): void
+    {
+        $this->expectExceptionMessageMatches('/Payload codec registry entries must implement/');
+        new PayloadCodecRegistry([new stdClass()]);
+    }
+
+    public function testTransformationRegistryRejectsValuesOutsideItsExtensionContract(): void
+    {
+        $this->expectExceptionMessageMatches('/Transformation registry entries must implement/');
+        new TransformationRegistry([new stdClass()]);
+    }
+
+    public function testTransformationRegistryRejectsInvalidIdsAndDuplicates(): void
+    {
+        $transformation = new StaticValueTransformation('custom');
+
+        $registry = new TransformationRegistry([$transformation]);
+        self::assertSame($transformation, $registry->get('custom'));
+        self::assertSame([$transformation], $registry->all());
+
+        try {
+            new TransformationRegistry([$transformation, $transformation]);
+            self::fail('Expected duplicate transformation validation.');
+        } catch (InvalidArgumentException) {
+            $this->addToAssertionCount(1);
+        }
+
+        $invalid = new StaticValueTransformation('not valid', []);
+
+        $this->expectExceptionMessageMatches('/ID .* invalid/');
+        new TransformationRegistry([$invalid]);
+    }
+
     public function testRegistriesRejectIdsWithTrailingNewlines(): void
     {
-        $strategy = new class () implements ReplacementStrategyInterface {
-            #[Override]
-            public function id(): string
-            {
-                return "custom\n";
-            }
-
-            #[Override]
-            public function replace(string $value): string
-            {
-                return $value;
-            }
-        };
+        $strategy = new StaticReplacementStrategy("custom\n");
         $this->expectException(InvalidArgumentException::class);
         new ReplacementStrategyRegistry([$strategy]);
     }
 
     public function testCodecRegistryRejectsDuplicatesAndInvalidIds(): void
     {
-        $codec = new class () implements PayloadCodecInterface {
-            #[Override]
-            public function id(): string
-            {
-                return 'custom';
-            }
-
-            #[Override]
-            public function decode(string $payload): array
-            {
-                return [];
-            }
-
-            #[Override]
-            public function encode(array $data): string
-            {
-                return '';
-            }
-        };
+        $codec = new StaticPayloadCodec('custom', []);
 
         try {
             new PayloadCodecRegistry([$codec, $codec]);
@@ -188,50 +200,14 @@ final class ExtensionRegistryTest extends TestCase
         } catch (InvalidArgumentException) {
             $this->addToAssertionCount(1);
         }
-        $invalid = new class () implements PayloadCodecInterface {
-            #[Override]
-            public function id(): string
-            {
-                return 'not valid';
-            }
-
-            #[Override]
-            public function decode(string $payload): array
-            {
-                return [];
-            }
-
-            #[Override]
-            public function encode(array $data): string
-            {
-                return '';
-            }
-        };
+        $invalid = new StaticPayloadCodec('not valid', []);
         $this->expectExceptionMessageMatches('/ID .* invalid/');
         new PayloadCodecRegistry([$invalid]);
     }
 
     public function testCodecRegistryRejectsIdsWithTrailingNewlines(): void
     {
-        $codec = new class () implements PayloadCodecInterface {
-            #[Override]
-            public function id(): string
-            {
-                return "custom\n";
-            }
-
-            #[Override]
-            public function decode(string $payload): array
-            {
-                return [];
-            }
-
-            #[Override]
-            public function encode(array $data): string
-            {
-                return '';
-            }
-        };
+        $codec = new StaticPayloadCodec("custom\n", []);
 
         $this->expectException(InvalidArgumentException::class);
         new PayloadCodecRegistry([$codec]);
