@@ -5,7 +5,7 @@ declare(strict_types=1);
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilder;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
 
-require dirname(__DIR__) . '/vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 
 /**
  * @param array<string, mixed> $data

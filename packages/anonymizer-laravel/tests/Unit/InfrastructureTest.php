@@ -13,10 +13,13 @@ use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileCompositionCompiler;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinitionData;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinitionParser;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileGlobalRuleParser;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileMetadataParser;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileRuleAppender;
+use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\EmbeddedPayloadDefinitionParser;
 use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\RuleOptionsCompiler;
 use PhpAnonymizer\Anonymizer\Domain\Rule\RuleDefinition;
+use PhpAnonymizer\Anonymizer\Domain\Rule\RuleTraversalCombinationValidator;
 use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Audit\AuditLoggerAdapter;
 use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Payload\YamlPayloadCodec;
 use PhpAnonymizer\AnonymizerLaravel\Infrastructure\Profile\ProfileComposer;
@@ -42,6 +45,9 @@ use Symfony\Component\Yaml\Exception\ParseException;
 #[UsesClass(ProfileCompositionCompiler::class)]
 #[UsesClass(ProfileDefinitionData::class)]
 #[UsesClass(ProfileRuleAppender::class)]
+#[UsesClass(ProfileGlobalRuleParser::class)]
+#[UsesClass(EmbeddedPayloadDefinitionParser::class)]
+#[UsesClass(RuleTraversalCombinationValidator::class)]
 final class InfrastructureTest extends TestCase
 {
     public function testProfileComposerCombinesConfiguredAndTaggedDefinitions(): void
@@ -68,6 +74,15 @@ final class InfrastructureTest extends TestCase
         self::assertSame('yaml', $codec->id());
         self::assertSame("root:\n  nested:\n    - one\n", $codec->encode(['root' => ['nested' => ['one']]]));
         self::assertSame("-\n  root:\n    nested:\n      - one\n", $codec->encodeDocument([['root' => ['nested' => ['one']]]]));
+    }
+
+    public function testYamlCodecPreservesDepthFourForMappingAndSequenceDocuments(): void
+    {
+        $codec = new YamlPayloadCodec();
+        $mapping = ['one' => ['two' => ['three' => ['four' => ['five' => 'value']]]]];
+
+        self::assertSame("one:\n  two:\n    three:\n      four: { five: value }\n", $codec->encode($mapping));
+        self::assertSame("-\n  one:\n    two:\n      three: { four: { five: value } }\n", $codec->encodeDocument([$mapping]));
     }
 
     public function testYamlCodecRejectsInvalidRootsAndKeys(): void

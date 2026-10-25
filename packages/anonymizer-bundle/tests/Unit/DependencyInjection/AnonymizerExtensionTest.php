@@ -13,10 +13,13 @@ use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileCompositionCompiler;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinitionData;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinitionParser;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileGlobalRuleParser;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileMetadataParser;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileRuleAppender;
+use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\EmbeddedPayloadDefinitionParser;
 use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\RuleOptionsCompiler;
 use PhpAnonymizer\Anonymizer\Domain\Rule\RuleDefinition;
+use PhpAnonymizer\Anonymizer\Domain\Rule\RuleTraversalCombinationValidator;
 use PhpAnonymizer\AnonymizerBundle\AnonymizerBundle;
 use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleCollectionConverter;
 use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleConverter;
@@ -46,6 +49,7 @@ use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Transformation\DateS
 use PhpAnonymizer\AnonymizerSymfonySerializer\SymfonySerializerExtension;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
@@ -71,6 +75,9 @@ use Symfony\Component\DependencyInjection\Reference;
 #[CoversClass(ProfileCompositionCompiler::class)]
 #[CoversClass(ProfileDefinitionData::class)]
 #[CoversClass(ProfileRuleAppender::class)]
+#[UsesClass(ProfileGlobalRuleParser::class)]
+#[UsesClass(EmbeddedPayloadDefinitionParser::class)]
+#[UsesClass(RuleTraversalCombinationValidator::class)]
 final class AnonymizerExtensionTest extends TestCase
 {
     #[DataProvider('invalidProfilesProvider')]
@@ -208,12 +215,17 @@ final class AnonymizerExtensionTest extends TestCase
         $configuredReference = $configured->getDefinition(SymfonySerializerExtension::class)->getArguments()[0];
         self::assertInstanceOf(Reference::class, $configuredReference);
         self::assertSame('custom_serializer', (string) $configuredReference);
+        self::assertSame([['priority' => 0]], $configured->getDefinition(SymfonySerializerExtension::class)->getTag('anonymizer.extension'));
 
         $default = new ContainerBuilder();
         new AnonymizerExtension()->load([['serializer' => ['enabled' => true, 'service' => null]]], $default);
         $defaultReference = $default->getDefinition(SymfonySerializerExtension::class)->getArguments()[0];
         self::assertInstanceOf(Reference::class, $defaultReference);
         self::assertSame('serializer', (string) $defaultReference);
+
+        $disabled = new ContainerBuilder();
+        new AnonymizerExtension()->load([['serializer' => ['enabled' => false, 'service' => null]]], $disabled);
+        self::assertFalse($disabled->hasDefinition(SymfonySerializerExtension::class));
     }
 
     public function testPseudonymizationRequiresKeyProvider(): void

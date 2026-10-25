@@ -51,6 +51,15 @@ final class YamlPayloadCodecTest extends TestCase
         ]));
     }
 
+    public function testPreservesConfiguredDumpDepthForMappingsAndSequences(): void
+    {
+        $codec = new YamlPayloadCodec();
+        $mapping = ['one' => ['two' => ['three' => ['four' => ['five' => 'value']]]]];
+
+        self::assertSame("one:\n  two:\n    three:\n      four: { five: value }\n", $codec->encode($mapping));
+        self::assertSame("-\n  one:\n    two:\n      three: { four: { five: value } }\n", $codec->encodeDocument([$mapping]));
+    }
+
     public function testRejectsScalarAndMalformedRoots(): void
     {
         $codec = new YamlPayloadCodec();

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require dirname(__DIR__) . '/vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 
 $root = dirname(__DIR__);
 $manifest = require $root . '/tools/public-api-manifest.php';

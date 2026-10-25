@@ -13,6 +13,7 @@ use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use function Safe\file_get_contents;
 use function Safe\file_put_contents;
+use function Safe\glob;
 use function Safe\mkdir;
 use function Safe\rmdir;
 use function Safe\unlink;
@@ -51,8 +52,12 @@ final class LegacyImportInfrastructureTest extends TestCase
         mkdir($directory);
 
         try {
-            $this->expectException(LegacyImportException::class);
-            new AtomicFileWriter()->write($directory, 'cannot replace directory');
+            try {
+                new AtomicFileWriter()->write($directory, 'cannot replace directory');
+                self::fail('Expected replacing a directory to fail.');
+            } catch (LegacyImportException) {
+                self::assertSame([], glob($directory . '/.anonymizer-import-*'));
+            }
         } finally {
             rmdir($directory);
         }
@@ -96,6 +101,7 @@ final class LegacyImportInfrastructureTest extends TestCase
             self::assertSame(['profiles' => ['customer' => []]], $reader->read($yaml));
 
             $this->expectException(LegacyImportException::class);
+            $this->expectExceptionMessageIsOrContains(sprintf('Input file "%s" does not exist or is not readable.', $directory . '/missing.txt'));
             $reader->read($directory . '/missing.txt');
         } finally {
             unlink($json);
@@ -114,6 +120,7 @@ final class LegacyImportInfrastructureTest extends TestCase
         try {
             $reader = new LegacyDocumentReader();
             $this->expectException(LegacyImportException::class);
+            $this->expectExceptionMessageIsOrContains('Input must have a .yaml, .yml, or .json extension.');
             $reader->read($text);
         } finally {
             unlink($text);
@@ -151,12 +158,71 @@ final class LegacyImportInfrastructureTest extends TestCase
                 self::fail('Malformed JSON should be rejected.');
             } catch (LegacyImportException $exception) {
                 self::assertStringContainsString('Unable to parse input', $exception->getMessage());
+                self::assertStringContainsString('Syntax error', $exception->getMessage());
             }
             $this->expectException(LegacyImportException::class);
             $reader->read($integerKey);
         } finally {
             unlink($malformed);
             unlink($integerKey);
+            rmdir($directory);
+        }
+    }
+
+    public function testReaderHonorsCaseInsensitiveExtensionsAndJsonDepthBoundary(): void
+    {
+        $directory = sys_get_temp_dir() . '/anonymizer-reader-depth-' . bin2hex(random_bytes(5));
+        mkdir($directory);
+        $valid = $directory . '/valid.json';
+        $uppercase = $directory . '/UPPER.JSON';
+        $tooDeep = $directory . '/too-deep.json';
+        $validJson = str_repeat('{"a":', 511) . '0' . str_repeat('}', 511);
+        $tooDeepJson = str_repeat('{"a":', 512) . '0' . str_repeat('}', 512);
+        file_put_contents($valid, $validJson);
+        file_put_contents($uppercase, $validJson);
+        file_put_contents($tooDeep, $tooDeepJson);
+
+        try {
+            $reader = new LegacyDocumentReader();
+            $reader->read($valid);
+            $reader->read($uppercase);
+
+            try {
+                $reader->read($tooDeep);
+                self::fail('JSON at the configured depth boundary should be rejected.');
+            } catch (LegacyImportException $exception) {
+                self::assertStringContainsString('Unable to parse input', $exception->getMessage());
+            }
+        } finally {
+            unlink($valid);
+            unlink($uppercase);
+            unlink($tooDeep);
+            rmdir($directory);
+        }
+    }
+
+    public function testReaderSupportsYmlAndRequiresAnAssociativeRoot(): void
+    {
+        $directory = sys_get_temp_dir() . '/anonymizer-reader-yml-' . bin2hex(random_bytes(5));
+        mkdir($directory);
+        $yml = $directory . '/rules.YML';
+        $rootList = $directory . '/list.json';
+        file_put_contents($yml, "profiles:\n  customer:\n    mode: redact\nversion: 1\n");
+        file_put_contents($rootList, '[1,2]');
+
+        try {
+            $reader = new LegacyDocumentReader();
+            self::assertSame(['profiles' => ['customer' => ['mode' => 'redact']], 'version' => 1], $reader->read($yml));
+
+            try {
+                $reader->read($rootList);
+                self::fail('A root list is not a mapping document.');
+            } catch (LegacyImportException $exception) {
+                self::assertSame('The input document must use string mapping keys.', $exception->getMessage());
+            }
+        } finally {
+            unlink($yml);
+            unlink($rootList);
             rmdir($directory);
         }
     }

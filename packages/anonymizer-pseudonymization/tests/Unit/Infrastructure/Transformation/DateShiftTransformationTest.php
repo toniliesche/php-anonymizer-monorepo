@@ -96,8 +96,21 @@ final class DateShiftTransformationTest extends TestCase
 
     public function testMalformedRfc3339DateIsRejected(): void
     {
+        $transformation = new DateShiftTransformation(new StaticPseudonymKeyProvider());
+        foreach (['2024-01-10 12:00:00', 'x2024-01-10T12:00:00Z', '2024-01-10T12:00:00Zx', "2024-01-10T12:00:00Z\n"] as $invalidDate) {
+            try {
+                $transformation->transformWithContext($invalidDate, ['max_days' => 1, 'scope_attribute' => 'tenant'], $this->context());
+                self::fail('Expected malformed RFC 3339 input to be rejected.');
+            } catch (InvalidArgumentException $exception) {
+                self::assertNotSame('', $exception->getMessage());
+            }
+        }
+    }
+
+    public function testContextualTransformationValidatesOptionsBeforeProcessing(): void
+    {
         $this->expectException(InvalidArgumentException::class);
-        new DateShiftTransformation(new StaticPseudonymKeyProvider())->transformWithContext('2024-01-10 12:00:00', ['max_days' => 1, 'scope_attribute' => 'tenant'], $this->context());
+        new DateShiftTransformation(new StaticPseudonymKeyProvider())->transformWithContext('2024-01-10T12:00:00Z', ['max_days' => 0, 'scope_attribute' => 'tenant'], $this->context());
     }
 
     public function testMissingScopeAndUnavailableKeyAreRejected(): void

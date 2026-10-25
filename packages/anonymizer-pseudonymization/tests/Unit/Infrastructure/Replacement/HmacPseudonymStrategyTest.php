@@ -29,9 +29,10 @@ final class HmacPseudonymStrategyTest extends TestCase
         self::assertSame('pseudonymize', $strategy->id());
         $same = $strategy->replaceWithContext('Jörg@example.test', $context);
         self::assertSame($same, $strategy->replaceWithContext('Jörg@example.test', $context));
-        self::assertSame(43, mb_strlen($same, 'UTF-8'));
+        self::assertSame('tCQC4ZjBkfQYG91M83szmYHz6vDJaWZ5GoBzwBds26c', $same);
         self::assertMatchesRegularExpression('/^[A-Za-z0-9_-]{43}$/', $same);
         self::assertNotSame($same, $strategy->replaceWithContext('Jörg@example.test', new ReplacementContext('customer', JsonPointer::fromString('/name'), 'primary', new AnonymizationContext(['scope' => 'billing', 'tenant' => 'acme']))));
+        self::assertNotSame($same, $strategy->replaceWithContext('Jörg@example.test', new ReplacementContext('customer', JsonPointer::fromString('/email'), 'primary', new AnonymizationContext(['scope' => 'billing', 'tenant' => 'changed']))));
     }
 
     public function testProviderFailuresDoNotExposeKeyMaterial(): void

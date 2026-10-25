@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use PhpAnonymizer\Benchmark\BenchmarkComparison;
 
-require_once dirname(__DIR__) . '/tools/Benchmark/BenchmarkComparison.php';
+require_once __DIR__ . '/../tools/Benchmark/BenchmarkComparison.php';
 
 $scenario = static fn (float $time = 10.0, int $memory = 100): array => [
     'median_ms' => $time,

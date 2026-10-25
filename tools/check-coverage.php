@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-$coverageFile = $argv[1] ?? dirname(__DIR__) . '/var/coverage.xml';
+$coverageFile = $argv[1] ?? __DIR__ . '/../var/coverage.xml';
 if (!is_file($coverageFile)) {
     fwrite(STDERR, sprintf("Coverage file not found: %s\n", $coverageFile));
 
