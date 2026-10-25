@@ -32,7 +32,7 @@ final readonly class PackagistReleaseVerifier
         }
 
         $packages = $manifest->toArray()['packages'];
-        foreach ($packages as $index => $entry) {
+        foreach (array_values($packages) as $index => $entry) {
             $this->progress(sprintf('Packagist update %d/%d: requesting %s.', $index + 1, count($packages), $entry['composer_name']));
             $this->request('POST', '/api/update-package', 'Bearer ' . $username . ':' . $apiToken, ['repository' => $entry['repository']]);
             $this->progress('Packagist accepted the update request for ' . $entry['composer_name'] . '.');
