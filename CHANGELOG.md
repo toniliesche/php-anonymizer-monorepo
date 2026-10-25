@@ -4,6 +4,8 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+## 2.0.1
+
 - Added Gitea validation and GitHub release workflow documentation, including
   package repository provisioning, CI credentials, Packagist registration,
   and release recovery. Registered the Packagist verification command in

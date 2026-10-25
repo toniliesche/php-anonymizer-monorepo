@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2.0.1
+
 ## 2.0.0
 
 - Split framework registration into internal composition collaborators and made

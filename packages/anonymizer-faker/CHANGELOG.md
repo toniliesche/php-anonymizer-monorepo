@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2.0.1
+
 ## 2.0.0
 
 - Iteration 29: asserted the deterministic seed unpacking invariant at runtime.
