@@ -47,7 +47,7 @@ try {
         $updateResponses[] = ['status' => 202, 'body' => ['status' => 'success']];
     }
     $http->setResponses('POST', '/api/update-package', $updateResponses);
-    foreach ($packages as $package => $entry) {
+    foreach ($packages as $entry) {
         $metadataPath = '/p2/' . $entry['composer_name'] . '.json';
         $version = ['version' => '2.0.0', 'source' => ['reference' => $entry['split_sha']]];
         $http->setResponses('GET', $metadataPath, [
