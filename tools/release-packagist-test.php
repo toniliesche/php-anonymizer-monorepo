@@ -64,7 +64,10 @@ try {
 
         throw new RuntimeException('Packagist update failure was ignored.');
     } catch (RuntimeException $exception) {
-        if (!str_contains($exception->getMessage(), 'request failed')) {
+        if (!str_contains($exception->getMessage(), 'POST request failed')
+            || !str_contains($exception->getMessage(), 'HTTP 503')
+            || !str_contains($exception->getMessage(), 'retry')
+        ) {
             throw $exception;
         }
     }
