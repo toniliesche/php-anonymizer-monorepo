@@ -57,7 +57,7 @@ final class SymfonyObjectAnonymizerTest extends TestCase
 
     public function testNormalizationFailureIsWrapped(): void
     {
-        $serializer = new TestSerializer(static fn(): never => throw new RuntimeException('broken'));
+        $serializer = new TestSerializer(static fn (): never => throw new RuntimeException('broken'));
         $core = $this->createMock(AnonymizerInterface::class);
         $core->expects($this->never())->method('anonymizeWithReport');
         $adapter = new SymfonyObjectAnonymizer($core, $serializer);
@@ -73,7 +73,7 @@ final class SymfonyObjectAnonymizerTest extends TestCase
 
     public function testListNormalizationIsRejected(): void
     {
-        $serializer = new TestSerializer(static fn(mixed $value): array => ['Jane']);
+        $serializer = new TestSerializer(static fn (mixed $value): array => ['Jane']);
         $core = $this->createMock(AnonymizerInterface::class);
         $core->expects($this->never())->method('anonymizeWithReport');
         $adapter = new SymfonyObjectAnonymizer($core, $serializer);
@@ -84,7 +84,7 @@ final class SymfonyObjectAnonymizerTest extends TestCase
 
     public function testDenormalizationFailureIsWrapped(): void
     {
-        $serializer = new TestSerializer(static fn(mixed $value): array => ['name' => 'Jane'], static fn(mixed $data, string $type): never => throw new RuntimeException('broken'));
+        $serializer = new TestSerializer(static fn (mixed $value): array => ['name' => 'Jane'], static fn (mixed $data, string $type): never => throw new RuntimeException('broken'));
         $core = $this->createMock(AnonymizerInterface::class);
         $core->expects($this->once())->method('anonymizeWithReport')->willReturn(new AnonymizationResult(['name' => 'John'], [], []));
         $adapter = new SymfonyObjectAnonymizer($core, $serializer);
@@ -100,7 +100,7 @@ final class SymfonyObjectAnonymizerTest extends TestCase
 
     public function testWrongDenormalizedClassIsRejected(): void
     {
-        $serializer = new TestSerializer(static fn(mixed $value): array => ['name' => 'Jane'], static fn(mixed $data, string $type): stdClass => new stdClass());
+        $serializer = new TestSerializer(static fn (mixed $value): array => ['name' => 'Jane'], static fn (mixed $data, string $type): stdClass => new stdClass());
         $core = $this->createMock(AnonymizerInterface::class);
         $core->expects($this->once())->method('anonymizeWithReport')->willReturn(new AnonymizationResult(['name' => 'John'], [], []));
         $adapter = new SymfonyObjectAnonymizer($core, $serializer);
@@ -112,38 +112,45 @@ final class SymfonyObjectAnonymizerTest extends TestCase
 
 final class Person
 {
-    public function __construct(public string $name) {}
+    public function __construct(public string $name)
+    {
+    }
 }
 
-final readonly class TestSerializer implements NormalizerInterface, DenormalizerInterface
+final readonly class TestSerializer implements DenormalizerInterface, NormalizerInterface
 {
     /**
-     * @param Closure(mixed): (array<int|string, mixed>|string|int|float|bool|ArrayObject<int|string, mixed>|null) $normalize
-     * @param Closure(mixed, string): mixed|null $denormalize
+     * @param Closure(mixed): (null|array<int|string, mixed>|ArrayObject<int|string, mixed>|bool|float|int|string) $normalize
+     * @param null|Closure(mixed, string): mixed $denormalize
      */
-    public function __construct(private Closure $normalize, private ?Closure $denormalize = null) {}
+    public function __construct(private Closure $normalize, private ?Closure $denormalize = null)
+    {
+    }
+
     #[Override]
     public function normalize(mixed $data, ?string $format = null, array $context = []): array|string|int|float|bool|ArrayObject|null
     {
-        /** @var array<int|string, mixed>|string|int|float|bool|ArrayObject<int|string, mixed>|null $result */
-        $result = ($this->normalize)($data);
-        return $result;
+        return ($this->normalize)($data);
     }
+
     #[Override]
     public function supportsNormalization(mixed $data, ?string $format = null, array $context = []): bool
     {
         return true;
     }
+
     #[Override]
     public function denormalize(mixed $data, string $type, ?string $format = null, array $context = []): mixed
     {
-        return ($this->denormalize ?? static fn(): object => new $type())($data, $type);
+        return ($this->denormalize ?? static fn (): object => new $type())($data, $type);
     }
+
     #[Override]
     public function supportsDenormalization(mixed $data, string $type, ?string $format = null, array $context = []): bool
     {
         return true;
     }
+
     #[Override]
     public function getSupportedTypes(?string $format): array
     {

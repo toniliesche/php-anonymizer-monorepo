@@ -20,7 +20,7 @@ final class AuditLoggerAdapterTest extends TestCase
     public function testLogsSafeAggregateAudit(): void
     {
         $logger = $this->createMock(LoggerInterface::class);
-        $logger->expects(self::once())->method('info')->with('Anonymization audit', [
+        $logger->expects($this->once())->method('info')->with('Anonymization audit', [
             'profile' => 'customer',
             'entries' => [[
                 'fingerprint' => 'fingerprint',
@@ -31,7 +31,7 @@ final class AuditLoggerAdapterTest extends TestCase
             ]],
         ]);
         $anonymizer = $this->createMock(AuditAnonymizerInterface::class);
-        $anonymizer->expects(self::once())->method('anonymizeWithAudit')->with('customer', ['email' => 'secret'])->willReturn(new AuditAnonymizationResult(
+        $anonymizer->expects($this->once())->method('anonymizeWithAudit')->with('customer', ['email' => 'secret'])->willReturn(new AuditAnonymizationResult(
             ['email' => '[REDACTED]'],
             [new AuditEntry('customer', 'fingerprint', '/email', 'replace', 'redact', 1)],
         ));

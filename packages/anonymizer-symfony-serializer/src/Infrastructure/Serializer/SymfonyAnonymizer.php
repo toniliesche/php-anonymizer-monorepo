@@ -14,16 +14,17 @@ final readonly class SymfonyAnonymizer implements AnonymizerInterface
     public function __construct(
         private AnonymizerInterface $arrayAnonymizer,
         private SymfonyObjectAnonymizer $objectAnonymizer,
-    ) {}
+    ) {
+    }
 
-    /** @return array<string, mixed>|object */
+    /**
+     * @return array<string, mixed>|object
+     */
     #[Override]
     public function anonymize(string $profile, array|object $data): array|object
     {
         if (is_array($data)) {
-            /** @var array<string, mixed> $result */
-            $result = $this->arrayAnonymizer->anonymize($profile, $data);
-            return $result;
+            return $this->arrayAnonymizer->anonymize($profile, $data);
         }
 
         return $this->objectAnonymizer->anonymize($profile, $data);

@@ -4,12 +4,18 @@ declare(strict_types=1);
 
 namespace PhpAnonymizer\AnonymizerBundle\Application\LegacyImport;
 
-/** @codeCoverageIgnore Legacy path diagnostics are exercised through command-level integration tests. */
+/**
+ * @codeCoverageIgnore Legacy path diagnostics are exercised through command-level integration tests.
+ */
 final readonly class LegacyRulePathConverter
 {
-    public function __construct(private LegacyRuleValueConverter $values) {}
+    public function __construct(private LegacyRuleValueConverter $values)
+    {
+    }
 
-    /** @return array<string, mixed> */
+    /**
+     * @return array<string, mixed>
+     */
     public function convert(string $path, mixed $definition): array
     {
         $parts = explode('.', trim($path, '.'));
@@ -35,14 +41,13 @@ final readonly class LegacyRulePathConverter
             $fields[] = $part;
         }
 
-        /** @var array<string, mixed> $result */
-        $result = $this->build($fields, $eachFields, $definition);
-        return $result;
+        return $this->build($fields, $eachFields, $definition);
     }
 
     /**
      * @param list<string> $fields
      * @param list<int> $eachFields
+     *
      * @return array<string, mixed>
      */
     private function build(array $fields, array $eachFields, mixed $definition, int $index = 0): array
@@ -57,7 +62,9 @@ final readonly class LegacyRulePathConverter
             : $rule;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * @return array<string, mixed>
+     */
     private function leaf(string $field, mixed $definition): array
     {
         if (is_array($definition) && array_key_exists('name', $definition)) {

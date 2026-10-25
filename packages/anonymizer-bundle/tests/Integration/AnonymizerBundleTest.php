@@ -26,6 +26,12 @@ use PhpAnonymizer\Anonymizer\Application\Extension\Profile\Validation\ProfileRef
 use PhpAnonymizer\Anonymizer\Application\Extension\Replacement\DefaultRedactionStrategy;
 use PhpAnonymizer\Anonymizer\Application\Extension\Replacement\ReplacementStrategyRegistry;
 use PhpAnonymizer\Anonymizer\Application\Extension\Replacement\StarMaskStrategy;
+use PhpAnonymizer\Anonymizer\Application\Extension\Transformation\CoreTransformationFactory;
+use PhpAnonymizer\Anonymizer\Application\Extension\Transformation\DateGeneralizeTransformation;
+use PhpAnonymizer\Anonymizer\Application\Extension\Transformation\NullifyTransformation;
+use PhpAnonymizer\Anonymizer\Application\Extension\Transformation\NumericBucketTransformation;
+use PhpAnonymizer\Anonymizer\Application\Extension\Transformation\PartialMaskTransformation;
+use PhpAnonymizer\Anonymizer\Application\Extension\Transformation\TransformationRegistry;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\RuleOptionsCompiler;
 use PhpAnonymizer\Anonymizer\Domain\Rule\Payload\EmbeddedPayloadDefinition;
@@ -86,8 +92,21 @@ use Symfony\Component\HttpKernel\KernelInterface;
 #[CoversClass(RuleOptionsCompiler::class)]
 #[CoversClass(RuleDefinition::class)]
 #[CoversClass(EmbeddedPayloadDefinition::class)]
+#[CoversClass(CoreTransformationFactory::class)]
+#[CoversClass(DateGeneralizeTransformation::class)]
+#[CoversClass(NullifyTransformation::class)]
+#[CoversClass(NumericBucketTransformation::class)]
+#[CoversClass(PartialMaskTransformation::class)]
+#[CoversClass(TransformationRegistry::class)]
 final class AnonymizerBundleTest extends KernelTestCase
 {
+    #[Override]
+    protected function tearDown(): void
+    {
+        restore_exception_handler();
+        parent::tearDown();
+    }
+
     public function testConfiguredProfileIsAvailableThroughAutowiring(): void
     {
         new AnonymizerBundle()->build(new ContainerBuilder());
@@ -95,6 +114,7 @@ final class AnonymizerBundleTest extends KernelTestCase
 
         $kernel = self::$kernel;
         self::assertInstanceOf(KernelInterface::class, $kernel);
+
         /** @var AnonymizerInterface $anonymizer */
         $anonymizer = $kernel->getContainer()->get(AnonymizerInterface::class);
 
@@ -109,8 +129,8 @@ final class AnonymizerBundleTest extends KernelTestCase
         $container = new ContainerBuilder();
         new AnonymizerBundle()->build($container);
         $passes = $container->getCompiler()->getPassConfig()->getBeforeOptimizationPasses();
-        self::assertNotSame([], array_filter($passes, static fn(object $pass): bool => $pass instanceof ExtensionTagCompilerPass));
-        self::assertNotSame([], array_filter($passes, static fn(object $pass): bool => $pass instanceof SerializerServiceCompilerPass));
+        self::assertNotSame([], array_filter($passes, static fn (object $pass): bool => $pass instanceof ExtensionTagCompilerPass));
+        self::assertNotSame([], array_filter($passes, static fn (object $pass): bool => $pass instanceof SerializerServiceCompilerPass));
     }
 
     public function testFakerConfigurationRegistersStrategies(): void
@@ -126,12 +146,13 @@ final class AnonymizerBundleTest extends KernelTestCase
         self::assertTrue($container->hasDefinition(LegacyDocumentReader::class));
         self::assertSame([['id' => 'faker.first_name', 'builtin' => true]], $container->getDefinition('anonymizer.faker.faker_first_name')->getTag('anonymizer.replacement_strategy'));
         $tags = $container->getDefinition(YamlPayloadCodec::class)->getTag('anonymizer.payload_codec');
+
         /** @var array<int, array{id: string}> $tags */
         self::assertSame('yaml', $tags[0]['id']);
 
         $method = new ReflectionMethod(AnonymizerExtension::class, 'requireFakerFactory');
         $this->expectException(InvalidConfigurationException::class);
-        $method->invoke(new AnonymizerExtension(), 'Missing\\FakerFactory');
+        $method->invoke(new AnonymizerExtension(), 'Missing\FakerFactory');
     }
 
     public function testPersonaConfigurationRegistersStrategies(): void
@@ -148,12 +169,4 @@ final class AnonymizerBundleTest extends KernelTestCase
     {
         return TestKernel::class;
     }
-
-    #[Override]
-    protected function tearDown(): void
-    {
-        restore_exception_handler();
-        parent::tearDown();
-    }
-
 }

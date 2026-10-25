@@ -26,7 +26,7 @@ final class HmacPseudonymStrategyTest extends TestCase
 {
     public function testOutputIsDeterministicAndScopeSensitive(): void
     {
-        $strategy = new HmacPseudonymStrategy(new class implements PseudonymKeyProviderInterface {
+        $strategy = new HmacPseudonymStrategy(new class () implements PseudonymKeyProviderInterface {
             #[Override]
             public function keyFor(string $keyId): string
             {
@@ -44,13 +44,14 @@ final class HmacPseudonymStrategyTest extends TestCase
 
     public function testProviderFailuresDoNotExposeKeyMaterial(): void
     {
-        $strategy = new HmacPseudonymStrategy(new class implements PseudonymKeyProviderInterface {
+        $strategy = new HmacPseudonymStrategy(new class () implements PseudonymKeyProviderInterface {
             #[Override]
             public function keyFor(string $keyId): string
             {
                 throw new RuntimeException('secret-key-material');
             }
         });
+
         try {
             $strategy->replaceWithContext('value', new ReplacementContext('customer', JsonPointer::root(), 'primary', new AnonymizationContext()));
             self::fail('Expected key failure.');
@@ -62,7 +63,7 @@ final class HmacPseudonymStrategyTest extends TestCase
 
     public function testEmptyKeyAndNonContextualCallAreRejected(): void
     {
-        $strategy = new HmacPseudonymStrategy(new class implements PseudonymKeyProviderInterface {
+        $strategy = new HmacPseudonymStrategy(new class () implements PseudonymKeyProviderInterface {
             #[Override]
             public function keyFor(string $keyId): string
             {
@@ -75,7 +76,7 @@ final class HmacPseudonymStrategyTest extends TestCase
 
     public function testPlainReplacementCallIsRejected(): void
     {
-        $strategy = new HmacPseudonymStrategy(new class implements PseudonymKeyProviderInterface {
+        $strategy = new HmacPseudonymStrategy(new class () implements PseudonymKeyProviderInterface {
             #[Override]
             public function keyFor(string $keyId): string
             {

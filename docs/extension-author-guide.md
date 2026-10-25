@@ -70,3 +70,9 @@ $anonymizer = AnonymizerFactory::fromProfiles(
     codecs: [new PipeCodec()],
 );
 ```
+Typed value transformations implement `ValueTransformationInterface`, declare
+supported input types and output type, and validate their named-map options.
+Register custom implementations through the `anonymizer.value_transformation`
+Bundle tag with a unique `id`. Contextual implementations may receive the
+profile, JSON Pointer, key ID, and application attributes through
+`ContextualValueTransformationInterface`.

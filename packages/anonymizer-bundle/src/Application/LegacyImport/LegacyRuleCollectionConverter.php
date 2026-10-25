@@ -6,10 +6,13 @@ namespace PhpAnonymizer\AnonymizerBundle\Application\LegacyImport;
 
 final readonly class LegacyRuleCollectionConverter
 {
-    public function __construct(private LegacyRuleNodeConverter $nodes) {}
+    public function __construct(private LegacyRuleNodeConverter $nodes)
+    {
+    }
 
     /**
      * @param array<mixed> $rules
+     *
      * @return list<array<string, mixed>>
      */
     // @phpstan-ignore complexity.functionLike (legacy map and node-list formats require explicit dispatch)
@@ -26,8 +29,10 @@ final readonly class LegacyRuleCollectionConverter
                         throw LegacyImportException::message('Legacy rule nodes must use string keys.');
                     }
                 }
+
                 /** @var array<string, mixed> $definition */
                 $converted[] = $this->nodes->convertNode($definition);
+
                 continue;
             }
             if (!is_string($key)) {
@@ -35,6 +40,7 @@ final readonly class LegacyRuleCollectionConverter
             }
             $converted[] = $this->nodes->convertPath($key, $definition);
         }
+
         return $converted;
     }
 }

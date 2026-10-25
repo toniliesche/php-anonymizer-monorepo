@@ -16,14 +16,18 @@ final class TestPayloadCodec implements PayloadCodecInterface
         return 'pipe';
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * @return array<string, mixed>
+     */
     #[Override]
     public function decode(string $payload): array
     {
         return ['email' => $payload];
     }
 
-    /** @param array<string, mixed> $data */
+    /**
+     * @param array<string, mixed> $data
+     */
     #[Override]
     public function encode(array $data): string
     {

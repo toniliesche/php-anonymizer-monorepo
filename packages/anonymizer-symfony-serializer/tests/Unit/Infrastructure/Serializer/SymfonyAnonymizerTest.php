@@ -47,5 +47,7 @@ final class SymfonyAnonymizerTest extends TestCase
 
 final class FacadePerson
 {
-    public function __construct(public string $name) {}
+    public function __construct(public string $name)
+    {
+    }
 }

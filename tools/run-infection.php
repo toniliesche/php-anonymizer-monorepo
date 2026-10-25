@@ -13,4 +13,5 @@ $command = sprintf(
 );
 
 passthru($command, $exitCode);
+
 exit($exitCode);

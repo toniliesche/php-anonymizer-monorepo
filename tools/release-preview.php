@@ -5,6 +5,7 @@ declare(strict_types=1);
 use PhpAnonymizer\Release\ReleasePlanner;
 
 $root = $argv[3] ?? dirname(__DIR__);
+
 require_once __DIR__ . '/Release/ReleasePlanner.php';
 
 $planner = new ReleasePlanner();
@@ -15,6 +16,7 @@ try {
     $plan = $planner->plan($branch, $main, $root);
 } catch (Throwable $exception) {
     fwrite(STDERR, $exception->getMessage() . "\n");
+
     exit(2);
 }
 

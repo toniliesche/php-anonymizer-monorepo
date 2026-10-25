@@ -14,7 +14,9 @@ use Throwable;
 
 final readonly class HmacPseudonymStrategy implements ContextualReplacementStrategyInterface
 {
-    public function __construct(private PseudonymKeyProviderInterface $keys) {}
+    public function __construct(private PseudonymKeyProviderInterface $keys)
+    {
+    }
 
     #[Override]
     public function id(): string
@@ -42,6 +44,7 @@ final readonly class HmacPseudonymStrategy implements ContextualReplacementStrat
 
         $message = $this->message($value, $context);
         $digest = hash_hmac('sha256', $message, $key, true);
+
         return rtrim(strtr(base64_encode($digest), '+/', '-_'), '=');
     }
 
@@ -57,6 +60,7 @@ final readonly class HmacPseudonymStrategy implements ContextualReplacementStrat
         foreach ($parts as $part) {
             $message .= pack('N', mb_strlen($part, 'UTF-8')) . $part;
         }
+
         return $message;
     }
 }

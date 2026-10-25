@@ -10,10 +10,16 @@ use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
 
 final readonly class ConfiguredProfileProvider implements ProfileProviderInterface
 {
-    /** @param list<ProfileDefinition> $profiles */
-    public function __construct(private array $profiles) {}
+    /**
+     * @param list<ProfileDefinition> $profiles
+     */
+    public function __construct(private array $profiles)
+    {
+    }
 
-    /** @return iterable<ProfileDefinition> */
+    /**
+     * @return iterable<ProfileDefinition>
+     */
     #[Override]
     public function profiles(): iterable
     {

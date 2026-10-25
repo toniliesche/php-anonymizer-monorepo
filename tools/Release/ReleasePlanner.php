@@ -9,7 +9,9 @@ use RuntimeException;
 
 final class ReleasePlanner
 {
-    /** @return array{branch: string, main: string, prefix: string, version: string, tags: list<string>} */
+    /**
+     * @return array{branch: string, main: string, prefix: string, version: string, tags: list<string>}
+     */
     public function plan(string $branch, string $main, string $root): array
     {
         if (preg_match('/^release\/(\d+)\.(\d+)\.x$/', $branch, $matches) !== 1) {
@@ -31,7 +33,9 @@ final class ReleasePlanner
         return ['branch' => $branch, 'main' => $main, 'prefix' => $prefix, 'version' => $prefix . $patch, 'tags' => $stable];
     }
 
-    /** @param list<string> $command */
+    /**
+     * @param list<string> $command
+     */
     private function run(array $command, string $cwd): string
     {
         $escaped = implode(' ', array_map(escapeshellarg(...), $command));

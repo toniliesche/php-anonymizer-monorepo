@@ -36,7 +36,7 @@ final class CompositeProfileProviderTest extends TestCase
         );
 
         self::assertSame(['configured', 'tagged'], array_map(
-            static fn(ProfileDefinition $profile): string => $profile->name(),
+            static fn (ProfileDefinition $profile): string => $profile->name(),
             iterator_to_array($provider->profiles(), false),
         ));
     }

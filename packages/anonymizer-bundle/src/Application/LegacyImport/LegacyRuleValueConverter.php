@@ -12,6 +12,7 @@ final class LegacyRuleValueConverter
     {
         return is_string($value) && isset(self::FAKER_FIELDS[$value]) ? self::FAKER_FIELDS[$value] : 'redact';
     }
+
     public function fallback(mixed $value): mixed
     {
         return is_array($value) ? ($value['value_type'] ?? null) : null;

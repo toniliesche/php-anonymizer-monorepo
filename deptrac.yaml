@@ -40,6 +40,18 @@ deptrac:
       collectors:
         - type: classNameRegex
           value: "#^PhpAnonymizer\\\\AnonymizerSymfonySerializer\\\\.*#"
+    - name: Symfony
+      collectors:
+        - type: classNameRegex
+          value: "#^Symfony\\\\.*#"
+    - name: Faker
+      collectors:
+        - type: classNameRegex
+          value: "#^Faker\\\\.*#"
+    - name: Psr
+      collectors:
+        - type: classNameRegex
+          value: "#^Psr\\\\.*#"
   ruleset:
     Domain: ~
     Application:
@@ -54,9 +66,12 @@ deptrac:
       - PersonasIntegration
       - PseudonymizationIntegration
       - SerializerIntegration
+      - Symfony
+      - Psr
     FakerIntegration:
       - Application
       - Domain
+      - Faker
     PersonasIntegration:
       - Application
       - Domain
@@ -66,3 +81,4 @@ deptrac:
     SerializerIntegration:
       - Application
       - Domain
+      - Symfony

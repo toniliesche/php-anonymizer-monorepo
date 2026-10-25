@@ -33,6 +33,7 @@ use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\ConfiguredProfileProvi
 use PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement\FakerReplacementStrategyFactory;
 use PhpAnonymizer\AnonymizerPersonas\Infrastructure\Replacement\PersonaReplacementStrategyFactory;
 use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Replacement\HmacPseudonymStrategy;
+use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Transformation\DateShiftTransformation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -138,6 +139,7 @@ final class AnonymizerExtensionTest extends TestCase
         $faker = $container->getDefinition('anonymizer.faker.faker_name');
         self::assertSame([FakerReplacementStrategyFactory::class, 'createStrategy'], $faker->getFactory());
         self::assertCount(2, $faker->getArguments());
+
         /** @var list<array{id: string}> $tags */
         $tags = $faker->getTag('anonymizer.replacement_strategy');
         self::assertSame('faker.name', $tags[0]['id']);
@@ -170,9 +172,12 @@ final class AnonymizerExtensionTest extends TestCase
         new AnonymizerExtension()->load([['pseudonymization' => ['enabled' => true, 'key_provider' => 'keys']]], $container);
 
         self::assertSame(['keys'], $this->referenceIds($container->getDefinition(HmacPseudonymStrategy::class)->getArguments()));
+
         /** @var list<array{id: string}> $tags */
         $tags = $container->getDefinition(HmacPseudonymStrategy::class)->getTag('anonymizer.replacement_strategy');
-        self::assertSame('pseudonymize', $tags[0]['id']);
+        self::assertSame([['id' => 'pseudonymize', 'builtin' => true]], $tags);
+        self::assertSame(['keys'], $this->referenceIds($container->getDefinition(DateShiftTransformation::class)->getArguments()));
+        self::assertSame([['id' => 'date_shift', 'builtin' => true]], $container->getDefinition(DateShiftTransformation::class)->getTag('anonymizer.value_transformation'));
         self::assertTrue($container->getAlias(ContextualAnonymizerInterface::class)->isPublic());
     }
 
@@ -191,7 +196,7 @@ final class AnonymizerExtensionTest extends TestCase
             ['faker', 'Faker integration is enabled but php-anonymizer/anonymizer-faker is not installed.'],
         ] as [$integration, $prefix]) {
             try {
-                $method->invoke($extension, 'Missing\\Integration\\Factory', $integration);
+                $method->invoke($extension, 'Missing\Integration\Factory', $integration);
                 self::fail('Expected missing integration exception.');
             } catch (InvalidConfigurationException $exception) {
                 self::assertStringStartsWith($prefix, $exception->getMessage());
@@ -245,8 +250,32 @@ final class AnonymizerExtensionTest extends TestCase
         self::assertTrue($container->getAlias(BatchAnonymizerInterface::class)->isPublic());
     }
 
+    public function testBundleRegistersBothCompilerPasses(): void
+    {
+        $container = new ContainerBuilder();
+        new AnonymizerBundle()->build($container);
+
+        $passes = $container->getCompilerPassConfig()->getBeforeOptimizationPasses();
+        self::assertNotSame([], array_filter($passes, static fn (object $pass): bool => $pass instanceof ExtensionTagCompilerPass));
+        self::assertNotSame([], array_filter($passes, static fn (object $pass): bool => $pass instanceof SerializerServiceCompilerPass));
+    }
+
+    /**
+     * @return iterable<string, array{0: mixed}>
+     */
+    public static function invalidProfilesProvider(): iterable
+    {
+        yield 'scalar profiles' => ['invalid'];
+
+        yield 'list profiles' => [[['mode' => 'redact']]];
+
+        yield 'scalar definition' => [['customer' => 'invalid']];
+
+        yield 'invalid definition' => [['customer' => ['mode' => 'invalid', 'rules' => [['field' => 'email']]]]];
+    }
+
     /** @param array<int|string, mixed> $arguments
-     *  @return list<string>
+     * @return list<string>
      */
     private function referenceIds(array $arguments): array
     {
@@ -257,24 +286,5 @@ final class AnonymizerExtensionTest extends TestCase
         }
 
         return $ids;
-    }
-
-    public function testBundleRegistersBothCompilerPasses(): void
-    {
-        $container = new ContainerBuilder();
-        new AnonymizerBundle()->build($container);
-
-        $passes = $container->getCompilerPassConfig()->getBeforeOptimizationPasses();
-        self::assertNotSame([], array_filter($passes, static fn(object $pass): bool => $pass instanceof ExtensionTagCompilerPass));
-        self::assertNotSame([], array_filter($passes, static fn(object $pass): bool => $pass instanceof SerializerServiceCompilerPass));
-    }
-
-    /** @return iterable<string, array{0: mixed}> */
-    public static function invalidProfilesProvider(): iterable
-    {
-        yield 'scalar profiles' => ['invalid'];
-        yield 'list profiles' => [[['mode' => 'redact']]];
-        yield 'scalar definition' => [['customer' => 'invalid']];
-        yield 'invalid definition' => [['customer' => ['mode' => 'invalid', 'rules' => [['field' => 'email']]]]];
     }
 }

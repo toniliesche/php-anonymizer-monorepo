@@ -13,4 +13,5 @@ $arguments = implode(' ', array_map(escapeshellarg(...), array_slice($argv, 1)))
 $command = sprintf('%s %s %s --configuration=%s --coverage-text --coverage-clover=%s %s', $php, $phpOptions, $phpunit, escapeshellarg($root . '/phpunit.xml'), escapeshellarg($root . '/var/coverage.xml'), $arguments);
 
 passthru($command, $exitCode);
+
 exit($exitCode);

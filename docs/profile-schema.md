@@ -63,6 +63,21 @@ Contextual strategies may additionally require a non-secret key identifier:
 ['field' => 'email', 'strategy' => 'pseudonymize', 'key_id' => 'customer-v1']
 ```
 
+Typed leaf transformations use a named map and are mutually exclusive with
+`strategy` and `embedded`:
+
+```php
+['field' => 'birthDate', 'transform' => [
+    'type' => 'date_generalize',
+    'options' => ['unit' => 'month'],
+]]
+```
+
+Core transformations include `nullify`, `partial_mask`,
+`date_generalize`, and `numeric_bucket`. The optional pseudonymization package
+adds contextual `date_shift`, which requires `key_id`, `max_days`, and a
+`scope_attribute`; call the contextual array or object API when using it.
+
 Use `ContextualAnonymizerInterface` with an `AnonymizationContext` containing
 canonical string attributes such as `tenant` and `scope`. Key material is
 resolved by the application and never belongs in profiles or logs.

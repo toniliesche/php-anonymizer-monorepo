@@ -10,13 +10,18 @@ use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
 
 final readonly class CompositeProfileProvider implements ProfileProviderInterface
 {
-    /** @param iterable<ProfileProviderInterface> $providers */
+    /**
+     * @param iterable<ProfileProviderInterface> $providers
+     */
     public function __construct(
         private ProfileProviderInterface $configured,
         private iterable $providers,
-    ) {}
+    ) {
+    }
 
-    /** @return iterable<ProfileDefinition> */
+    /**
+     * @return iterable<ProfileDefinition>
+     */
     #[Override]
     public function profiles(): iterable
     {

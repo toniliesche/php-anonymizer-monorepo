@@ -30,6 +30,7 @@ use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\ConfiguredProfileProvi
 use PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement\FakerReplacementStrategyFactory;
 use PhpAnonymizer\AnonymizerPersonas\Infrastructure\Replacement\PersonaReplacementStrategyFactory;
 use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Replacement\HmacPseudonymStrategy;
+use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Transformation\DateShiftTransformation;
 use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyAnonymizer;
 use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyObjectAnonymizer;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
@@ -42,7 +43,9 @@ use Symfony\Component\DependencyInjection\Reference;
 final class AnonymizerExtension extends Extension
 {
     private const array PERSONA_IDS = ['persona.name', 'persona.first_name', 'persona.last_name', 'persona.email', 'persona.username', 'persona.company', 'persona.phone', 'persona.street', 'persona.street_number', 'persona.city', 'persona.postcode', 'persona.country'];
+
     private const array FAKER_IDS = ['faker.building_number', 'faker.city', 'faker.company', 'faker.country', 'faker.email', 'faker.first_name', 'faker.house_number', 'faker.last_name', 'faker.name', 'faker.password', 'faker.postcode', 'faker.street', 'faker.street_number', 'faker.username', 'faker.zip'];
+
     #[Override]
     public function load(array $configs, ContainerBuilder $container): void
     {
@@ -60,7 +63,7 @@ final class AnonymizerExtension extends Extension
             new Reference(BundleConfigRenderer::class), new Reference(AtomicFileWriter::class),
         ]))->addTag('console.command');
 
-        /** @var array{profiles: array<string, mixed>, faker: array{enabled: bool, locale: string, seed: int|string|null}, personas: array{enabled: bool, locale: string}, limits: array{max_input_bytes: int, max_depth: int, max_visited_nodes: int, max_collection_entries: int, max_embedded_payload_depth: int}, audit: array{enabled: bool, logger_service: string|null}, pseudonymization: array{enabled: bool, key_provider: string|null}} $config */
+        /** @var array{profiles: array<string, mixed>, faker: array{enabled: bool, locale: string, seed: null|int|string}, personas: array{enabled: bool, locale: string}, limits: array{max_input_bytes: int, max_depth: int, max_visited_nodes: int, max_collection_entries: int, max_embedded_payload_depth: int}, audit: array{enabled: bool, logger_service: null|string}, pseudonymization: array{enabled: bool, key_provider: null|string}} $config */
         $config = $this->processConfiguration(new AnonymizerConfiguration(), $configs);
         $profiles = $this->createProfiles($config['profiles']);
         $container->setDefinition(AnonymizationLimits::class, new Definition(AnonymizationLimits::class, [
@@ -124,6 +127,7 @@ final class AnonymizerExtension extends Extension
             new TaggedIteratorArgument('anonymizer.replacement_strategy'),
             new TaggedIteratorArgument('anonymizer.payload_codec'),
             new Reference(AnonymizationLimits::class),
+            new TaggedIteratorArgument('anonymizer.value_transformation'),
         ]);
         $container->setDefinition(ArrayAnonymizer::class, $anonymizer);
         $container->setDefinition(SymfonyObjectAnonymizer::class, new Definition(SymfonyObjectAnonymizer::class, [
@@ -158,13 +162,16 @@ final class AnonymizerExtension extends Extension
     {
         if (!class_exists($class)) {
             $package = $integration === 'personas' ? 'php-anonymizer/anonymizer-personas' : 'php-anonymizer/anonymizer-faker';
+
             throw new InvalidConfigurationException(sprintf('%s integration is enabled but %s is not installed. Install it with composer require %s.', ucfirst($integration), $package, $package));
         }
 
         return $class;
     }
 
-    /** @param array{enabled: bool, key_provider: string|null} $config */
+    /**
+     * @param array{enabled: bool, key_provider: null|string} $config
+     */
     private function configurePseudonymization(array $config, ContainerBuilder $container): void
     {
         if (!$config['enabled']) {
@@ -180,11 +187,13 @@ final class AnonymizerExtension extends Extension
         }
         $container->setDefinition(HmacPseudonymStrategy::class, new Definition(HmacPseudonymStrategy::class, [new Reference($config['key_provider'])]))
             ->addTag('anonymizer.replacement_strategy', ['id' => 'pseudonymize', 'builtin' => true]);
+        $container->setDefinition(DateShiftTransformation::class, new Definition(DateShiftTransformation::class, [new Reference($config['key_provider'])]))
+            ->addTag('anonymizer.value_transformation', ['id' => 'date_shift', 'builtin' => true]);
         $container->setAlias(ContextualAnonymizerInterface::class, ArrayAnonymizer::class)->setPublic(true);
     }
 
     /** @param array<string, mixed> $definitions
-     *  @return array<string, array<string, mixed>>
+     * @return array<string, array<string, mixed>>
      */
     private function createProfiles(array $definitions): array
     {
@@ -195,7 +204,6 @@ final class AnonymizerExtension extends Extension
             }
 
             /** @var array<string, mixed> $definition */
-
             try {
                 ProfileDefinition::fromArray($name, $definition);
                 $profiles[$name] = $definition;

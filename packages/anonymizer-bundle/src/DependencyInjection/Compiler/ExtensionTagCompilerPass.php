@@ -6,17 +6,16 @@ namespace PhpAnonymizer\AnonymizerBundle\DependencyInjection\Compiler;
 
 use InvalidArgumentException;
 use Override;
-
-use function Safe\preg_match;
-
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use function Safe\preg_match;
 
 final class ExtensionTagCompilerPass implements CompilerPassInterface
 {
     private const array TAGS = [
         'anonymizer.replacement_strategy' => ['redact', 'star_mask', 'pseudonymize', 'faker.building_number', 'faker.city', 'faker.company', 'faker.country', 'faker.email', 'faker.first_name', 'faker.house_number', 'faker.last_name', 'faker.name', 'faker.password', 'faker.postcode', 'faker.street', 'faker.street_number', 'faker.username', 'faker.zip', 'persona.name', 'persona.first_name', 'persona.last_name', 'persona.email', 'persona.username', 'persona.company', 'persona.phone', 'persona.street', 'persona.street_number', 'persona.city', 'persona.postcode', 'persona.country'],
         'anonymizer.payload_codec' => ['json', 'yaml'],
+        'anonymizer.value_transformation' => ['nullify', 'partial_mask', 'date_generalize', 'numeric_bucket', 'date_shift'],
     ];
 
     #[Override]
@@ -27,7 +26,9 @@ final class ExtensionTagCompilerPass implements CompilerPassInterface
         }
     }
 
-    /** @param list<string> $builtIns */
+    /**
+     * @param list<string> $builtIns
+     */
     private function validateTag(ContainerBuilder $container, string $tag, array $builtIns): void
     {
         $ids = [];
