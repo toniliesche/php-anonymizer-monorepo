@@ -241,6 +241,7 @@ final class AnonymizerExtensionTest extends TestCase
         foreach ([
             ['personas', 'Personas integration is enabled but php-anonymizer/anonymizer-personas is not installed.'],
             ['faker', 'Faker integration is enabled but php-anonymizer/anonymizer-faker is not installed.'],
+            ['serializer', 'Serializer integration is enabled but php-anonymizer/anonymizer-symfony-serializer is not installed.'],
         ] as [$integration, $prefix]) {
             try {
                 $method->invoke($extension, 'Missing\Integration\Factory', $integration);

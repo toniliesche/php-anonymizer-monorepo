@@ -40,7 +40,7 @@ final readonly class ReleaseTestFixture
                 'extra' => ['branch-alias' => ['dev-develop' => ReleaseTrain::DEVELOPMENT_ALIAS]],
             ];
             if ($package === 'anonymizer-bundle') {
-                $metadata['require']['php-anonymizer/anonymizer-symfony-serializer'] = '^2.0';
+                $metadata['suggest']['php-anonymizer/anonymizer-symfony-serializer'] = 'Enable Serializer object support';
             }
             file_put_contents($packageDirectory . '/composer.json', json_encode($metadata, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR) . "\n");
             file_put_contents($packageDirectory . '/README.md', '# ' . $package . " fixture\n");

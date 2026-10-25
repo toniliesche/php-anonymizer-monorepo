@@ -31,6 +31,12 @@ try {
     if ($errors !== []) {
         throw new RuntimeException('Valid release fixture failed: ' . implode('; ', $errors));
     }
+    $bundleManifest = json_decode((string) file_get_contents($valid . '/packages/anonymizer-bundle/composer.json'), true, 512, JSON_THROW_ON_ERROR);
+    if (array_key_exists('php-anonymizer/anonymizer-symfony-serializer', $bundleManifest['require'] ?? [])
+        || !array_key_exists('php-anonymizer/anonymizer-symfony-serializer', $bundleManifest['suggest'] ?? [])
+    ) {
+        throw new RuntimeException('Valid release fixture must keep the Serializer adapter optional and suggested.');
+    }
 } finally {
     $remove($valid);
 }
@@ -88,9 +94,9 @@ $invalidSerializerConstraint = $fixture();
 try {
     $manifestPath = $invalidSerializerConstraint . '/packages/anonymizer-bundle/composer.json';
     $manifest = json_decode((string) file_get_contents($manifestPath), true, 512, JSON_THROW_ON_ERROR);
-    $manifest['require']['php-anonymizer/anonymizer-symfony-serializer'] = '^1.0';
+    $manifest['require']['php-anonymizer/anonymizer-symfony-serializer'] = '^2.0';
     file_put_contents($manifestPath, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
-    assertErrorContains($readiness->validate('2.0.0', $invalidSerializerConstraint), 'must require the Serializer package ^2.0');
+    assertErrorContains($readiness->validate('2.0.0', $invalidSerializerConstraint), 'must keep the Serializer adapter optional');
 } finally {
     $remove($invalidSerializerConstraint);
 }

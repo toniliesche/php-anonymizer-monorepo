@@ -77,11 +77,6 @@ final class ReleaseTrain
         return $package === 'anonymizer' ? null : '^2.0';
     }
 
-    public function requiredSerializerConstraint(string $package): ?string
-    {
-        return $package === 'anonymizer-bundle' ? '^2.0' : null;
-    }
-
     private function assertPackage(string $package): void
     {
         if (!in_array($package, self::PACKAGES, true)) {
