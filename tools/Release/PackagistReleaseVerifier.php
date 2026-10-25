@@ -31,33 +31,47 @@ final readonly class PackagistReleaseVerifier
             throw new RuntimeException('PACKAGIST_USERNAME and PACKAGIST_API_TOKEN are required.');
         }
 
-        foreach ($manifest->toArray()['packages'] as $entry) {
+        $packages = $manifest->toArray()['packages'];
+        foreach ($packages as $index => $entry) {
+            $this->progress(sprintf('Packagist update %d/%d: requesting %s.', $index + 1, count($packages), $entry['composer_name']));
             $this->request('POST', '/api/update-package', 'Bearer ' . $username . ':' . $apiToken, ['repository' => $entry['repository']]);
+            $this->progress('Packagist accepted the update request for ' . $entry['composer_name'] . '.');
         }
     }
 
     public function verify(ReleaseManifest $manifest): void
     {
         $deadline = time() + $this->timeout;
+        $attempt = 0;
         do {
+            $attempt++;
             $pending = [];
-            foreach ($manifest->toArray()['packages'] as $package => $entry) {
+            $packages = $manifest->toArray()['packages'];
+            $this->progress(sprintf('Packagist metadata check %d for %d packages.', $attempt, count($packages)));
+            foreach ($packages as $package => $entry) {
                 try {
                     $metadata = $this->request('GET', '/p2/' . $entry['composer_name'] . '.json');
                     if (!$this->containsPublishedVersion($metadata, $manifest->version(), $entry['split_sha'])) {
                         $pending[] = $package;
+                        $this->progress('Packagist has not published the expected version/reference for ' . $entry['composer_name'] . ' yet.');
+                    } else {
+                        $this->progress('Verified ' . $entry['composer_name'] . ' ' . $manifest->version() . '.');
                     }
                 } catch (RuntimeException) {
                     $pending[] = $package;
+                    $this->progress('Packagist metadata is not available yet for ' . $entry['composer_name'] . '.');
                 }
             }
             if ($pending === []) {
+                $this->progress('Packagist metadata verification passed for all packages.');
+
                 return;
             }
             if (time() >= $deadline) {
                 throw new RuntimeException('Packagist did not publish the expected versions and source references before timeout: ' . implode(', ', $pending));
             }
             $wait = min($this->pollInterval, max(1, $deadline - time()));
+            $this->progress(sprintf('Waiting %d seconds before retrying; pending packages: %s.', $wait, implode(', ', $pending)));
             if (is_callable($this->wait)) {
                 ($this->wait)($wait);
             } else {
@@ -68,6 +82,7 @@ final readonly class PackagistReleaseVerifier
 
     public function installCleanConsumer(ReleaseManifest $manifest): void
     {
+        $this->progress(sprintf('Creating a clean consumer for %d packages at version %s.', count($manifest->toArray()['packages']), $manifest->version()));
         $directory = sys_get_temp_dir() . '/php-anonymizer-packagist-consumer-' . bin2hex(random_bytes(8));
         if (!mkdir($directory, 0o700)) {
             throw new RuntimeException('Could not create clean Packagist consumer directory.');
@@ -85,16 +100,18 @@ final readonly class PackagistReleaseVerifier
                 'minimum-stability' => 'stable',
                 'prefer-stable' => true,
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
-            $process = proc_open(['composer', 'install', '--no-interaction', '--prefer-dist', '--no-progress', '--no-scripts'], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $directory);
+            $process = proc_open(['composer', 'install', '--no-interaction', '--prefer-dist', '--no-progress', '--no-scripts'], [
+                0 => ['file', '/dev/null', 'r'],
+                1 => STDOUT,
+                2 => STDERR,
+            ], $pipes, $directory);
             if (!is_resource($process)) {
                 throw new RuntimeException('Could not start clean Composer consumer installation.');
             }
-            $output = stream_get_contents($pipes[1]) . stream_get_contents($pipes[2]);
-            fclose($pipes[1]);
-            fclose($pipes[2]);
             if (proc_close($process) !== 0) {
-                throw new RuntimeException('Clean Packagist consumer installation failed: ' . $output);
+                throw new RuntimeException('Clean Packagist consumer installation failed; see the preceding Composer output.');
             }
+            $this->progress('Clean Composer consumer installation passed.');
         } finally {
             $this->removeDirectory($directory);
         }
@@ -126,8 +143,10 @@ final readonly class PackagistReleaseVerifier
         $statusLine = $responseHeaders[0] ?? '';
         if (!is_string($body) || preg_match('/\s(\d{3})\s/', $statusLine, $matches) !== 1 || (int) $matches[1] < 200 || (int) $matches[1] >= 300) {
             $status = preg_match('/\s(\d{3})\s/', $statusLine, $matches) === 1 ? ' (HTTP ' . $matches[1] . ')' : '';
+            $responseBody = is_string($body) ? trim(preg_replace('/\s+/', ' ', strip_tags($body)) ?? '') : '';
+            $responseBody = $responseBody === '' ? '' : ': ' . substr($responseBody, 0, 500);
 
-            throw new RuntimeException('Packagist request failed for ' . $path . $status . '.');
+            throw new RuntimeException('Packagist ' . $method . ' request failed for ' . $path . $status . $responseBody . '.');
         }
         $decoded = json_decode($body, true);
 
@@ -173,5 +192,11 @@ final readonly class PackagistReleaseVerifier
             $item->isDir() ? rmdir($item->getPathname()) : unlink($item->getPathname());
         }
         rmdir($directory);
+    }
+
+    private function progress(string $message): void
+    {
+        fwrite(STDOUT, '[release] ' . $message . PHP_EOL);
+        fflush(STDOUT);
     }
 }

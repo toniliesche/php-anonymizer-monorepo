@@ -29,8 +29,10 @@ if (!is_dir($target) && !mkdir($target, 0o777, true) && !is_dir($target)) {
 }
 
 $manifest = ['version' => $version, 'packages' => []];
-foreach ($packages as $package) {
+foreach ($packages as $index => $package) {
     $name = basename($package);
+    printf("[release] Building archives for package %d/%d: %s.\n", $index + 1, count($packages), $name);
+    fflush(STDOUT);
     $prefix = $name . '-' . $version . '/';
     $zipName = $name . '-' . $version . '.zip';
     $tarName = $name . '-' . $version . '.tar.gz';

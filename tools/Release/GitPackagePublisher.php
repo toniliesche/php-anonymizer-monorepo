@@ -29,14 +29,17 @@ final readonly class GitPackagePublisher
         return $this->withCredentials($token, function () use ($splitPlan, $root): ReleasePublicationPlan {
             $version = $splitPlan->version;
             $branch = $this->train->publicationBranchFor($version);
+            $packageNames = $this->train->packages();
+            $this->progress(sprintf('Checking publication refs for %d package repositories.', count($packageNames)));
             $analysisRepository = sys_get_temp_dir() . '/php-anonymizer-publication-check-' . bin2hex(random_bytes(8));
             $this->runGit($root, ['init', '--bare', '--quiet', $analysisRepository]);
 
             try {
-                $packages = [];
-                foreach ($this->train->packages() as $package) {
+                $packagePlans = [];
+                foreach ($packageNames as $index => $package) {
                     $entry = $splitPlan->packages[$package];
                     $repository = $this->repositoryFor($package, $entry['repository']);
+                    $this->progress(sprintf('Preflight %d/%d: %s.', $index + 1, count($packageNames), $package));
                     $refs = $this->remoteRefs($root, $repository);
                     $branchRef = 'refs/heads/' . $branch;
                     $tagRef = 'refs/tags/' . $version;
@@ -62,15 +65,21 @@ final readonly class GitPackagePublisher
                         }
                     }
 
-                    $packages[$package] = [
+                    $packagePlans[$package] = [
                         'repository' => $repository,
                         'split_sha' => $entry['split_sha'],
                         'push_branch' => $pushBranch,
                         'push_tag' => $remoteTagSha === null,
                     ];
+                    $this->progress(sprintf(
+                        '%s: branch %s; tag %s.',
+                        $package,
+                        $pushBranch ? 'will publish' : 'already current',
+                        $remoteTagSha === null ? 'will publish' : 'already present',
+                    ));
                 }
 
-                return new ReleasePublicationPlan($splitPlan, $branch, $packages);
+                return new ReleasePublicationPlan($splitPlan, $branch, $packagePlans);
             } finally {
                 $this->removeDirectory($analysisRepository);
             }
@@ -101,7 +110,8 @@ final readonly class GitPackagePublisher
 
             try {
                 $temporaryTags = [];
-                foreach ($this->train->packages() as $package) {
+                $packages = $this->train->packages();
+                foreach ($packages as $index => $package) {
                     $entry = $publicationPlan->packages[$package] ?? throw new InvalidArgumentException('Publication plan is missing package: ' . $package);
                     if (!$entry['push_branch'] && !$entry['push_tag']) {
                         continue;
@@ -120,10 +130,11 @@ final readonly class GitPackagePublisher
                 }
 
                 $results = [];
-                foreach ($this->train->packages() as $package) {
+                foreach ($packages as $index => $package) {
                     $entry = $publicationPlan->packages[$package];
                     if (!$entry['push_branch'] && !$entry['push_tag']) {
                         $results[$package] = 'already_published';
+                        $this->progress(sprintf('Publish %d/%d: %s already has the planned branch and tag.', $index + 1, count($packages), $package));
 
                         continue;
                     }
@@ -135,10 +146,12 @@ final readonly class GitPackagePublisher
                     if ($entry['push_tag']) {
                         $refs[] = $temporaryTags[$package] . ':refs/tags/' . $publicationPlan->splitPlan->version;
                     }
+                    $this->progress(sprintf('Publish %d/%d: pushing branch/tag updates for %s.', $index + 1, count($packages), $package));
                     $this->runGit($publishRepository, [
                         '-c', 'credential.helper=', 'push', '--atomic', '--porcelain', $entry['repository'], ...$refs,
                     ]);
                     $results[$package] = 'published';
+                    $this->progress(sprintf('Publish %d/%d: published branch/tag updates for %s.', $index + 1, count($packages), $package));
                 }
 
                 return $results;
@@ -304,5 +317,11 @@ final readonly class GitPackagePublisher
             $item->isDir() ? rmdir($item->getPathname()) : unlink($item->getPathname());
         }
         rmdir($directory);
+    }
+
+    private function progress(string $message): void
+    {
+        fwrite(STDOUT, '[release] ' . $message . PHP_EOL);
+        fflush(STDOUT);
     }
 }
