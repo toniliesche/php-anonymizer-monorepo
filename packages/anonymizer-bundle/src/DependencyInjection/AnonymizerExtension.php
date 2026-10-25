@@ -15,6 +15,8 @@ use PhpAnonymizer\Anonymizer\Application\Anonymization\ContextualDocumentAnonymi
 use PhpAnonymizer\Anonymizer\Application\Anonymization\ContextualNdjsonAnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\DocumentAnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\NdjsonAnonymizerInterface;
+use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspector;
+use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileInspectorInterface;
 use PhpAnonymizer\Anonymizer\Domain\Exception\InvalidProfileDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
 use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleCollectionConverter;
@@ -125,6 +127,8 @@ final class AnonymizerExtension extends Extension
                 new TaggedIteratorArgument('anonymizer.profile_provider'),
             ]),
         );
+        $container->setDefinition(ProfileInspector::class, new Definition(ProfileInspector::class, [new Reference(CompositeProfileProvider::class)]));
+        $container->setAlias(ProfileInspectorInterface::class, ProfileInspector::class)->setPublic(true);
 
         $anonymizer = new Definition(ArrayAnonymizer::class, [
             new Reference(CompositeProfileProvider::class),

@@ -22,6 +22,8 @@ acceptance criteria of earlier iterations.
 | [13](iterations/13-document-payloads-and-ndjson.md) | Document payloads and NDJSON exports |
 | [14](iterations/14-key-normalization-and-global-rules.md) | Key normalization and global rules |
 | [15](iterations/15-profile-governance-and-controlled-reuse.md) | Profile governance and controlled reuse |
+| [16](iterations/16-portable-profile-providers.md) | Portable profile providers |
+| [17](iterations/17-laravel-framework-integration.md) | Laravel framework integration |
 
 ## Architecture decisions
 
@@ -36,9 +38,11 @@ in [Refined Iteration 5 Symfony Bundle integration plan](refined-iteration-05-sy
 
 ## Non-negotiable engineering rules
 
-- PHP 8.5+ and Symfony 8 are the supported platforms.
+- PHP 8.5+, Symfony 8, and Laravel 13 are supported integration platforms.
 - The core processes arrays only and never mutates its input. Object handling is
-  exclusively an optional Symfony Serializer adapter.
+  exclusively an optional Symfony Serializer adapter. Laravel may bind that
+  standalone adapter without requiring the Symfony bundle; no Laravel-native
+  Eloquent or generic object adapter is part of v1.
 - Public extension points are interfaces and explicit IDs. Do not restore legacy
   factories, regexp runtime parsing, or mutable property/reflection access.
 - New post-1.0 capabilities remain additive: keep `AnonymizerInterface` stable
@@ -71,6 +75,19 @@ in [Refined Iteration 5 Symfony Bundle integration plan](refined-iteration-05-sy
 - When normalized rule keys collide, an exact match against the original data
   key wins; if no exact rule exists, declaration order is deterministic. The
   original data key remains the report and output key.
+- `ProfileProviderInterface::profiles(): iterable` is the stable v1 provider
+  contract for library-owned rule sets. `AnonymizerFactory::fromProfileProviders()`
+  is explicit and deterministic; Composer package scanning, provider metadata,
+  inheritance, and profile overrides are not supported.
+- Framework integrations compose explicitly registered providers. Symfony uses
+  the existing `anonymizer.profile_provider` tag; Laravel uses an auto-discovered
+  service provider and the same logical tag. Library packages remain usable in
+  plain PHP through the provider factory helper.
+- `php-anonymizer/anonymizer-laravel` provides Laravel container/configuration
+  integration without facades. When configured with an application-owned
+  Symfony Serializer service, it may bind the existing standalone Symfony
+  Serializer adapter; it does not construct that serializer or require the
+  Symfony bundle.
 
 ## Static-analysis and test contracts
 

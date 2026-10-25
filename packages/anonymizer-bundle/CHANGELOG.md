@@ -2,7 +2,11 @@
 
 ## Unreleased
 
+## 1.5.0
+
 - Bundle profiles now support key normalization and global scalar rules.
+- Bundle configuration now supports governed profile metadata, ordered local
+  fragments, startup composition diagnostics, and a public profile inspector.
 
 ## 1.4.0
 

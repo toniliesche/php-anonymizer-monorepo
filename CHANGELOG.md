@@ -4,8 +4,35 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
-- Iteration 11 adds keyed deterministic pseudonymisation through the optional
-  `anonymizer-pseudonymization` package and per-call contextual execution.
+## 1.5.0
+
+- Added comparison-only ASCII key normalization and profile-local global
+  scalar rules without changing original dataset keys or report paths.
+- Added governed profile metadata, deterministic local rule fragments,
+  startup composition diagnostics, and safe profile inspection.
+
+## 1.4.0
+
+- Added explicit document roots, document payload APIs, and lazy NDJSON
+  anonymization with bounded safe audit aggregation.
+
+## 1.3.0
+
+- Added typed leaf transformations with validated registries and built-in
+  `nullify`, `partial_mask`, `date_generalize`, and `numeric_bucket` handlers.
+- Added contextual `date_shift` transformation support.
+
+## 1.2.0
+
+- Added contextual anonymization and replacement interfaces carrying scoped
+  application attributes, profile, and path information.
+- Added the optional keyed deterministic pseudonymization package with HMAC
+  replacement and pluggable key providers.
+
+## 1.1.0
+
+- Added execution limits, lazy batch anonymization, and deterministic safe
+  aggregate audit results.
 
 ## Iteration 9.1 — 1.0.0 Cohesion and API Refactor
 
