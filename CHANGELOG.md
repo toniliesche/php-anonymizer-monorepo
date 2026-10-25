@@ -4,14 +4,13 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
-## 2.0.1
+## 2.0.0
 
 - Added Gitea validation and GitHub release workflow documentation, including
   package repository provisioning, CI credentials, Packagist registration,
   and release recovery. Registered the Packagist verification command in
-  Composer.
-
-## 2.0.0
+  Composer. Fixed the release publisher to use Packagist's documented
+  `/api/update-package` endpoint.
 
 - Iteration 29: replaced unsafe extension and framework-boundary type claims
   with Webmozart Assert runtime checks, added PHPStan assertion support, and

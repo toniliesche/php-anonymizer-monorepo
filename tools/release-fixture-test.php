@@ -37,7 +37,7 @@ try {
     }
 
     $http = new ReleaseHttpFixture($fixture->temporaryDirectory());
-    $http->setResponses('POST', '/api/packages/php-anonymizer/anonymizer/update', [
+    $http->setResponses('POST', '/api/update-package', [
         ['status' => 503, 'body' => ['error' => 'temporary fixture failure']],
         ['status' => 202, 'body' => ['status' => 'success', 'jobs' => ['fixture-job']]],
     ]);
@@ -52,7 +52,7 @@ try {
             'ignore_errors' => true,
             'timeout' => 3,
         ]]);
-        $body = file_get_contents($http->baseUrl() . '/api/packages/php-anonymizer/anonymizer/update', false, $context);
+        $body = file_get_contents($http->baseUrl() . '/api/update-package', false, $context);
         $responseHeaders = http_get_last_response_headers() ?: [];
         $status = $responseHeaders[0] ?? '';
         if (!is_string($body) || preg_match('/\s(\d{3})\s/', $status, $matches) !== 1) {
@@ -65,7 +65,7 @@ try {
     }
 
     $state = $http->state();
-    if (($state['requests']['POST /api/packages/php-anonymizer/anonymizer/update'] ?? 0) !== 2
+    if (($state['requests']['POST /api/update-package'] ?? 0) !== 2
         || count($state['observed']) !== 2
         || !$state['observed'][0]['authorization_present']
     ) {

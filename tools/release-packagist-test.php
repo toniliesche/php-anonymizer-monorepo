@@ -42,22 +42,18 @@ try {
         'packages' => $packages,
     ]);
     $http = new ReleaseHttpFixture($fixture->temporaryDirectory());
+    $updateResponses = [['status' => 503, 'body' => ['error' => 'retry']]];
+    for ($response = 0; $response < count($packages) - 1; $response++) {
+        $updateResponses[] = ['status' => 202, 'body' => ['status' => 'success']];
+    }
+    $http->setResponses('POST', '/api/update-package', $updateResponses);
     foreach ($packages as $package => $entry) {
-        $parts = explode('/', $entry['composer_name']);
-        $updatePath = '/api/packages/' . $entry['composer_name'] . '/update';
         $metadataPath = '/p2/' . $entry['composer_name'] . '.json';
-        $responses = $package === array_key_first($packages)
-            ? [['status' => 503, 'body' => ['error' => 'retry']], ['status' => 202, 'body' => ['status' => 'success']]]
-            : [['status' => 202, 'body' => ['status' => 'success']]];
-        $http->setResponses('POST', $updatePath, $responses);
         $version = ['version' => '2.0.0', 'source' => ['reference' => $entry['split_sha']]];
         $http->setResponses('GET', $metadataPath, [
             ['status' => 200, 'body' => ['packages' => [$entry['composer_name'] => [['version' => '2.0.0', 'source' => ['reference' => str_repeat('0', 40)]]]]]],
             ['status' => 200, 'body' => ['packages' => [$entry['composer_name'] => [$version]]]],
         ]);
-        if ($parts[0] !== 'php-anonymizer') {
-            throw new RuntimeException('Invalid fixture Composer package name.');
-        }
     }
     $http->start();
     $waits = 0;
@@ -94,7 +90,10 @@ try {
         }
     }
     $state = $http->state();
-    if (count($state['observed']) < 14 || !$state['observed'][0]['authorization_present']) {
+    if (($state['requests']['POST /api/update-package'] ?? 0) !== count($packages) + 1
+        || count($state['observed']) < count($packages) * 2
+        || !$state['observed'][0]['authorization_present']
+    ) {
         throw new RuntimeException('Packagist fixture did not record authenticated update requests.');
     }
     echo 'Packagist update and verification fixtures passed for ' . count($packages) . " packages.\n";

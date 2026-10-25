@@ -32,8 +32,7 @@ final readonly class PackagistReleaseVerifier
         }
 
         foreach ($manifest->toArray()['packages'] as $entry) {
-            $path = '/api/packages/' . rawurlencode(substr($entry['composer_name'], 0, strpos($entry['composer_name'], '/'))) . '/' . rawurlencode(substr($entry['composer_name'], strpos($entry['composer_name'], '/') + 1)) . '/update';
-            $this->request('POST', $path, 'Bearer ' . $username . ':' . $apiToken, ['repository' => $entry['repository']]);
+            $this->request('POST', '/api/update-package', 'Bearer ' . $username . ':' . $apiToken, ['repository' => $entry['repository']]);
         }
     }
 
@@ -126,7 +125,9 @@ final readonly class PackagistReleaseVerifier
         $responseHeaders = http_get_last_response_headers() ?: [];
         $statusLine = $responseHeaders[0] ?? '';
         if (!is_string($body) || preg_match('/\s(\d{3})\s/', $statusLine, $matches) !== 1 || (int) $matches[1] < 200 || (int) $matches[1] >= 300) {
-            throw new RuntimeException('Packagist request failed for ' . $path . '.');
+            $status = preg_match('/\s(\d{3})\s/', $statusLine, $matches) === 1 ? ' (HTTP ' . $matches[1] . ')' : '';
+
+            throw new RuntimeException('Packagist request failed for ' . $path . $status . '.');
         }
         $decoded = json_decode($body, true);
 
