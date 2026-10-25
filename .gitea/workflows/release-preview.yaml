@@ -59,6 +59,11 @@ jobs:
           composer ci:verify-checkout
           composer ci:runtime:check
 
+      - name: Prepare local main ref for version calculation
+        run: |
+          git fetch --no-tags origin '+refs/heads/main:refs/remotes/origin/main'
+          git branch --force main origin/main
+
       - name: Run release preview without publication credentials
         env:
           GITHUB_HEAD_REF: ${{ github.event_name == 'workflow_dispatch' && inputs.release_branch || github.head_ref }}
