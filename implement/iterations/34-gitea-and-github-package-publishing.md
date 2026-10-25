@@ -253,13 +253,15 @@ not add tracked worktree changes.
 ### Task 13 — Activate and verify publication — Pending external setup
 
 The local release contract, publication fixtures, consumer checks, artifacts,
-and workflow diagnostics are implemented and pass `composer qa`. External
-activation has not been run: this checkout has no Git remote or local `main`
-branch, no `release/2.0.x` branch or 2.0.0 tag, and no `gh` or Gitea CLI. It
-also contains the uncommitted iteration work, which cannot be used as a stable
-release source. Repository creation, CI secret configuration, legacy workflow
-changes, Gitea artifact retrieval, and production publication require the
-authenticated repository setup and a committed release source.
+and workflow diagnostics are implemented and pass `composer qa`. The GitHub
+monorepo now has `origin` and `main`, and the clean local `develop` checkout is
+in sync with pushed commit `9a25895`. Release preview calculates `2.0.0` from
+`release/2.0.x` against `main`; that branch and tag do not yet exist. The six
+integration repository URLs currently return 404 to unauthenticated checks.
+Although Git can read the monorepo refs, this environment's stored `gh` token
+is invalid and Gitea access is not configured. Creating repositories, setting
+secrets, changing legacy workflows, running Gitea artifact retrieval, and
+publishing therefore remain pending valid API and Gitea access.
 
 - Create the monorepo and six integration repositories, seed the package refs,
   configure secrets and Gitea Actions, and disable legacy publishing automation
