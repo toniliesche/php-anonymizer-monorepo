@@ -5,7 +5,7 @@ declare(strict_types=1);
 $root = dirname(__DIR__);
 $version = $argv[1] ?? 'dev';
 $target = $root . '/var/artifacts/' . preg_replace('/[^A-Za-z0-9_.-]+/', '-', $version);
-$expected = ['anonymizer', 'anonymizer-bundle', 'anonymizer-faker', 'anonymizer-personas', 'anonymizer-symfony-serializer'];
+$expected = ['anonymizer', 'anonymizer-bundle', 'anonymizer-faker', 'anonymizer-personas', 'anonymizer-pseudonymization', 'anonymizer-symfony-serializer'];
 $packages = [];
 foreach ($expected as $name) {
     $package = $root . '/packages/' . $name;

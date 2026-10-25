@@ -4,8 +4,8 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
-- Iteration 10 adds bounded execution limits, a no-report fast path, lazy
-  batch anonymization, and aggregate value-free audit results.
+- Iteration 11 adds keyed deterministic pseudonymisation through the optional
+  `anonymizer-pseudonymization` package and per-call contextual execution.
 
 ## Iteration 9.1 — 1.0.0 Cohesion and API Refactor
 

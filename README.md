@@ -60,6 +60,11 @@ foreach ($anonymizer->anonymizeRecords('customer', $records) as $safe) {
 }
 ```
 
+The optional `php-anonymizer/anonymizer-pseudonymization` package provides
+keyed deterministic pseudonyms. Register an application key provider, use a
+leaf rule with `strategy: pseudonymize` and a non-secret `key_id`, then call
+the contextual anonymizer with per-request scope attributes.
+
 Execution limits are enabled by default. `AnonymizationLimits` can be passed to
 `AnonymizerFactory::fromArrays()` as its final argument. Encoded payloads are
 limited to 10 MiB by default, with additional bounds for traversal depth,

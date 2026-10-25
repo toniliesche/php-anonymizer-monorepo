@@ -1,0 +1,25 @@
+{
+    "name": "php-anonymizer/anonymizer-pseudonymization",
+    "description": "Keyed deterministic pseudonymisation for PHP Anonymizer",
+    "license": "MIT",
+    "type": "library",
+    "require": {
+        "php": "^8.5",
+        "php-anonymizer/anonymizer": "^1.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "PhpAnonymizer\\AnonymizerPseudonymization\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PhpAnonymizer\\AnonymizerPseudonymization\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-develop": "1.2.x-dev"
+        }
+    }
+}

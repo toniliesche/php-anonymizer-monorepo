@@ -4,6 +4,7 @@ deptrac:
     - packages/anonymizer-bundle/src
     - packages/anonymizer-faker/src
     - packages/anonymizer-personas/src
+    - packages/anonymizer-pseudonymization/src
     - packages/anonymizer-symfony-serializer/src
   exclude_files: ~
   layers:
@@ -31,6 +32,10 @@ deptrac:
       collectors:
         - type: classNameRegex
           value: "#^PhpAnonymizer\\\\AnonymizerPersonas\\\\.*#"
+    - name: PseudonymizationIntegration
+      collectors:
+        - type: classNameRegex
+          value: "#^PhpAnonymizer\\\\AnonymizerPseudonymization\\\\.*#"
     - name: SerializerIntegration
       collectors:
         - type: classNameRegex
@@ -47,11 +52,15 @@ deptrac:
       - Domain
       - FakerIntegration
       - PersonasIntegration
+      - PseudonymizationIntegration
       - SerializerIntegration
     FakerIntegration:
       - Application
       - Domain
     PersonasIntegration:
+      - Application
+      - Domain
+    PseudonymizationIntegration:
       - Application
       - Domain
     SerializerIntegration:

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8cb73dda558f059259ada8823e55328a",
+    "content-hash": "5a5fd00fffec0aeb372f3a95872e5d01",
     "packages": [
         {
             "name": "thecodingmachine/safe",
@@ -2562,7 +2562,7 @@
             "dist": {
                 "type": "path",
                 "url": "packages/anonymizer",
-                "reference": "133f7b1e1ea57c114380e0bbf9c980d1c2a13e76"
+                "reference": "0a82e274ef0fd9b1c5fdb1d9b8497c5e62862504"
             },
             "require": {
                 "ext-mbstring": "*",
@@ -2572,7 +2572,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-develop": "1.0.x-dev"
+                    "dev-develop": "1.2.x-dev"
                 }
             },
             "autoload": {
@@ -2600,11 +2600,11 @@
             "dist": {
                 "type": "path",
                 "url": "packages/anonymizer-bundle",
-                "reference": "32f2abc7448169b19e5c2aff255c0f3aee179ad9"
+                "reference": "4cd03047208e56347700c7249b7b741181411912"
             },
             "require": {
                 "php": "^8.5",
-                "php-anonymizer/anonymizer": "^1.0",
+                "php-anonymizer/anonymizer": "^1.2",
                 "php-anonymizer/anonymizer-symfony-serializer": "^1.0",
                 "psr/log": "^3.0",
                 "symfony/config": "^8.1.4",
@@ -2617,7 +2617,8 @@
             },
             "suggest": {
                 "php-anonymizer/anonymizer-faker": "Enable Faker replacement strategies",
-                "php-anonymizer/anonymizer-personas": "Enable fixed European persona strategies"
+                "php-anonymizer/anonymizer-personas": "Enable fixed European persona strategies",
+                "php-anonymizer/anonymizer-pseudonymization": "Enable keyed deterministic pseudonymisation"
             },
             "type": "symfony-bundle",
             "extra": {
@@ -2700,16 +2701,53 @@
             }
         },
         {
+            "name": "php-anonymizer/anonymizer-pseudonymization",
+            "version": "dev-develop",
+            "dist": {
+                "type": "path",
+                "url": "packages/anonymizer-pseudonymization",
+                "reference": "35455bfa636944f7718e6a6858c62e036b2b99f4"
+            },
+            "require": {
+                "php": "^8.5",
+                "php-anonymizer/anonymizer": "^1.2"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-develop": "1.2.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "PhpAnonymizer\\AnonymizerPseudonymization\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "PhpAnonymizer\\AnonymizerPseudonymization\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "Keyed deterministic pseudonymisation for PHP Anonymizer",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
             "name": "php-anonymizer/anonymizer-symfony-serializer",
             "version": "dev-develop",
             "dist": {
                 "type": "path",
                 "url": "packages/anonymizer-symfony-serializer",
-                "reference": "7c91beb356927b121493fa4f6c23838a2f0981af"
+                "reference": "bc9fafbe5323cc473446b2c4e386f559749f326c"
             },
             "require": {
                 "php": "^8.5",
-                "php-anonymizer/anonymizer": "^1.0",
+                "php-anonymizer/anonymizer": "^1.2",
                 "symfony/serializer": "^8.1.4"
             },
             "type": "library",
@@ -9424,6 +9462,7 @@
         "php-anonymizer/anonymizer-bundle": 20,
         "php-anonymizer/anonymizer-faker": 20,
         "php-anonymizer/anonymizer-personas": 20,
+        "php-anonymizer/anonymizer-pseudonymization": 20,
         "php-anonymizer/anonymizer-symfony-serializer": 20
     },
     "prefer-stable": true,

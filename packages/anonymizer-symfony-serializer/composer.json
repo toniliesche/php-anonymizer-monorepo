@@ -5,7 +5,7 @@
     "type": "library",
     "require": {
         "php": "^8.5",
-        "php-anonymizer/anonymizer": "^1.0",
+        "php-anonymizer/anonymizer": "^1.2",
         "symfony/serializer": "^8.1.4"
     },
     "autoload": {

@@ -53,6 +53,13 @@ final class AnonymizerConfiguration implements ConfigurationInterface
                         ->scalarNode('logger_service')->defaultNull()->end()
                     ->end()
                 ->end()
+                ->arrayNode('pseudonymization')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->booleanNode('enabled')->defaultFalse()->end()
+                        ->scalarNode('key_provider')->defaultNull()->end()
+                    ->end()
+                ->end()
             ->end();
 
         return $treeBuilder;

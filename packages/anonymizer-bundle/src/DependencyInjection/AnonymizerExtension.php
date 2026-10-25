@@ -10,6 +10,7 @@ use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\ArrayAnonymizer;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AuditAnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Application\Anonymization\BatchAnonymizerInterface;
+use PhpAnonymizer\Anonymizer\Application\Anonymization\ContextualAnonymizerInterface;
 use PhpAnonymizer\Anonymizer\Domain\Exception\InvalidProfileDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
 use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyRuleCollectionConverter;
@@ -28,6 +29,7 @@ use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\CompositeProfileProvid
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\Profile\ConfiguredProfileProvider;
 use PhpAnonymizer\AnonymizerFaker\Infrastructure\Replacement\FakerReplacementStrategyFactory;
 use PhpAnonymizer\AnonymizerPersonas\Infrastructure\Replacement\PersonaReplacementStrategyFactory;
+use PhpAnonymizer\AnonymizerPseudonymization\Infrastructure\Replacement\HmacPseudonymStrategy;
 use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyAnonymizer;
 use PhpAnonymizer\AnonymizerSymfonySerializer\Infrastructure\Serializer\SymfonyObjectAnonymizer;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
@@ -58,7 +60,7 @@ final class AnonymizerExtension extends Extension
             new Reference(BundleConfigRenderer::class), new Reference(AtomicFileWriter::class),
         ]))->addTag('console.command');
 
-        /** @var array{profiles: array<string, mixed>, faker: array{enabled: bool, locale: string, seed: int|string|null}, personas: array{enabled: bool, locale: string}, limits: array{max_input_bytes: int, max_depth: int, max_visited_nodes: int, max_collection_entries: int, max_embedded_payload_depth: int}, audit: array{enabled: bool, logger_service: string|null}} $config */
+        /** @var array{profiles: array<string, mixed>, faker: array{enabled: bool, locale: string, seed: int|string|null}, personas: array{enabled: bool, locale: string}, limits: array{max_input_bytes: int, max_depth: int, max_visited_nodes: int, max_collection_entries: int, max_embedded_payload_depth: int}, audit: array{enabled: bool, logger_service: string|null}, pseudonymization: array{enabled: bool, key_provider: string|null}} $config */
         $config = $this->processConfiguration(new AnonymizerConfiguration(), $configs);
         $profiles = $this->createProfiles($config['profiles']);
         $container->setDefinition(AnonymizationLimits::class, new Definition(AnonymizationLimits::class, [
@@ -92,6 +94,7 @@ final class AnonymizerExtension extends Extension
                     ->addTag('anonymizer.replacement_strategy', ['id' => $id, 'builtin' => true]);
             }
         }
+        $this->configurePseudonymization($config['pseudonymization'], $container);
         $profileReferences = [];
         foreach ($profiles as $name => $definition) {
             $profileServiceId = ConfiguredProfileProvider::class . '.' . $name;
@@ -159,6 +162,25 @@ final class AnonymizerExtension extends Extension
         }
 
         return $class;
+    }
+
+    /** @param array{enabled: bool, key_provider: string|null} $config */
+    private function configurePseudonymization(array $config, ContainerBuilder $container): void
+    {
+        if (!$config['enabled']) {
+            return;
+        }
+        // @codeCoverageIgnoreStart
+        if (!class_exists(HmacPseudonymStrategy::class)) {
+            throw new InvalidConfigurationException('Pseudonymisation is enabled but php-anonymizer/anonymizer-pseudonymization is not installed.');
+        }
+        // @codeCoverageIgnoreEnd
+        if ($config['key_provider'] === null || $config['key_provider'] === '') {
+            throw new InvalidConfigurationException('anonymizer.pseudonymization.key_provider is required when pseudonymization is enabled.');
+        }
+        $container->setDefinition(HmacPseudonymStrategy::class, new Definition(HmacPseudonymStrategy::class, [new Reference($config['key_provider'])]))
+            ->addTag('anonymizer.replacement_strategy', ['id' => 'pseudonymize', 'builtin' => true]);
+        $container->setAlias(ContextualAnonymizerInterface::class, ArrayAnonymizer::class)->setPublic(true);
     }
 
     /** @param array<string, mixed> $definitions
