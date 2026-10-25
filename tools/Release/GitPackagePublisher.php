@@ -135,7 +135,9 @@ final readonly class GitPackagePublisher
                     if ($entry['push_tag']) {
                         $refs[] = $temporaryTags[$package] . ':refs/tags/' . $publicationPlan->splitPlan->version;
                     }
-                    $this->runGit($publishRepository, ['push', '--atomic', '--porcelain', $entry['repository'], ...$refs]);
+                    $this->runGit($publishRepository, [
+                        '-c', 'credential.helper=', 'push', '--atomic', '--porcelain', $entry['repository'], ...$refs,
+                    ]);
                     $results[$package] = 'published';
                 }
 
