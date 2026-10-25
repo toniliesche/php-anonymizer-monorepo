@@ -81,7 +81,7 @@ try {
     $http->setResponses('GET', '/p2/' . $packages[$firstPackage]['composer_name'] . '.json', [
         ['status' => 200, 'body' => ['packages' => [$packages[$firstPackage]['composer_name'] => [['version' => '2.0.0', 'source' => ['reference' => str_repeat('0', 40)]]]]]],
     ]);
-    $timeoutVerifier = new PackagistReleaseVerifier($http->baseUrl(), static function (int $seconds): void { usleep($seconds * 1000); }, 1, 1);
+    $timeoutVerifier = new PackagistReleaseVerifier($http->baseUrl(), static function (int $seconds): void { sleep($seconds); }, 1, 1);
 
     try {
         $timeoutVerifier->verify($manifest);
