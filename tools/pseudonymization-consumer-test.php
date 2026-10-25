@@ -14,7 +14,7 @@ try {
             'php-anonymizer/anonymizer-pseudonymization' => '@dev',
         ],
         'repositories' => [
-            ['type' => 'path', 'url' => $root . '/packages/anonymizer', 'options' => ['symlink' => false]],
+            ['type' => 'path', 'url' => $root . '/packages/anonymizer', 'options' => ['symlink' => false, 'versions' => ['php-anonymizer/anonymizer' => '2.0.x-dev']]],
             ['type' => 'path', 'url' => $root . '/packages/anonymizer-pseudonymization', 'options' => ['symlink' => false]],
         ],
         'minimum-stability' => 'dev',
