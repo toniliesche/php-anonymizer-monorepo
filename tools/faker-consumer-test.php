@@ -12,7 +12,7 @@ try {
         'require' => ['php' => '^8.5', 'php-anonymizer/anonymizer-faker' => '@dev'],
         'repositories' => [
             ['type' => 'path', 'url' => $root . '/packages/anonymizer-faker', 'options' => ['symlink' => false]],
-            ['type' => 'path', 'url' => $root . '/packages/anonymizer', 'options' => ['symlink' => false]],
+            ['type' => 'path', 'url' => $root . '/packages/anonymizer', 'options' => ['symlink' => false, 'versions' => ['php-anonymizer/anonymizer' => '2.0.x-dev']]],
         ],
         'minimum-stability' => 'dev',
     ];

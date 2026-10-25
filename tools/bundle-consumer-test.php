@@ -16,9 +16,9 @@ try {
             'symfony/yaml' => '^8.0',
         ],
         'repositories' => [
-            ['type' => 'path', 'url' => $root . '/packages/anonymizer', 'options' => ['symlink' => false]],
+            ['type' => 'path', 'url' => $root . '/packages/anonymizer', 'options' => ['symlink' => false, 'versions' => ['php-anonymizer/anonymizer' => '2.0.x-dev']]],
             ['type' => 'path', 'url' => $root . '/packages/anonymizer-bundle', 'options' => ['symlink' => false]],
-            ['type' => 'path', 'url' => $root . '/packages/anonymizer-symfony-serializer', 'options' => ['symlink' => false]],
+            ['type' => 'path', 'url' => $root . '/packages/anonymizer-symfony-serializer', 'options' => ['symlink' => false, 'versions' => ['php-anonymizer/anonymizer-symfony-serializer' => '2.0.x-dev']]],
         ],
         'minimum-stability' => 'dev',
     ];
