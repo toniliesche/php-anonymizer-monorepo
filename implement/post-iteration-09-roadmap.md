@@ -109,7 +109,21 @@ rules, preserve mode, embedded JSON, and Serializer adaptation.
 - Test map/list compatibility, malformed documents, record-level failures,
   memory bounds, ordering, and report path composition.
 
-## Iteration 14 — Profile Governance and Controlled Reuse
+## Iteration 14 — Key Normalization and Global Rules
+
+- Add optional comparison-only ASCII key normalization for equivalent
+  camelCase, PascalCase, snake_case, kebab-case, acronym, separator, and digit
+  boundary spellings.
+- Preserve original dataset keys in output, reports, audit paths, and payloads;
+  exact-spelling normalized collisions win, then declaration order.
+- Add profile-local global scalar rules, including `each: true` lists, at every
+  map depth and inside maps nested in lists.
+- Reject structural global rules and keep global rules isolated from embedded
+  profiles; retain existing preserve/redact and contextual semantics.
+- Release this iteration as `1.5.0`; the former governance/reuse scope moves to
+  Iteration 15.
+
+## Iteration 15 — Profile Governance and Controlled Reuse
 
 - Add profile metadata for schema/profile version, owner, deprecation state,
   and purpose; metadata must not affect anonymization behavior.

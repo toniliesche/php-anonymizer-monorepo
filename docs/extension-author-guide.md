@@ -87,3 +87,9 @@ Register custom implementations through the `anonymizer.value_transformation`
 Bundle tag with a unique `id`. Contextual implementations may receive the
 profile, JSON Pointer, key ID, and application attributes through
 `ContextualValueTransformationInterface`.
+
+Profile matching can optionally enable ASCII key normalization and global
+scalar rules. Extension authors should treat normalized field names as
+comparison aliases only; anonymizers must preserve the original dataset keys
+and report pointers. Global rules are evaluated within the profile that owns
+them and are not inherited by embedded profiles.

@@ -10,13 +10,18 @@ anonymizer:
   profiles:
     customer:
       mode: redact
+      key_normalization: true
       rules:
         - field: email
           strategy: star_mask
+      global_rules:
+        - field: email_address
 ```
 
 The core anonymizer is available through the autowireable
 `PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerInterface`.
+Profile key normalization is comparison-only, and global rules apply within
+the configured profile at every map depth without renaming dataset keys.
 
 Custom extension services use explicit IDs on their tags:
 
