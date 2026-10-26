@@ -61,7 +61,7 @@ updates. Mention release or migration impact; add screenshots for visual docs.
 ## Release Changelog Hygiene
 
 The repository uses a synchronized release train. The current work-in-progress
-release is `1.7.0`; update the root changelog and only the package
+release is `2.0.1`; update the root changelog and only the package
 `CHANGELOG.md` files affected by the change. Add package-specific entries where
 behavior changed; leave unrelated package changelogs untouched. Keep an empty
 `Unreleased` section above the current release for subsequent work.

@@ -163,6 +163,11 @@ profile, codec, and path without exposing payload contents.
 Use `anonymizePayload()` for an encoded map. An embedded rule applies a second
 profile to a JSON string stored inside the outer document.
 
+The JSON codec preserves whether each input container was an object or an
+array, including empty `{}` and `[]` containers, when it encodes payloads,
+documents, embedded JSON, and NDJSON records. A replacement of a container
+uses the replacement value's shape.
+
 <!-- executable -->
 ```php
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilder;
@@ -199,7 +204,10 @@ Execution limits are enabled by default. The defaults are 10 MiB input payloads,
 depth 64, 100,000 visited nodes, 50,000 entries per collection, and embedded
 payload depth 8. Override them with `AnonymizerBuilder::withLimits()` and
 `AnonymizationLimits`. Limit failures identify the profile and current JSON
-Pointer.
+Pointer. Encoded input size is measured in bytes and rejected before decoding.
+Traversal counts each node once from a depth-zero root, including unselected
+map and list values; collection sizes are checked whenever a container is
+visited. Embedded data shares its enclosing operation's budget.
 
 Use `anonymizeWithReport()` for changed and missing paths, or
 `anonymizeWithAudit()` for aggregate safe telemetry and action details. The
@@ -214,10 +222,18 @@ protecting the result and any data they log alongside it.
 transformed map at a time. It does not retain previous records or reports. A
 bad record or a transformation error is raised when iteration reaches that
 record. `anonymizeNdjson()` accepts logical JSON lines whose roots must be
-objects; the profile must declare `root: list`. Its result exposes lazy
-`lines()`. Consume every line successfully before calling `audit()` to obtain
-the aggregate stream audit. Partial or failed consumption does not produce a
-complete audit.
+objects; the profile must declare `root: list`. Its input-byte and traversal
+limits reset for each record, after removing that record's trailing line
+ending. The total stream has no byte-size cap, and later records are checked
+only when reached. Its result exposes lazy `lines()`. Consume every line
+successfully before calling `audit()` to obtain the aggregate stream audit.
+Partial or failed consumption does not produce a complete audit.
+
+When key normalization is enabled, a normalized input spelling satisfies the
+matching profile-local rule for missing-field reporting as well as selection.
+Exact matches take precedence in normalized collisions, and changed paths keep
+the input's original spelling. Global rules never generate missing-field
+events.
 
 <!-- executable -->
 ```php

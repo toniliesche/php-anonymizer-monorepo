@@ -62,9 +62,11 @@ the value is a string. Rules do not rename fields or create missing fields;
 report-enabled operations include missing profile-local selector fields in
 `missingPaths()` when their conditions match. Global rules do not report
 missing fields because they do not declare a fixed field set. With key
-normalization enabled, missing-path detection currently checks the literal
-selector spelling, so an anonymized normalized alias may also appear in
-`missingPaths()`.
+normalization enabled, presence uses the same exact-match-first and normalized
+lookup as rule selection. A field found through a normalized alias is not
+reported as missing; when normalized spellings collide, only the rule resolved
+for the existing input key is considered present. Changed paths retain the
+input key's original spelling.
 
 ## Governance metadata and reusable fragments
 
@@ -478,7 +480,12 @@ if ($payload !== '[{"email":"[REDACTED]"},{"email":"[REDACTED]"}]') {
 Core execution limits are enabled by default and can be overridden with
 `AnonymizationLimits`. The defaults are 10 MiB input payloads, depth 64,
 100,000 visited nodes, 50,000 entries per collection, and embedded depth 8.
-Limit failures identify the profile and current JSON Pointer.
+Input size is measured in encoded bytes and checked before decoding. Traversal
+starts at depth zero and counts each map value, list item, and scalar leaf once;
+unselected branches are included, and a container's size is checked whenever
+it is visited. Embedded payloads share the enclosing execution budget, while
+batch records use independent budgets. Limit failures identify the profile and
+current JSON Pointer.
 
 `AnonymizerInterface::anonymizeRecords()` accepts an iterable of map records and
 yields transformed maps lazily. Records are processed independently without
@@ -493,14 +500,19 @@ count. Audit results never contain input or replacement values.
 `AnonymizerInterface::anonymizeDocument()` accepts codecs implementing
 `DocumentPayloadCodecInterface` and preserves either a map or an explicitly
 declared list root. The core JSON codec and Bundle YAML codec support both
-roots; the existing `anonymizePayload*()` methods remain map-only.
+roots; the existing `anonymizePayload*()` methods remain map-only. JSON
+operations preserve original object containers, including `{}`, separately
+from arrays, including `[]`, through payload, document, and embedded JSON
+encoding.
 
 `AnonymizerInterface::anonymizeNdjson()` accepts an iterable of logical JSON
 lines and returns a lazy result. NDJSON profiles must use `root: list`; each
-line must be a JSON object. Consume `lines()` to process records, then call
-`audit()` for the aggregate safe audit. Stream audit paths use a wildcard record
-prefix such as `/*/email` and are unavailable after partial or failed
-consumption.
+line must be a JSON object. The input-byte limit and traversal budgets apply to
+each record independently after its trailing line ending is removed; there is
+no total-stream byte limit. Records retain their own JSON object and array
+shapes. Consume `lines()` to process records, then call `audit()` for the
+aggregate safe audit. Stream audit paths use a wildcard record prefix such as
+`/*/email` and are unavailable after partial or failed consumption.
 
 ## Composition and matching precedence
 
@@ -510,8 +522,8 @@ Profile processing has two phases:
    fragments. Provider results are collected when `AnonymizerBuilder::build()`
    runs.
 2. `build()` validates registered strategy, codec, and transformation IDs and
-   transformation options. Runtime values are checked when the corresponding
-   operation reaches each rule.
+   transformation options in both scoped and global rules. Runtime values are
+   checked when the corresponding operation reaches each rule.
 
 The resulting behavior follows these rules:
 

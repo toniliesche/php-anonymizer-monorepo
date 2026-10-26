@@ -27,7 +27,7 @@ $readiness = new ReleaseReadiness();
 $valid = $fixture();
 
 try {
-    $errors = $readiness->validate('2.0.0', $valid);
+    $errors = $readiness->validate('2.0.1', $valid);
     if ($errors !== []) {
         throw new RuntimeException('Valid release fixture failed: ' . implode('; ', $errors));
     }
@@ -48,7 +48,7 @@ try {
     $manifest = json_decode((string) file_get_contents($manifestPath), true, 512, JSON_THROW_ON_ERROR);
     $manifest['extra']['branch-alias']['dev-develop'] = '1.7.x-dev';
     file_put_contents($manifestPath, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
-    assertErrorContains($readiness->validate('2.0.0', $invalidAlias), '2.0.x-dev branch alias');
+    assertErrorContains($readiness->validate('2.0.1', $invalidAlias), '2.0.x-dev branch alias');
 } finally {
     $remove($invalidAlias);
 }
@@ -63,7 +63,7 @@ try {
         throw new RuntimeException('Could not prepare changelog fixture.');
     }
     file_put_contents($changelogPath, $contents);
-    assertErrorContains($readiness->validate('2.0.0', $invalidChangelog), 'Root changelog must place Unreleased');
+    assertErrorContains($readiness->validate('2.0.1', $invalidChangelog), 'Root changelog must place Unreleased');
 } finally {
     $remove($invalidChangelog);
 }
@@ -72,7 +72,7 @@ $invalidDocumentation = $fixture();
 
 try {
     unlink($invalidDocumentation . '/packages/anonymizer/docs/migration-v2.md');
-    assertErrorContains($readiness->validate('2.0.0', $invalidDocumentation), 'anonymizer is missing docs/migration-v2.md');
+    assertErrorContains($readiness->validate('2.0.1', $invalidDocumentation), 'anonymizer is missing docs/migration-v2.md');
 } finally {
     $remove($invalidDocumentation);
 }
@@ -84,7 +84,7 @@ try {
     $manifest = json_decode((string) file_get_contents($manifestPath), true, 512, JSON_THROW_ON_ERROR);
     $manifest['require']['php-anonymizer/anonymizer'] = '^1.0';
     file_put_contents($manifestPath, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
-    assertErrorContains($readiness->validate('2.0.0', $invalidCoreConstraint), 'must require php-anonymizer/anonymizer ^2.0');
+    assertErrorContains($readiness->validate('2.0.1', $invalidCoreConstraint), 'must require php-anonymizer/anonymizer ^2.0');
 } finally {
     $remove($invalidCoreConstraint);
 }
@@ -96,12 +96,12 @@ try {
     $manifest = json_decode((string) file_get_contents($manifestPath), true, 512, JSON_THROW_ON_ERROR);
     $manifest['require']['php-anonymizer/anonymizer-symfony-serializer'] = '^2.0';
     file_put_contents($manifestPath, json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
-    assertErrorContains($readiness->validate('2.0.0', $invalidSerializerConstraint), 'must keep the Serializer adapter optional');
+    assertErrorContains($readiness->validate('2.0.1', $invalidSerializerConstraint), 'must keep the Serializer adapter optional');
 } finally {
     $remove($invalidSerializerConstraint);
 }
 
-printf("Release readiness fixtures passed for %d packages (2.0.0).\n", count(new ReleaseTrain()->packages()));
+printf("Release readiness fixtures passed for %d packages (2.0.1).\n", count(new ReleaseTrain()->packages()));
 
 /**
  * @param list<string> $errors

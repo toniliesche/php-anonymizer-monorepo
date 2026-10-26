@@ -17,6 +17,9 @@ return RectorConfig::configure()
     // This fixture intentionally wires concrete Symfony services and mirrors
     // the runtime Kernel signature; Symfony migration renames are incorrect here.
     ->withSkipPath(__DIR__ . '/packages/anonymizer-bundle/tests/Integration/TestKernel.php')
+    // Keep PHPUnit UsesClass class-string metadata literal; converting these to ::class
+    // constants creates imports that PHP-CS-Fixer removes as unused.
+    ->withSkipPath(__DIR__ . '/packages/anonymizer/tests/Unit/Application/Anonymization/TraversalExecutionLimitsTest.php')
     ->withPhpSets(
         php85: true
     )
