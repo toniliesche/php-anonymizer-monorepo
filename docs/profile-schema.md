@@ -49,7 +49,7 @@ The rule body determines the expected input shape:
 
 | Rule body | Expected value | Effect |
 | --- | --- | --- |
-| no body | string | Use the mode’s default replacement, usually `[REDACTED]`. |
+| no body | string | Apply the mode’s default: redact in `redact` mode, pass through in `preserve` mode. |
 | `strategy` | string | Resolve a registered replacement strategy. |
 | `transform` | supported typed value | Resolve a registered value transformation. |
 | `embedded` | encoded string | Decode, apply another profile, and encode again. |
@@ -59,16 +59,24 @@ The rule body determines the expected input shape:
 
 Shape mismatches are errors unless a traversing rule supplies `on_scalar` and
 the value is a string. Rules do not rename fields or create missing fields;
-missing selected fields are reported by report-enabled operations.
+report-enabled operations include missing profile-local selector fields in
+`missingPaths()` when their conditions match. Global rules do not report
+missing fields because they do not declare a fixed field set. With key
+normalization enabled, presence uses the same exact-match-first and normalized
+lookup as rule selection. A field found through a normalized alias is not
+reported as missing; when normalized spellings collide, only the rule resolved
+for the existing input key is considered present. Changed paths retain the
+input key's original spelling.
 
 ## Governance metadata and reusable fragments
 
 Profiles may include optional governance metadata. The map may contain any
 subset of `schema_version`, `profile_version`, `owner`, `status`, and `purpose`;
 unknown keys and empty values are rejected. `status` is `active` or
-`deprecated`. Metadata is inspectable through the profile inspector and does
-not affect anonymization or the behavior fingerprint. Do not put secrets in
-metadata.
+`deprecated`. Metadata can be inspected through the framework integration's
+`ProfileInspectorInterface` service; the standalone core builder does not
+provide that service. Metadata does not affect anonymization or the behavior
+fingerprint. Do not put secrets in metadata.
 
 The metadata keys are all optional non-empty strings. `status` accepts only
 `active` or `deprecated`:
@@ -167,7 +175,7 @@ $profile = ProfileDefinition::fromArray('customer', [
 ]);
 ```
 
-The normalized global rules can be run against nested maps and lists:
+Global rules can be run against nested maps and lists:
 
 ```php
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilder;
@@ -364,12 +372,34 @@ transformation contracts are:
 
 | Type | Supported input | Options | Result |
 | --- | --- | --- | --- |
-| `nullify` | any supported scalar | none | `null` |
-| `partial_mask` | string | optional non-negative `prefix`, `suffix`, and non-empty `character` | Same-length masked string; defaults to showing the last four characters. |
-| `date_generalize` | RFC 3339 string or date object | required `unit`: `year`, `month`, `day`, or `hour` | Same date type rounded to that unit. |
-| `numeric_bucket` | integer or float | required positive `size`; optional numeric `origin` | Same numeric type rounded to a bucket. |
+| `nullify` | supported scalar or temporal value | none | `null` |
+| `partial_mask` | string | optional non-negative `prefix`, `suffix`, and non-empty `character` | Same-length string; defaults to hiding all but the last four characters. Strings of four or fewer characters remain unchanged with the defaults. |
+| `date_generalize` | RFC 3339 string or `DateTimeInterface` | required `unit`: `year`, `month`, `day`, or `hour` | String input stays a string; date objects return as `DateTimeImmutable`, rounded to the unit. |
+| `numeric_bucket` | integer or float | required positive `size`; optional numeric `origin` | Same numeric type rounded down to the bucket boundary relative to `origin`. |
 
-Examples:
+For example, `partial_mask` is a transformation, not a replacement strategy.
+This complete example rounds a numeric value down to its bucket boundary:
+
+<!-- executable -->
+```php
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilder;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
+
+$profile = ProfileDefinition::fromArray('customer', [
+    'mode' => 'redact',
+    'rules' => [['field' => 'income', 'transform' => [
+        'type' => 'numeric_bucket',
+        'options' => ['size' => 100, 'origin' => 0],
+    ]]],
+]);
+$result = AnonymizerBuilder::create()->withProfile($profile)->build()->anonymize('customer', ['income' => 245]);
+
+if ($result !== ['income' => 200]) {
+    throw new RuntimeException('The numeric bucket transformation example failed.');
+}
+```
+
+Other transformation forms include:
 
 ```php
 ['field' => 'name', 'transform' => [
@@ -380,16 +410,14 @@ Examples:
     'type' => 'date_generalize',
     'options' => ['unit' => 'month'],
 ]]
-['field' => 'income', 'transform' => [
-    'type' => 'numeric_bucket',
-    'options' => ['size' => 100, 'origin' => 0],
-]]
 ['field' => 'internalNote', 'transform' => ['type' => 'nullify']]
 ```
 
-Transformation types and options are validated when the selected rule runs.
-Unknown transformation IDs or invalid options fail the operation; they do not
-silently fall back to redaction.
+Transformation IDs and options are validated when `AnonymizerBuilder::build()`
+assembles the façade, including rules that may not match a particular input.
+The transformation's supported runtime type is checked when a matching rule
+is applied. Unknown IDs, invalid options, or unsupported values fail; they do
+not silently fall back to redaction.
 
 Pass an `AnonymizationContext` to the unified façade method when contextual
 execution is required. It contains canonical string attributes such as
@@ -452,7 +480,12 @@ if ($payload !== '[{"email":"[REDACTED]"},{"email":"[REDACTED]"}]') {
 Core execution limits are enabled by default and can be overridden with
 `AnonymizationLimits`. The defaults are 10 MiB input payloads, depth 64,
 100,000 visited nodes, 50,000 entries per collection, and embedded depth 8.
-Limit failures identify the profile and current JSON Pointer.
+Input size is measured in encoded bytes and checked before decoding. Traversal
+starts at depth zero and counts each map value, list item, and scalar leaf once;
+unselected branches are included, and a container's size is checked whenever
+it is visited. Embedded payloads share the enclosing execution budget, while
+batch records use independent budgets. Limit failures identify the profile and
+current JSON Pointer.
 
 `AnonymizerInterface::anonymizeRecords()` accepts an iterable of map records and
 yields transformed maps lazily. Records are processed independently without
@@ -467,22 +500,30 @@ count. Audit results never contain input or replacement values.
 `AnonymizerInterface::anonymizeDocument()` accepts codecs implementing
 `DocumentPayloadCodecInterface` and preserves either a map or an explicitly
 declared list root. The core JSON codec and Bundle YAML codec support both
-roots; the existing `anonymizePayload*()` methods remain map-only.
+roots; the existing `anonymizePayload*()` methods remain map-only. JSON
+operations preserve original object containers, including `{}`, separately
+from arrays, including `[]`, through payload, document, and embedded JSON
+encoding.
 
 `AnonymizerInterface::anonymizeNdjson()` accepts an iterable of logical JSON
 lines and returns a lazy result. NDJSON profiles must use `root: list`; each
-line must be a JSON object. Consume `lines()` to process records, then call
-`audit()` for the aggregate safe audit. Stream audit paths use a wildcard record
-prefix such as `/*/email` and are unavailable after partial or failed
-consumption.
+line must be a JSON object. The input-byte limit and traversal budgets apply to
+each record independently after its trailing line ending is removed; there is
+no total-stream byte limit. Records retain their own JSON object and array
+shapes. Consume `lines()` to process records, then call `audit()` for the
+aggregate safe audit. Stream audit paths use a wildcard record prefix such as
+`/*/email` and are unavailable after partial or failed consumption.
 
 ## Composition and matching precedence
 
 Profile processing has two phases:
 
-1. The definition is validated and fragments are expanded when the profile is
-   built.
-2. The compiled rules are matched against each map during anonymization.
+1. `ProfileDefinition::fromArray()` validates the profile shape and expands
+   fragments. Provider results are collected when `AnonymizerBuilder::build()`
+   runs.
+2. `build()` validates registered strategy, codec, and transformation IDs and
+   transformation options in both scoped and global rules. Runtime values are
+   checked when the corresponding operation reaches each rule.
 
 The resulting behavior follows these rules:
 
@@ -502,16 +543,40 @@ The resulting behavior follows these rules:
 - Embedded profile references are validated across all nested rules. A profile
   may not embed itself directly or through a cycle.
 
-For example, this profile masks `email-address` with the local rule, while the
-global rule handles other normalized spellings and deeper maps:
+For example, the direct profile rule replaces the fragment rule for
+`email_address`. For a `person`, the local transformation wins. For a
+`company`, its condition does not match and the global rule applies. Key
+normalization lets both rules match the input spelling `emailAddress`; output
+keeps that original key:
 
+<!-- executable -->
 ```php
-[
+use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilder;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
+
+$profile = ProfileDefinition::fromArray('customer', [
     'mode' => 'redact',
     'key_normalization' => true,
+    'fragments' => [[
+        'name' => 'contact',
+        'rules' => [['field' => 'email_address', 'strategy' => 'star_mask']],
+    ]],
+    'rules' => [
+        ['use' => 'contact'],
+        ['field' => 'email_address', 'when' => ['path' => 'kind', 'equals' => 'person'], 'transform' => [
+            'type' => 'partial_mask',
+            'options' => ['prefix' => 1, 'suffix' => 2],
+        ]],
+    ],
     'global_rules' => [['field' => 'email_address', 'strategy' => 'star_mask']],
-    'rules' => [['field' => 'email-address', 'strategy' => 'partial_mask']],
-]
+]);
+$anonymizer = AnonymizerBuilder::create()->withProfile($profile)->build();
+$person = $anonymizer->anonymize('customer', ['kind' => 'person', 'emailAddress' => 'ada@example.test']);
+$company = $anonymizer->anonymize('customer', ['kind' => 'company', 'emailAddress' => 'ada@example.test']);
+
+if (!str_starts_with($person['emailAddress'], 'a') || !str_ends_with($person['emailAddress'], 'st') || $company['emailAddress'] !== str_repeat('*', mb_strlen('ada@example.test', 'UTF-8'))) {
+    throw new RuntimeException('The local, fragment, and global rule precedence example failed.');
+}
 ```
 
 ## Validation checklist

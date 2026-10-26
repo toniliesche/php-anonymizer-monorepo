@@ -8,6 +8,7 @@ use PhpAnonymizer\AnonymizerBundle\Application\LegacyImport\LegacyImportExceptio
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport\AtomicFileWriter;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport\BundleConfigRenderer;
 use PhpAnonymizer\AnonymizerBundle\Infrastructure\LegacyImport\LegacyDocumentReader;
+use PHPUnit\Framework\Assert as PHPUnitAssert;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
@@ -84,6 +85,16 @@ final class LegacyImportInfrastructureTest extends TestCase
         self::assertSame("profiles:\n  customer:\n    mode: redact\n\n", new BundleConfigRenderer()->render([
             'profiles' => ['customer' => ['mode' => 'redact']],
         ]));
+    }
+
+    public function testRendererUsesEightInlineLevelsForDeepConfiguration(): void
+    {
+        $nested = ['leaf' => 'value'];
+        for ($depth = 0; $depth < 9; ++$depth) {
+            $nested = ['level' => $nested];
+        }
+
+        PHPUnitAssert::assertSame("root:\n  level:\n    level:\n      level:\n        level:\n          level:\n            level:\n              level: { level: { level: { leaf: value } } }\n\n", new BundleConfigRenderer()->render(['root' => $nested]));
     }
 
     public function testReaderSupportsJsonAndYamlAndRejectsInvalidInputs(): void

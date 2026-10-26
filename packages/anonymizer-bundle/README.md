@@ -1,7 +1,33 @@
 # PHP Anonymizer Symfony Bundle
 
-Install `php-anonymizer/anonymizer-bundle` alongside the core package. Symfony
-Flex can register the bundle; manual registration uses
+### Project Status
+
+[![Tests](https://github.com/toniliesche/php-anonymizer-monorepo/actions/workflows/quality.yml/badge.svg)](https://github.com/toniliesche/php-anonymizer-monorepo/actions/workflows/quality.yml)
+[![Code Coverage](https://codecov.io/gh/toniliesche/php-anonymizer-monorepo/branch/develop/graph/badge.svg)](https://codecov.io/gh/toniliesche/php-anonymizer-monorepo)
+[![Mutation testing badge](https://img.shields.io/endpoint?style=flat&url=https%3A%2F%2Fbadge-api.stryker-mutator.io%2Fgithub.com%2Ftoniliesche%2Fphp-anonymizer-monorepo%2Fmain)](https://dashboard.stryker-mutator.io/reports/github.com/toniliesche/php-anonymizer-monorepo/main)
+[![Downloads](https://img.shields.io/packagist/dt/php-anonymizer/anonymizer-bundle.svg)](https://packagist.org/packages/php-anonymizer/anonymizer-bundle)
+[![Stars](https://img.shields.io/github/stars/toniliesche/php-anonymizer-monorepo)](https://github.com/toniliesche/php-anonymizer-monorepo/stargazers)
+
+### Project Info
+
+[![PHP Version](https://img.shields.io/packagist/php-v/php-anonymizer/anonymizer-bundle)](https://github.com/toniliesche/php-anonymizer-monorepo)
+[![Latest Version](https://img.shields.io/packagist/v/php-anonymizer/anonymizer-bundle.svg)](https://packagist.org/packages/php-anonymizer/anonymizer-bundle)
+[![License](https://img.shields.io/github/license/toniliesche/php-anonymizer-monorepo)](https://github.com/toniliesche/php-anonymizer-monorepo/blob/main/LICENSE)
+
+### Repo Status
+
+[![Last Commit](https://img.shields.io/github/last-commit/toniliesche/php-anonymizer-monorepo)](https://github.com/toniliesche/php-anonymizer-monorepo)
+[![Issues](https://img.shields.io/github/issues/toniliesche/php-anonymizer-monorepo)](https://github.com/toniliesche/php-anonymizer-monorepo/issues)
+
+### License
+
+This project is released under the MIT license.
+
+See the [LICENSE](https://github.com/toniliesche/php-anonymizer-monorepo/blob/main/LICENSE) for more information.
+
+Install `php-anonymizer/anonymizer-bundle`; Composer installs the core and
+required Symfony component dependencies. Symfony Flex can register the bundle;
+manual registration uses
 `PhpAnonymizer\AnonymizerBundle\AnonymizerBundle`.
 
 ```yaml
@@ -85,8 +111,12 @@ anonymizer:
     logger_service: monolog.logger.anonymizer
 ```
 
-Object anonymization is opt-in. Enable `anonymizer.serializer.enabled` and
-provide the application-owned Symfony Serializer service through
-`anonymizer.serializer.service`, or use the conventional `serializer` service.
+Pseudonymization is optional; install `php-anonymizer/anonymizer-pseudonymization`
+and configure its key provider as described in the
+[usage guide](docs/usage.md). Object anonymization is also opt-in and requires
+`php-anonymizer/anonymizer-symfony-serializer` in addition to the application-
+owned Symfony Serializer service. Enable `anonymizer.serializer.enabled` and
+provide that service through `anonymizer.serializer.service`, or use the
+conventional `serializer` service.
 
 See the package-local [usage guide](docs/usage.md).

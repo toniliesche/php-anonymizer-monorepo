@@ -7,6 +7,10 @@
         "php": "^8.5",
         "php-anonymizer/anonymizer": "^2.0"
     },
+    "suggest": {
+        "php-anonymizer/anonymizer-bundle": "Register persona strategies automatically in Symfony",
+        "php-anonymizer/anonymizer-laravel": "Register persona strategies automatically in Laravel"
+    },
     "autoload": {
         "psr-4": {
             "PhpAnonymizer\\AnonymizerPersonas\\": "src/"

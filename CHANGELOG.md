@@ -4,6 +4,17 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+## 2.0.1
+
+- Corrected traversal budgets to count every input node once, including
+  unselected values, and measure encoded input limits in bytes before decoding.
+- Applied limits independently to each lazy NDJSON record and documented the
+  per-record budget behavior.
+- Preserved JSON object and list identity across map, document, embedded, and
+  NDJSON operations, including empty containers.
+- Matched missing-field reporting to exact and normalized key selection, and
+  validated global rule references during construction.
+
 ## 2.0.0
 
 - Added Gitea validation and GitHub release workflow documentation, including

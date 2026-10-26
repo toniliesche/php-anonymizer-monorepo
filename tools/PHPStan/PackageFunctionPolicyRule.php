@@ -53,11 +53,22 @@ final class PackageFunctionPolicyRule implements Rule
         if (isset(self::MB_ENCODING_ARGUMENT[$name])) {
             $position = self::MB_ENCODING_ARGUMENT[$name];
             $argument = $node->args[$position] ?? null;
-            if ($argument === null || !$argument instanceof Arg || !$argument->value instanceof String_ || mb_strtoupper($argument->value->value, 'UTF-8') !== 'UTF-8') {
-                return [RuleErrorBuilder::message(sprintf("Function %s() must pass the explicit encoding 'UTF-8'.", $name))->identifier('anonymizer.explicitEncoding')->build()];
+            if (!$this->hasValidEncoding($name, $argument)) {
+                return [RuleErrorBuilder::message(sprintf("Function %s() must pass an explicit encoding ('UTF-8'; mb_strlen also accepts '8bit').", $name))->identifier('anonymizer.explicitEncoding')->build()];
             }
         }
 
         return [];
+    }
+
+    private function hasValidEncoding(string $function, ?Node $argument): bool
+    {
+        if (!$argument instanceof Arg || !$argument->value instanceof String_) {
+            return false;
+        }
+
+        $encoding = mb_strtoupper($argument->value->value, 'UTF-8');
+
+        return $encoding === 'UTF-8' || ($function === 'mb_strlen' && $encoding === '8BIT');
     }
 }

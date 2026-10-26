@@ -9,6 +9,10 @@
         "php-anonymizer/anonymizer": "^2.0",
         "webmozart/assert": "^2.5"
     },
+    "suggest": {
+        "php-anonymizer/anonymizer-bundle": "Register Faker strategies automatically in Symfony",
+        "php-anonymizer/anonymizer-laravel": "Register Faker strategies automatically in Laravel"
+    },
     "autoload": {
         "psr-4": {
             "PhpAnonymizer\\AnonymizerFaker\\": "src/"

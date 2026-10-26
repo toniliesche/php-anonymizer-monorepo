@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 $root = dirname(__DIR__);
 $files = array_merge(
+    glob($root . '/README.md') ?: [],
     glob($root . '/docs/*.md') ?: [],
+    glob($root . '/packages/*/README.md') ?: [],
     glob($root . '/packages/*/docs/*.md') ?: [],
 );
+$files = array_values(array_unique($files));
 sort($files, SORT_STRING);
 
 $examples = [];
@@ -38,7 +41,12 @@ try {
         $contents = "<?php\n\ndeclare(strict_types=1);\n\nrequire __DIR__ . '/vendor/autoload.php';\n\n" . trim($source) . "\n";
         file_put_contents($script, $contents);
 
-        $process = proc_open([PHP_BINARY, $script], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, $directory);
+        $process = proc_open(
+            [PHP_BINARY, '-d', 'zend.assertions=1', '-d', 'assert.exception=1', $script],
+            [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+            $pipes,
+            $directory,
+        );
         if (!is_resource($process)) {
             throw new RuntimeException('Could not start documentation example.');
         }

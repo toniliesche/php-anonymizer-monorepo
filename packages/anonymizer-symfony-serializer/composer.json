@@ -8,6 +8,10 @@
         "php-anonymizer/anonymizer": "^2.0",
         "symfony/serializer": "^8.1.9"
     },
+    "suggest": {
+        "php-anonymizer/anonymizer-bundle": "Register the Serializer adapter automatically in Symfony",
+        "php-anonymizer/anonymizer-laravel": "Register the Serializer adapter automatically in Laravel"
+    },
     "autoload": {
         "psr-4": {
             "PhpAnonymizer\\AnonymizerSymfonySerializer\\": "src/"

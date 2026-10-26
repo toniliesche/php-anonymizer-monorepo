@@ -109,8 +109,9 @@ final class OptionalIntegrationRegistrar
         if (!$config['enabled']) {
             return;
         }
+        $extension = $this->factory(SymfonySerializerExtension::class, 'serializer');
         $service = is_string($config['service']) && $config['service'] !== '' ? $config['service'] : 'serializer';
-        $container->setDefinition(SymfonySerializerExtension::class, new Definition(SymfonySerializerExtension::class, [new Reference($service)])
+        $container->setDefinition($extension, new Definition($extension, [new Reference($service)])
             ->addTag('anonymizer.extension', ['priority' => 0]));
     }
 
@@ -138,7 +139,11 @@ final class OptionalIntegrationRegistrar
     private function factory(string $class, string $integration): string
     {
         if (!class_exists($class)) {
-            $package = $integration === 'personas' ? 'php-anonymizer/anonymizer-personas' : 'php-anonymizer/anonymizer-faker';
+            $package = match ($integration) {
+                'personas' => 'php-anonymizer/anonymizer-personas',
+                'serializer' => 'php-anonymizer/anonymizer-symfony-serializer',
+                default => 'php-anonymizer/anonymizer-faker',
+            };
 
             throw new InvalidConfigurationException(sprintf('%s integration is enabled but %s is not installed. Install it with composer require %s.', ucfirst($integration), $package, $package));
         }

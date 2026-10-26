@@ -40,6 +40,15 @@ jobs:
         run: composer install --no-interaction --prefer-dist --no-progress
       - name: Run full QA
         run: composer ci:run-gate quality composer qa
+        env:
+          STRYKER_DASHBOARD_API_KEY: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.STRYKER_DASHBOARD_API_KEY || '' }}
+      - name: Upload coverage to Codecov
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          files: var/coverage.xml
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_ORG_TOKEN }}
       - name: Record workflow outcome
         if: always()
         env:

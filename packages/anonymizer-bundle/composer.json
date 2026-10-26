@@ -6,7 +6,6 @@
     "require": {
         "php": "^8.5",
         "php-anonymizer/anonymizer": "^2.0",
-        "php-anonymizer/anonymizer-symfony-serializer": "^2.0",
         "psr/log": "^3.0.2",
         "symfony/config": "^8.1.5",
         "symfony/console": "^8.1.9",
@@ -19,7 +18,8 @@
     "suggest": {
         "php-anonymizer/anonymizer-faker": "Enable Faker replacement strategies",
         "php-anonymizer/anonymizer-personas": "Enable fixed European persona strategies",
-        "php-anonymizer/anonymizer-pseudonymization": "Enable keyed deterministic pseudonymisation"
+        "php-anonymizer/anonymizer-pseudonymization": "Enable keyed deterministic pseudonymisation",
+        "php-anonymizer/anonymizer-symfony-serializer": "Enable object anonymization through an application-owned Symfony Serializer"
     },
     "autoload": {
         "psr-4": {

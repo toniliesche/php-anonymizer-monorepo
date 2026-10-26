@@ -39,6 +39,7 @@ use PhpAnonymizer\Anonymizer\Application\Exception\ProfileNotFound;
 use PhpAnonymizer\Anonymizer\Application\Exception\UnsupportedValue;
 use PhpAnonymizer\Anonymizer\Application\Extension\Payload\EmbeddedPayloadTraversal;
 use PhpAnonymizer\Anonymizer\Application\Extension\Payload\JsonPayloadCodec;
+use PhpAnonymizer\Anonymizer\Application\Extension\Payload\JsonPayloadData;
 use PhpAnonymizer\Anonymizer\Application\Extension\Payload\PayloadCodecRegistry;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileRegistry;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\Validation\EmbeddedProfileReferenceGraph;
@@ -103,6 +104,7 @@ use stdClass;
 #[CoversClass(DefaultRedactionStrategy::class)]
 #[CoversClass(StarMaskStrategy::class)]
 #[CoversClass(JsonPayloadCodec::class)]
+#[UsesClass(JsonPayloadData::class)]
 #[CoversClass(CoreTransformationFactory::class)]
 #[CoversClass(DateGeneralizeTransformation::class)]
 #[CoversClass(NullifyTransformation::class)]
@@ -653,7 +655,7 @@ final class ArrayAnonymizerTest extends TestCase
         ], $result->events());
     }
 
-    public function testEmbeddedPayloadUsesUtf8LengthAndPreservesTheCallerBudget(): void
+    public function testEmbeddedPayloadUsesByteLengthAndPreservesTheCallerBudget(): void
     {
         $nested = ProfileDefinition::fromArray('nested', ['mode' => 'redact', 'rules' => [['field' => 'payload']]]);
         $outer = ProfileDefinition::fromArray('outer', [
@@ -663,7 +665,7 @@ final class ArrayAnonymizerTest extends TestCase
         $anonymizer = new ArrayAnonymizer(
             new InMemoryProfileProvider([$nested, $outer]),
             codecs: [new StaticPayloadCodec('plain')],
-            limits: new AnonymizationLimits(maxInputBytes: 1),
+            limits: new AnonymizationLimits(maxInputBytes: 3),
         );
 
         self::assertSame(['payload' => '[REDACTED]'], $anonymizer->anonymize('outer', ['payload' => '€']));
@@ -887,13 +889,13 @@ final class ArrayAnonymizerTest extends TestCase
         $anonymizer->anonymizePayload('limited-payload', 'json', '{"email":"secret"}');
     }
 
-    public function testTopLevelPayloadCountsUtf8CharactersForInputLimits(): void
+    public function testTopLevelPayloadCountsBytesForInputLimits(): void
     {
         $profile = ProfileDefinition::fromArray('unicode-payload', ['mode' => 'redact', 'rules' => [['field' => 'payload']]]);
         $anonymizer = new ArrayAnonymizer(
             new InMemoryProfileProvider([$profile]),
             codecs: [new StaticPayloadCodec('unicode')],
-            limits: new AnonymizationLimits(maxInputBytes: 1),
+            limits: new AnonymizationLimits(maxInputBytes: 3),
         );
 
         self::assertSame('[REDACTED]', $anonymizer->anonymizePayload('unicode-payload', 'unicode', '€'));

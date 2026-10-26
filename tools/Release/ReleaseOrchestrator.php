@@ -64,6 +64,9 @@ final readonly class ReleaseOrchestrator
         $savedManifestPath = $artifactDirectory . '/release-manifest.json';
         $hasSavedManifest = $release !== null && $this->hasAsset($release, 'release-manifest.json');
         if ($release === null || !$hasSavedManifest) {
+            if ($release !== null && ($release['draft'] ?? false) !== true) {
+                throw new RuntimeException('Published GitHub release ' . $version . ' is missing its saved manifest; refusing to rebuild released content.');
+            }
             $this->progress($release === null ? 'No draft release found; preparing a new release.' : 'Draft release found without a saved manifest; rebuilding its release assets.');
             if ($release !== null) {
                 $artifactDirectory = sys_get_temp_dir() . '/php-anonymizer-release-resume-' . bin2hex(random_bytes(8));
@@ -83,10 +86,9 @@ final readonly class ReleaseOrchestrator
             }
             $this->uploadMissingAssets($client, $release, $manifest, $artifactDirectory);
         } else {
-            $this->progress('Resuming from the saved draft release manifest.');
-            if (($release['draft'] ?? false) !== true) {
-                throw new RuntimeException('GitHub release ' . $version . ' is already published; refusing to change released content.');
-            }
+            $this->progress(($release['draft'] ?? false) === true
+                ? 'Resuming from the saved draft release manifest.'
+                : 'Release is already published; validating its saved manifest and resuming post-publication steps.');
             if (!is_dir($artifactDirectory) && !mkdir($artifactDirectory, 0o700, true) && !is_dir($artifactDirectory)) {
                 throw new RuntimeException('Could not create release resume directory.');
             }
@@ -105,6 +107,9 @@ final readonly class ReleaseOrchestrator
             }
             $publicationPlan = $this->publisher->preflight($splitPlan, $root);
             if ($this->hasMissingPackageAssets($release, $manifest)) {
+                if (($release['draft'] ?? false) !== true) {
+                    throw new RuntimeException('Published GitHub release ' . $version . ' is missing package assets; refusing to change released content.');
+                }
                 $artifactDirectory = sys_get_temp_dir() . '/php-anonymizer-release-resume-' . bin2hex(random_bytes(8));
                 $rebuilt = $this->buildManifest($splitPlan, $root, $artifactDirectory);
                 if ($rebuilt->toArray() !== $manifest->toArray()) {
@@ -131,8 +136,12 @@ final readonly class ReleaseOrchestrator
         $packagist->verify($manifest);
         $this->progress('Installing the exact release versions in a clean Composer consumer.');
         $packagist->installCleanConsumer($manifest);
-        $this->progress('Publishing the GitHub release.');
-        $client->publish($release);
+        if (($release['draft'] ?? false) === true) {
+            $this->progress('Publishing the GitHub release.');
+            $client->publish($release);
+        } else {
+            $this->progress('GitHub release is already published; leaving its released content unchanged.');
+        }
         $this->progress('Opening or reusing the main-to-develop synchronization pull request.');
         $client->openOrReuseSynchronizationPullRequest();
         $this->progress('Release publication finished successfully.');

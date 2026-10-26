@@ -46,6 +46,9 @@ workflow's built-in `GITHUB_TOKEN` is separately limited to contents and pull
 request write permissions in the release job; it creates the draft/release,
 pushes the monorepo tag, and opens or reuses the synchronization pull request.
 Publishing secrets are injected only into the release publication step.
+In the repository's Actions settings, allow GitHub Actions to create pull
+requests. Without that setting, GitHub can reject the final synchronization PR
+with HTTP 403 even when the workflow token has `pull-requests: write`.
 
 GitHub quality, preview, and benchmark jobs use `contents: read`. The release
 workflow grants its release job `contents: write` and `pull-requests: write`,

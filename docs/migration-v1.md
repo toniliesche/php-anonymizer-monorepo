@@ -1,4 +1,8 @@
-# Migrating to PHP Anonymizer 1.0
+# Historical: Migrating legacy configurations to PHP Anonymizer 1.0
+
+This note describes the original 1.0 rewrite and is retained for historical
+upgrades. It does not describe upgrading a 1.x application to the current 2.0
+API; use the [2.0 migration guide](migration-v2.md) for that.
 
 Version 1.0 is the clean rewrite of the legacy anonymizer. Configuration is
 profile-first and array-based; legacy YAML/JSON rule files can be converted

@@ -1,118 +1,85 @@
 # PHP Anonymizer
 
-This repository is the PHP Anonymizer 2.x development monorepo. Development
-uses PHP 8.5+, Composer, and the root Composer scripts.
+PHP Anonymizer is a PHP 8.5+ library for applying reusable profiles to arrays,
+documents, streams, and optionally objects. The framework-independent core
+returns transformed data without changing the input.
 
-The current work-in-progress release is 2.0.0. Install the packages you need
-with Composer; the Laravel integration is available for Laravel 13:
+### Project Status
+
+[![Tests](https://github.com/toniliesche/php-anonymizer-monorepo/actions/workflows/quality.yml/badge.svg)](https://github.com/toniliesche/php-anonymizer-monorepo/actions/workflows/quality.yml)
+[![Code Coverage](https://codecov.io/gh/toniliesche/php-anonymizer-monorepo/branch/develop/graph/badge.svg)](https://codecov.io/gh/toniliesche/php-anonymizer-monorepo)
+[![Mutation testing badge](https://img.shields.io/endpoint?style=flat&url=https%3A%2F%2Fbadge-api.stryker-mutator.io%2Fgithub.com%2Ftoniliesche%2Fphp-anonymizer-monorepo%2Fmain)](https://dashboard.stryker-mutator.io/reports/github.com/toniliesche/php-anonymizer-monorepo/main)
+[![Downloads](https://img.shields.io/packagist/dt/php-anonymizer/anonymizer.svg)](https://packagist.org/packages/php-anonymizer/anonymizer)
+[![Stars](https://img.shields.io/github/stars/toniliesche/php-anonymizer-monorepo)](https://github.com/toniliesche/php-anonymizer-monorepo/stargazers)
+
+### Project Info
+
+[![PHP Version](https://img.shields.io/packagist/php-v/php-anonymizer/anonymizer)](https://github.com/toniliesche/php-anonymizer-monorepo)
+[![Latest Version](https://img.shields.io/packagist/v/php-anonymizer/anonymizer.svg)](https://packagist.org/packages/php-anonymizer/anonymizer)
+[![License](https://img.shields.io/github/license/toniliesche/php-anonymizer-monorepo)](https://github.com/toniliesche/php-anonymizer-monorepo/blob/main/LICENSE)
+
+### Repo Status
+
+[![Last Commit](https://img.shields.io/github/last-commit/toniliesche/php-anonymizer-monorepo)](https://github.com/toniliesche/php-anonymizer-monorepo)
+[![Issues](https://img.shields.io/github/issues/toniliesche/php-anonymizer-monorepo)](https://github.com/toniliesche/php-anonymizer-monorepo/issues)
+
+Install the core package with Composer:
 
 ```sh
-composer require php-anonymizer/anonymizer php-anonymizer/anonymizer-laravel
+composer require php-anonymizer/anonymizer
 ```
 
-The core API is built around one façade and an immutable builder:
+Build a profile and façade, then anonymize an associative array:
 
+<!-- executable -->
 ```php
 use PhpAnonymizer\Anonymizer\Application\Anonymization\AnonymizerBuilder;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinition;
 
-$anonymizer = AnonymizerBuilder::create()
-    ->withProfile(ProfileDefinition::fromArray('customer', [
-        'mode' => 'redact',
-        'rules' => [['field' => 'email']],
-    ]))
-    ->build();
-$safe = $anonymizer->anonymize('customer', ['email' => 'user@example.com']);
-// ['email' => '[REDACTED]']
-```
-
-Preserve profiles act as allow-lists. Selected strings remain unchanged while
-other strings are redacted recursively:
-
-```php
-$profile = ProfileDefinition::fromArray('customer-safe', [
-    'mode' => 'preserve',
+$profile = ProfileDefinition::fromArray('customer', [
+    'mode' => 'redact',
     'rules' => [['field' => 'email']],
 ]);
+$anonymizer = AnonymizerBuilder::create()->withProfile($profile)->build();
+$safe = $anonymizer->anonymize('customer', ['email' => 'ada@example.test']);
 
-$safe = $anonymizer->anonymize('customer-safe', [
-    'email' => 'user@example.com',
-    'name' => 'Ada',
-]);
-// ['email' => 'user@example.com', 'name' => '[REDACTED]']
-```
-
-The profile schema, conditions, and scalar fallbacks are documented in
-[`docs/profile-schema.md`](docs/profile-schema.md).
-
-See the complete [user guide](docs/user-guide.md) and
-[2.0 migration guide](docs/migration-v2.md) for application setup and upgrade
-instructions.
-
-The core also supports named string strategies and encoded payloads:
-
-```php
-$profile = ProfileDefinition::fromArray('payload', [
-    'mode' => 'redact',
-    'rules' => [['field' => 'email', 'strategy' => 'star_mask']],
-]);
-
-$json = $anonymizer->anonymizePayload('payload', 'json', '{"email":"Ada"}');
-// {"email":"***"}
-```
-
-Custom strategies and codecs implement the framework-free interfaces described
-in [`docs/extension-author-guide.md`](docs/extension-author-guide.md).
-
-Array consumers can process records lazily without retaining prior records or
-reports:
-
-```php
-foreach ($anonymizer->anonymizeRecords('customer', $records) as $safe) {
-    export($safe);
+if ($safe !== ['email' => '[REDACTED]']) {
+    throw new RuntimeException('The quick-start example did not redact the email.');
 }
 ```
 
-The optional `php-anonymizer/anonymizer-pseudonymization` package provides
-keyed deterministic pseudonyms. Register an application key provider, use a
-leaf rule with `strategy: pseudonymize` and a non-secret `key_id`, then pass an
-`AnonymizationContext` with per-request scope attributes to the façade call.
+Profiles default to `redact` mode. Use `preserve` mode when you want an
+allow-list: selected strings pass through and other strings are redacted.
+Nested map and list rules preserve the input shape. Read the [user guide](docs/user-guide.md)
+for the application walkthrough and [profile schema](docs/profile-schema.md)
+for every supported rule and option.
 
-Execution limits are enabled by default. Configure `AnonymizationLimits` with
-`AnonymizerBuilder::withLimits()`. Encoded payloads are
-limited to 10 MiB by default, with additional bounds for traversal depth,
-visited nodes, collection entries, and embedded payload depth.
+## Optional integrations
 
-Callers that need safe operational telemetry can use the façade's
-`anonymizeWithAudit()` method. Audit entries contain profile identity, a
-compiled profile fingerprint, paths, actions, handler IDs, and counts—never
-source or replacement values.
+Install only the packages you need:
 
-Symfony applications can install `php-anonymizer/anonymizer-bundle` and
-configure the same profiles under `anonymizer.profiles`. The Bundle exposes an
-autowireable `AnonymizerInterface` and discovers custom providers, strategies,
-and codecs through explicit `anonymizer.*` service tags. See the Bundle
-README for installation and Flex/manual registration details.
+- [Symfony Bundle](packages/anonymizer-bundle/README.md) for Symfony service
+  registration, profile configuration, and tagged extensions.
+- [Laravel integration](packages/anonymizer-laravel/README.md) for Laravel 13
+  service-container registration.
+- [Symfony Serializer adapter](packages/anonymizer-symfony-serializer/README.md)
+  for opt-in object anonymization.
+- [Faker strategies](packages/anonymizer-faker/README.md) or [fixed personas](packages/anonymizer-personas/README.md)
+  for synthetic replacement values.
+- [Pseudonymization](packages/anonymizer-pseudonymization/README.md) for
+  context-aware keyed pseudonyms.
 
-Laravel 13 applications can install `php-anonymizer/anonymizer-laravel`. Its
-service provider is auto-discovered, composes configured profiles with ordered
-`anonymizer.*` tags, and supports the standalone Symfony Serializer adapter
-when explicitly enabled with an application-owned Serializer service.
+Extensions can also be implemented in plain PHP. See the
+[extension author guide](docs/extension-author-guide.md).
 
-Reusable profile libraries can expose immutable `ProfileDefinition` objects
-through `ProfileProviderInterface`. Register providers explicitly with
-`AnonymizerBuilder::withProfileProviders()` (or Laravel's
-`anonymizer.profile_provider` tag); providers are never scanned or discovered
-implicitly.
+## Documentation
 
-Run `composer qa` for the complete quality gate.
+- [User guide](docs/user-guide.md)
+- [Profile schema reference](docs/profile-schema.md)
+- [Extension author guide](docs/extension-author-guide.md)
+- [Migration to 2.0](docs/migration-v2.md)
+- [Legacy rule import](docs/legacy-rule-import.md)
+- [API surface](docs/api-surface-v2.md)
+- [Release and publishing](docs/release-and-publishing.md) for maintainers
 
-Maintainers can follow the [release and publishing guide](docs/release-and-publishing.md)
-for repository setup, CI credentials, package registration, and release recovery.
-
-For performance checks, run `PHP_VERSION=8.5 composer benchmark`. The isolated
-benchmark uses two warmups, seven samples, and 100 iterations per scenario;
-`BENCHMARK_WARMUPS`, `BENCHMARK_SAMPLES`, and `BENCHMARK_ITERATIONS` can tune
-local runs. CI compares the semantic output digest strictly and reports
-warnings above 10% median time or 15% peak memory; these warnings are
-non-blocking because shared runners are noisy.
+The project is released under the [MIT license](LICENSE).

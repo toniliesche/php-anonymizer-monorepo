@@ -37,6 +37,7 @@ use PhpAnonymizer\Anonymizer\Application\Exception\ExecutionLimitExceeded;
 use PhpAnonymizer\Anonymizer\Application\Exception\ProfileNotFound;
 use PhpAnonymizer\Anonymizer\Application\Extension\Payload\EmbeddedPayloadTraversal;
 use PhpAnonymizer\Anonymizer\Application\Extension\Payload\JsonPayloadCodec;
+use PhpAnonymizer\Anonymizer\Application\Extension\Payload\JsonPayloadData;
 use PhpAnonymizer\Anonymizer\Application\Extension\Payload\PayloadCodecRegistry;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\ProfileRegistry;
 use PhpAnonymizer\Anonymizer\Application\Extension\Profile\Validation\EmbeddedProfileReferenceGraph;
@@ -57,6 +58,7 @@ use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinitionData;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileDefinitionParser;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileGlobalRuleParser;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileMetadataParser;
+use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileMode;
 use PhpAnonymizer\Anonymizer\Domain\Profile\ProfileRuleAppender;
 use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\EmbeddedPayloadDefinitionParser;
 use PhpAnonymizer\Anonymizer\Domain\Rule\Compiler\RuleOptionsCompiler;
@@ -64,7 +66,6 @@ use PhpAnonymizer\Anonymizer\Domain\Rule\RuleDefinition;
 use PhpAnonymizer\Anonymizer\Domain\Rule\RuleTraversalCombinationValidator;
 use PhpAnonymizer\Anonymizer\Infrastructure\Profile\InMemoryProfileProvider;
 use PhpAnonymizer\Anonymizer\Tests\Support\Extension\StaticContextualReplacementStrategy;
-use PhpAnonymizer\Anonymizer\Tests\Support\Extension\StaticPayloadCodec;
 use PhpAnonymizer\Anonymizer\Tests\Support\PullCountingIterable;
 use PhpAnonymizer\Anonymizer\Tests\Support\Records;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -98,13 +99,14 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(RedactUnselectedValues::class)]
 #[CoversClass(AnonymizationReport::class)]
 #[UsesClass(AnonymizationResult::class)]
-#[UsesClass(ArrayTraversal::class)]
+#[CoversClass(ArrayTraversal::class)]
 #[UsesClass(CompiledProfile::class)]
 #[UsesClass(CompiledRuleList::class)]
 #[UsesClass(RuleSelector::class)]
 #[UsesClass(SelectedRule::class)]
 #[UsesClass(EmbeddedPayloadTraversal::class)]
 #[UsesClass(JsonPayloadCodec::class)]
+#[UsesClass(JsonPayloadData::class)]
 #[UsesClass(PayloadCodecRegistry::class)]
 #[UsesClass(ProfileRegistry::class)]
 #[UsesClass(EmbeddedProfileReferenceGraph::class)]
@@ -331,20 +333,20 @@ final class AnonymizationRuntimeTest extends TestCase
     public function testTraversalCountsEmptyChildrenAndEachMapsAtTheirDepth(): void
     {
         foreach ([
-            [['field' => 'customer', 'children' => [['field' => 'email']]], ['customer' => []]],
-            [['field' => 'items', 'each' => [['field' => 'email']]], ['items' => [[]]]],
-        ] as [$rule, $data]) {
+            [['field' => 'customer', 'children' => [['field' => 'email']]], ['customer' => []], ['maxVisitedNodes' => 1], 'maxVisitedNodes'],
+            [['field' => 'items', 'each' => [['field' => 'email']]], ['items' => [[]]], ['maxDepth' => 1], 'maxDepth'],
+        ] as [$rule, $data, $limits, $limitName]) {
             $profile = ProfileDefinition::fromArray('nested', ['mode' => 'redact', 'rules' => [$rule]]);
             $anonymizer = new ArrayAnonymizer(
                 new InMemoryProfileProvider([$profile]),
-                limits: new AnonymizationLimits(maxDepth: 1),
+                limits: new AnonymizationLimits(...$limits),
             );
 
             try {
                 $anonymizer->anonymize('nested', $data);
-                self::fail('An empty nested map beyond maxDepth should be rejected.');
+                self::fail('An over-budget nested map should be rejected.');
             } catch (ExecutionLimitExceeded $exception) {
-                self::assertStringContainsString('maxDepth', $exception->getMessage());
+                self::assertStringContainsString($limitName, $exception->getMessage());
             }
         }
     }
@@ -415,6 +417,108 @@ final class AnonymizationRuntimeTest extends TestCase
             ['path' => '/tags/0', 'action' => 'replace', 'handler' => 'redact'],
             ['path' => '/tags/1', 'action' => 'replace', 'handler' => 'redact'],
         ], $result->events());
+    }
+
+    public function testSelectedStringListsEnforceDepthAndNodeBoundaries(): void
+    {
+        $profile = ProfileDefinition::fromArray('strings', [
+            'mode' => 'redact',
+            'rules' => [['field' => 'tags', 'each' => true]],
+        ]);
+        $input = ['tags' => ['one', 'two']];
+
+        self::assertSame(['tags' => ['[REDACTED]', '[REDACTED]']], new ArrayAnonymizer(
+            new InMemoryProfileProvider([$profile]),
+            limits: new AnonymizationLimits(maxDepth: 2, maxVisitedNodes: 4, maxCollectionEntries: 2),
+        )->anonymize('strings', $input));
+
+        foreach ([
+            [new AnonymizationLimits(maxDepth: 1, maxVisitedNodes: 10, maxCollectionEntries: 2), '/tags/0'],
+            [new AnonymizationLimits(maxDepth: 2, maxVisitedNodes: 3, maxCollectionEntries: 2), '/tags/1'],
+        ] as [$limits, $pointer]) {
+            try {
+                new ArrayAnonymizer(new InMemoryProfileProvider([$profile]), limits: $limits)
+                    ->anonymize('strings', $input);
+                self::fail(sprintf('The selected string list should exceed its budget at %s.', $pointer));
+            } catch (ExecutionLimitExceeded $exception) {
+                self::assertStringContainsString('profile "strings"', $exception->getMessage());
+                self::assertStringContainsString($pointer, $exception->getMessage());
+            }
+        }
+    }
+
+    public function testSelectedChildrenAndEachCountEachMapExactlyOnce(): void
+    {
+        $children = ProfileDefinition::fromArray('children', [
+            'mode' => 'redact',
+            'rules' => [['field' => 'customer', 'children' => [['field' => 'email']]]],
+        ]);
+        self::assertSame(['customer' => ['email' => '[REDACTED]']], new ArrayAnonymizer(
+            new InMemoryProfileProvider([$children]),
+            limits: new AnonymizationLimits(maxVisitedNodes: 3),
+        )->anonymize('children', ['customer' => ['email' => 'secret']]));
+
+        $each = ProfileDefinition::fromArray('each', [
+            'mode' => 'redact',
+            'rules' => [['field' => 'items', 'each' => [['field' => 'email']]]],
+        ]);
+        self::assertSame(['items' => [['email' => '[REDACTED]'], ['email' => '[REDACTED]']]], new ArrayAnonymizer(
+            new InMemoryProfileProvider([$each]),
+            limits: new AnonymizationLimits(maxVisitedNodes: 6),
+        )->anonymize('each', ['items' => [['email' => 'one'], ['email' => 'two']]]));
+    }
+
+    public function testTraversalLimitsCoverEveryNodeInUnselectedListsAndRespectExactBoundaries(): void
+    {
+        $plain = ProfileDefinition::fromArray('plain', ['mode' => 'preserve', 'rules' => [['field' => 'unused']]]);
+
+        try {
+            new ArrayAnonymizer(
+                new InMemoryProfileProvider([$plain]),
+                limits: new AnonymizationLimits(maxCollectionEntries: 1),
+            )->anonymize('plain', ['metadata' => ['one', 'two']]);
+            self::fail('An oversized unselected list should exceed the collection limit.');
+        } catch (ExecutionLimitExceeded $exception) {
+            self::assertStringContainsString('maxCollectionEntries', $exception->getMessage());
+            self::assertStringContainsString('profile "plain"', $exception->getMessage());
+            self::assertStringContainsString('/metadata', $exception->getMessage());
+        }
+
+        try {
+            new ArrayAnonymizer(
+                new InMemoryProfileProvider([$plain]),
+                limits: new AnonymizationLimits(maxDepth: 2),
+            )->anonymize('plain', ['metadata' => [[['secret']]]]);
+            self::fail('Nested list indices should increase traversal depth.');
+        } catch (ExecutionLimitExceeded $exception) {
+            self::assertStringContainsString('maxDepth', $exception->getMessage());
+            self::assertStringContainsString('profile "plain"', $exception->getMessage());
+            self::assertStringContainsString('/metadata/0/0', $exception->getMessage());
+        }
+
+        try {
+            new ArrayAnonymizer(
+                new InMemoryProfileProvider([$plain]),
+                limits: new AnonymizationLimits(maxVisitedNodes: 2),
+            )->anonymize('plain', ['first' => 'one', 'second' => 'two']);
+            self::fail('Unselected scalar leaves should count toward the node limit.');
+        } catch (ExecutionLimitExceeded $exception) {
+            self::assertStringContainsString('maxVisitedNodes', $exception->getMessage());
+            self::assertStringContainsString('profile "plain"', $exception->getMessage());
+            self::assertStringContainsString('/second', $exception->getMessage());
+        }
+
+        foreach ([ProfileMode::REDACT, ProfileMode::PRESERVE] as $mode) {
+            $strings = ProfileDefinition::fromArray('strings', [
+                'mode' => $mode->value,
+                'rules' => [['field' => 'tags', 'each' => true]],
+            ]);
+            $result = new ArrayAnonymizer(
+                new InMemoryProfileProvider([$strings]),
+                limits: new AnonymizationLimits(maxDepth: 2, maxVisitedNodes: 4, maxCollectionEntries: 2),
+            )->anonymize('strings', ['tags' => ['one', 'two']]);
+            self::assertSame($mode === ProfileMode::REDACT ? ['[REDACTED]', '[REDACTED]'] : ['one', 'two'], $result['tags']);
+        }
     }
 
     public function testTraversalReusesAnExecutionBudgetSuppliedByTheCaller(): void
@@ -549,19 +653,6 @@ final class AnonymizationRuntimeTest extends TestCase
 
         $this->expectException(ExecutionLimitExceeded::class);
         $anonymizer->anonymizePayload('customer', 'json', '{"email":"secret"}');
-    }
-
-    public function testPayloadInputLimitUsesUtf8CharacterLength(): void
-    {
-        $profile = ProfileDefinition::fromArray('customer', ['mode' => 'redact', 'rules' => [['field' => 'email']]]);
-        $codec = new StaticPayloadCodec('unicode', []);
-        $anonymizer = new ArrayAnonymizer(
-            new InMemoryProfileProvider([$profile]),
-            codecs: [$codec],
-            limits: new AnonymizationLimits(maxInputBytes: 1),
-        );
-
-        self::assertSame('', $anonymizer->anonymizePayload('customer', 'unicode', '€'));
     }
 
     public function testPreserveScalarRedactionIsAuditedWithRedactHandler(): void

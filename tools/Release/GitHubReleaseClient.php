@@ -107,16 +107,27 @@ final readonly class GitHubReleaseClient
     public function openOrReuseSynchronizationPullRequest(): void
     {
         $path = '/repos/' . $this->repository . '/pulls?state=open&base=develop&head=toniliesche:main';
+        $this->progress('Checking for an open main-to-develop synchronization pull request.');
         $pulls = $this->request('GET', $path);
         if ($pulls !== []) {
+            $number = $pulls[0]['number'] ?? null;
+            $this->progress(is_int($number)
+                ? 'Reusing synchronization pull request #' . $number . '.'
+                : 'Reusing the existing synchronization pull request.');
+
             return;
         }
-        $this->request('POST', '/repos/' . $this->repository . '/pulls', [
+        $this->progress('Creating a pull request from main into develop.');
+        $pull = $this->request('POST', '/repos/' . $this->repository . '/pulls', [
             'title' => 'Merge main into develop',
             'head' => 'main',
             'base' => 'develop',
             'body' => 'Synchronize the published release back to the development branch.',
         ]);
+        $number = $pull['number'] ?? null;
+        $this->progress(is_int($number)
+            ? 'Created synchronization pull request #' . $number . '.'
+            : 'Created synchronization pull request.');
     }
 
     /**
@@ -172,10 +183,19 @@ final readonly class GitHubReleaseClient
         }
         if (!is_string($response) || preg_match('/\s(\d{3})\s/', $statusLine, $matches) !== 1 || (int) $matches[1] < 200 || (int) $matches[1] >= 300) {
             $status = preg_match('/\s(\d{3})\s/', $statusLine, $matches) === 1 ? 'HTTP ' . $matches[1] : 'network error';
+            $path = parse_url($url, PHP_URL_PATH);
+            $responseBody = is_string($response) ? trim(preg_replace('/\s+/', ' ', strip_tags($response)) ?? '') : '';
+            $responseBody = $responseBody === '' ? '' : ': ' . substr($responseBody, 0, 500);
 
-            throw new RuntimeException('GitHub API request failed (' . $status . ').');
+            throw new RuntimeException(sprintf('GitHub API %s request failed for %s (%s)%s.', $method, is_string($path) ? $path : 'request', $status, $responseBody));
         }
 
         return $response;
+    }
+
+    private function progress(string $message): void
+    {
+        fwrite(STDOUT, '[release] ' . $message . PHP_EOL);
+        fflush(STDOUT);
     }
 }

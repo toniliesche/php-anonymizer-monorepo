@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 2.0.1
+
+- Validate global rule strategy and transformation references during Bundle
+  profile construction so invalid configuration fails during framework boot.
+
 ## 2.0.0
 
 - Split framework registration into internal composition collaborators and made

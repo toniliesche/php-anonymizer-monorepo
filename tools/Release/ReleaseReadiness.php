@@ -61,8 +61,8 @@ final class ReleaseReadiness
             if ($train->requiredCoreConstraint($package) !== null && ($metadata['require']['php-anonymizer/anonymizer'] ?? null) !== $train->requiredCoreConstraint($package)) {
                 $errors[] = $package . ' must require php-anonymizer/anonymizer ^2.0.';
             }
-            if ($train->requiredSerializerConstraint($package) !== null && ($metadata['require']['php-anonymizer/anonymizer-symfony-serializer'] ?? null) !== $train->requiredSerializerConstraint($package)) {
-                $errors[] = 'anonymizer-bundle must require the Serializer package ^2.0.';
+            if ($package === 'anonymizer-bundle' && array_key_exists('php-anonymizer/anonymizer-symfony-serializer', $metadata['require'] ?? [])) {
+                $errors[] = 'anonymizer-bundle must keep the Serializer adapter optional.';
             }
         }
 
